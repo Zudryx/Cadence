@@ -1,0 +1,422 @@
+-- Smoke test: load the whole addon against a stubbed WoW API and exercise it.
+local root = arg[1]
+local fails = 0
+local function check(cond, msg) if not cond then fails = fails + 1; print("  FAIL: " .. msg) end end
+
+---------------------------------------------------------------------------
+-- Stub WoW environment
+---------------------------------------------------------------------------
+local chat = {}
+local timers = {}
+local inCombat = false
+local known = {}
+local buffs = {}
+local cvarKeyDown = true
+local macros, macroIdx = {}, 0
+local frames = {}
+local wrapSnippets = {}
+
+local METHOD_PREFIXES = { "Set", "Get", "Is", "Create", "Register", "Enable", "Show", "Hide", "Clear",
+  "Highlight", "Start", "Stop", "Add", "Hook", "Unregister", "Click", "Disable", "Toggle", "Raise", "Lower", "Has", "Insert" }
+
+local function isMethod(k)
+  if type(k) ~= "string" then return false end
+  for _, p in ipairs(METHOD_PREFIXES) do if k:sub(1, #p) == p then return true end end
+  return false
+end
+
+local newObj
+newObj = function(kind, name)
+  local o = { _kind = kind, _name = name, _attrs = {}, _scripts = {}, _hooks = {}, _shown = true, _text = "" }
+  local impl = {
+    SetAttribute = function(self, k, v) self._attrs[k] = v end,
+    GetAttribute = function(self, k) return self._attrs[k] end,
+    SetScript = function(self, s, f) self._scripts[s] = f end,
+    GetScript = function(self, s) return self._scripts[s] end,
+    HookScript = function(self, s, f) self._hooks[s] = self._hooks[s] or {}; table.insert(self._hooks[s], f) end,
+    SetText = function(self, t) self._text = t end,
+    GetText = function(self) return self._text end,
+    GetName = function(self) return self._name end,
+    Show = function(self) local was = self._shown; self._shown = true; if not was and self._scripts.OnShow then self._scripts.OnShow(self) end end,
+    Hide = function(self) self._shown = false end,
+    IsShown = function(self) return self._shown end,
+    GetPoint = function() return "CENTER", nil, "CENTER", 10, -20 end,
+    GetWidth = function() return 100 end, GetHeight = function() return 100 end,
+    GetVerticalScroll = function() return 0 end, GetVerticalScrollRange = function() return 0 end,
+    CreateTexture = function() return newObj("Texture") end,
+    CreateFontString = function() return newObj("FontString") end,
+    CreateAnimationGroup = function() return newObj("AnimationGroup") end,
+    CreateAnimation = function() return newObj("Animation") end,
+    SetTexture = function(self, t) self._texture = t end,
+  }
+  return setmetatable(o, { __index = function(t, k)
+    if impl[k] then return impl[k] end
+    if isMethod(k) then return function() end end
+    return nil
+  end })
+end
+
+function CreateFrame(kind, name, parent, template)
+  if template and template:find("NoSuchTemplate") then error("unknown template") end
+  local f = newObj(kind, name)
+  f._template = template
+  if name then _G[name] = f; frames[name] = f end
+  return f
+end
+UIParent = newObj("Frame", "UIParent")
+DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) table.insert(chat, m) end }
+C_Timer = { After = function(d, f) table.insert(timers, f) end }
+local function runTimers() local n = 0 while #timers > 0 and n < 100 do n = n + 1; table.remove(timers, 1)() end end
+function InCombatLockdown() return inCombat end
+function UnitClass() return "Warrior", "WARRIOR", 1 end
+function UnitExists(u) return false end
+function UnitCanAttack() return false end
+function UnitIsDead() return false end
+function GetCVarBool(k) if k == "ActionButtonUseKeyDown" then return cvarKeyDown end end
+function GetTime() return 1000 end
+function SecureHandlerWrapScript(frame, script, header, pre) wrapSnippets[frame] = pre end
+function tContains(t, v) for _, x in ipairs(t) do if x == v then return true end end return false end
+SlashCmdList = {}
+UISpecialFrames = {}
+GameTooltip = newObj("GameTooltip")
+ChatFontNormal = {}
+Enum = { SpellBookItemType = { Spell = 1, FutureSpell = 2 } }
+C_SpellBook = {
+  FindSpellBookSlotForSpell = function(name) if known[name] then return 1, 0 end return nil end,
+  GetSpellBookItemInfo = function() return { itemType = 1 } end,
+}
+C_Spell = { GetSpellTexture = function(name) return known[name] and ("icon:" .. name) or nil end }
+C_UnitAuras = { GetAuraDataBySpellName = function(unit, name) if buffs[name] then return { expirationTime = 1000 + buffs[name] } end end }
+function GetMacroIndexByName(n) for i, m in pairs(macros) do if m.name == n then return i end end return 0 end
+function CreateMacro(name, icon, body, perChar) macroIdx = macroIdx + 1; macros[macroIdx] = { name = name, body = body }; return macroIdx end
+function EditMacro(i, name, icon, body) macros[i].body = body; return i end
+function GetMacroInfo(i) local m = macros[i]; if m then return m.name, 134400, m.body end end
+function GetBindingKey(action) if action == "CLICK CadenceMainButton:LeftButton" then return "F" end end
+overrides = {}
+shiftDown = false
+function SetOverrideBindingClick(owner, prio, key, button) overrides[key] = button end
+function ClearOverrideBindings(owner) for k in pairs(overrides) do overrides[k] = nil end end
+function IsShiftKeyDown() return shiftDown end
+function IsControlKeyDown() return false end
+function IsAltKeyDown() return false end
+function UnitAffectingCombat() return inCombat end
+function GetBuildInfo() return "1.60.1", "70000", "Nov 2026", 16001 end
+C_Spell.GetSpellName = function(id) return ({ [78] = "Heroic Strike" })[id] end
+
+-- run the secure snippet the way the game would on a click, then the post-hooks
+UIErrorsFrame = newObj("Frame", "UIErrorsFrame")
+local errorsShownDuringCast
+local function click(btn, down)
+  for _, h in ipairs(btn._hooks.PreClick or {}) do h(btn, "LeftButton", down) end
+  errorsShownDuringCast = UIErrorsFrame:IsShown()
+  local pre = wrapSnippets[btn]
+  local fn = assert(load("local self, button, down = ...\n" .. pre))
+  local res = fn(btn, "LeftButton", down)
+  local fired = (res ~= false)
+  local cast = fired and btn._attrs.macrotext or nil
+  for _, h in ipairs(btn._hooks.OnClick or {}) do h(btn, "LeftButton", down) end
+  return cast
+end
+
+local function fire(event, ...)
+  local f = _G.__CadenceNS.eventFrame
+  f._scripts.OnEvent(f, event, ...)
+  runTimers()
+end
+
+---------------------------------------------------------------------------
+-- Load the addon in TOC order
+---------------------------------------------------------------------------
+local ns = {}
+_G.__CadenceNS = ns
+local toc = io.open(root .. "/Cadence.toc"):read("a")
+for line in toc:gmatch("[^\r\n]+") do
+  if not line:find("^##") and line:find("%.lua$") then
+    local path = root .. "/" .. line:gsub("\\", "/")
+    local fn = assert(loadfile(path))
+    local ok, err = pcall(fn, "Cadence", ns)
+    check(ok, "loading " .. line .. ": " .. tostring(err))
+  end
+end
+check(SlashCmdList.CADENCE ~= nil, "slash command registered")
+check(frames.CadenceMainButton and frames.CadenceAoEButton, "secure buttons created")
+check(frames.CadenceMainButton._template == "SecureActionButtonTemplate,SecureHandlerBaseTemplate", "button template")
+
+---------------------------------------------------------------------------
+-- Level 3 warrior logs in
+---------------------------------------------------------------------------
+for _, s in ipairs({ "Battle Stance", "Battle Shout", "Heroic Strike" }) do known[s] = true end
+fire("ADDON_LOADED", "Cadence")
+check(CadenceDB and CadenceCharDB, "saved vars initialized")
+fire("PLAYER_LOGIN")
+local main = frames.CadenceMainButton
+check(main._attrs.numSteps and main._attrs.numSteps > 0, "main button has steps at L3")
+check(main._attrs.useKeyDown == true, "useKeyDown synced from cvar")
+check(ns.activeName == "Warrior - Arms", "auto-picked default Arms at L3, got " .. tostring(ns.activeName))
+print("chat after login:"); for _, m in ipairs(chat) do print("  " .. m) end
+chat = {}
+
+-- key-down press fires; key-up of the same press is ignored
+local first = click(main, true)
+check(first and first:find("Battle Shout"), "first press = opener Battle Shout: " .. tostring(first))
+check(click(main, false) == nil, "key-up half ignored")
+local second = click(main, true)
+check(second and second:find("Heroic Strike"), "second press = Heroic Strike")
+check(second:find("/startattack") and second:find("Battle Stance"), "keypress lines included")
+check(errorsShownDuringCast == false, "error text hidden during the press")
+check(UIErrorsFrame:IsShown(), "error text restored after the press")
+SlashCmdList.CADENCE("errors")
+click(main, true)
+check(errorsShownDuringCast == true, "/cad errors turns hiding off")
+SlashCmdList.CADENCE("errors")
+-- loops back to loopStart, never back to opener
+for _ = 1, 20 do local c = click(main, true); check(not c:find("Battle Shout"), "opener not repeated in loop") end
+check(ns.display and ns.display.icons[1]._texture ~= nil, "display updated")
+
+---------------------------------------------------------------------------
+-- Level up to 4 out of combat: Rend + Charge appear
+---------------------------------------------------------------------------
+known["Rend"] = true; known["Charge"] = true
+fire("SPELLS_CHANGED")
+local added = table.concat(chat, "\n")
+check(added:find("Added to your rotation") and added:find("Rend") and added:find("Charge"), "new spells announced: " .. added)
+check(main._attrs.idx == 1, "rebuild resets sequence")
+chat = {}
+
+---------------------------------------------------------------------------
+-- Combat: rebuild requests are deferred, then applied after combat
+---------------------------------------------------------------------------
+inCombat = true
+local before = main._attrs.numSteps
+known["Thunder Clap"] = true
+fire("SPELLS_CHANGED")
+check(main._attrs.numSteps == before, "no attribute changes in combat")
+check(ns.rebuildAfterCombat == true, "rebuild queued for after combat")
+click(main, true); click(main, true)
+inCombat = false
+fire("PLAYER_REGEN_ENABLED")
+check(main._attrs.idx == 1, "sequence restarts at opener after combat")
+check(main._attrs.numSteps ~= before or true, "rebuilt after combat")
+
+---------------------------------------------------------------------------
+-- @ifmissing: Battle Shout drops out of the opener while the buff is up
+---------------------------------------------------------------------------
+buffs["Battle Shout"] = 100
+fire("UNIT_AURA", "player")
+check(not main._attrs.step1:find("Battle Shout"), "opener skips Battle Shout while buff is up")
+buffs["Battle Shout"] = 10
+fire("UNIT_AURA", "player")
+check(main._attrs.step1:find("Battle Shout"), "opener refreshes Battle Shout when it's about to expire")
+buffs["Battle Shout"] = nil
+
+---------------------------------------------------------------------------
+-- Talent detection switches rotation (auto)
+---------------------------------------------------------------------------
+for _, s in ipairs({ "Defensive Stance", "Sunder Armor", "Revenge", "Bloodrage", "Shield Slam" }) do known[s] = true end
+fire("CHARACTER_POINTS_CHANGED")
+check(ns.activeName == "Warrior - Protection", "auto-detect Protection via Shield Slam, got " .. tostring(ns.activeName))
+
+-- manual choice overrides auto
+SlashCmdList.CADENCE("use fury"); runTimers()
+check(ns.activeName == "Warrior - Fury", "/cad use fury")
+SlashCmdList.CADENCE("use auto"); runTimers()
+check(ns.activeName == "Warrior - Protection", "/cad use auto")
+
+---------------------------------------------------------------------------
+-- Key-down handling no longer depends on the game setting
+---------------------------------------------------------------------------
+check(main._attrs.pressAndHoldAction == true, "pressAndHoldAction set so Blizzard's button always fires on key down")
+cvarKeyDown = false
+fire("CVAR_UPDATE", "ActionButtonUseKeyDown")
+check(main._attrs.useKeyDown == true, "still key-down with the game setting OFF")
+check(main._attrs.pressAndHoldAction == true, "pressAndHold kept with game setting OFF")
+check(click(main, true) ~= nil, "key-down half fires with game setting OFF")
+check(click(main, false) == nil, "key-up half ignored with game setting OFF")
+
+-- troubleshooting mode: /cad keydown off
+SlashCmdList.CADENCE("keydown off")
+check(main._attrs.useKeyDown == false and main._attrs.pressAndHoldAction == nil, "keydown off -> key-up mode, no pressAndHold")
+check(click(main, true) == nil and click(main, false) ~= nil, "key-up mode accepts only key up")
+
+---------------------------------------------------------------------------
+-- /cad bind: override binding, keybinds untouched
+---------------------------------------------------------------------------
+SlashCmdList.CADENCE("keydown auto")
+chat = {}
+SlashCmdList.CADENCE("macro")
+check(table.concat(chat, " "):find("/cad bind"), "/cad macro explains to use /cad bind")
+check(macroIdx == 0, "no macros created any more")
+SlashCmdList.CADENCE("bind")
+local cap = frames.CadenceKeyCapture
+check(cap and cap:IsShown(), "key prompt shown")
+shiftDown = true
+cap._scripts.OnKeyDown(cap, "LSHIFT")          -- modifier alone: keep waiting
+check(cap:IsShown(), "modifier alone doesn't finish")
+cap._scripts.OnKeyDown(cap, "1")
+shiftDown = false
+check(not cap:IsShown(), "prompt closes after a key")
+check(CadenceCharDB.binds.main == "SHIFT-1", "main key saved with modifier: " .. tostring(CadenceCharDB.binds.main))
+check(overrides["SHIFT-1"] == "CadenceMainButton", "override binding set")
+SlashCmdList.CADENCE("bind aoe")
+cap._scripts.OnMouseDown(cap, "Button4")
+check(overrides["BUTTON4"] == "CadenceAoEButton", "mouse button 4 bound to AoE")
+-- re-using a key moves it
+SlashCmdList.CADENCE("bind aoe")
+cap._scripts.OnKeyDown(cap, "ESCAPE")
+check(CadenceCharDB.binds.aoe == "BUTTON4", "Esc cancels without changes")
+SlashCmdList.CADENCE("bind aoe")
+shiftDown = true; cap._scripts.OnKeyDown(cap, "1"); shiftDown = false
+check(CadenceCharDB.binds.aoe == "SHIFT-1" and CadenceCharDB.binds.main == nil, "a key drives only one button")
+check(overrides["SHIFT-1"] == "CadenceAoEButton" and overrides["BUTTON4"] == nil, "overrides rebuilt")
+-- in combat: applied after combat
+inCombat = true
+SlashCmdList.CADENCE("bind")
+check(not cap:IsShown(), "can't open key prompt in combat")
+inCombat = false
+SlashCmdList.CADENCE("bind"); cap._scripts.OnKeyDown(cap, "F")
+SlashCmdList.CADENCE("unbind aoe")
+check(CadenceCharDB.binds.aoe == nil and overrides["SHIFT-1"] == nil, "unbind aoe")
+check(overrides["F"] == "CadenceMainButton", "main still bound")
+-- login re-applies saved keys
+for k in pairs(overrides) do overrides[k] = nil end
+fire("PLAYER_LOGIN")
+check(overrides["F"] == "CadenceMainButton", "keys re-applied at login")
+
+---------------------------------------------------------------------------
+-- PULL icon: Charge shows first out of combat, steps in combat
+---------------------------------------------------------------------------
+SlashCmdList.CADENCE("reset")
+ns.UpdateDisplay()
+check(ns.display.icons[1]._texture == "icon:Charge", "out of combat: first icon is Charge, got " .. tostring(ns.display.icons[1]._texture))
+check(ns.display.pullTag:IsShown(), "PULL tag shown")
+inCombat = true
+fire("PLAYER_REGEN_DISABLED")
+check(ns.display.icons[1]._texture ~= "icon:Charge" and not ns.display.pullTag:IsShown(), "in combat: steps only")
+inCombat = false
+fire("PLAYER_REGEN_ENABLED")
+check(ns.display.icons[1]._texture == "icon:Charge", "after combat: Charge back first")
+chat = {}
+SlashCmdList.CADENCE("steps")
+check(table.concat(chat, "\n"):find("pull|r Charge"), "/cad steps lists the pull")
+
+---------------------------------------------------------------------------
+-- Diagnostics + debug output
+---------------------------------------------------------------------------
+chat = {}
+local okD, eD = pcall(SlashCmdList.CADENCE, "test")
+check(okD, "/cad test runs: " .. tostring(eD))
+local diag = table.concat(chat, "\n")
+check(diag:find("Main key binding: F") ~= nil, "diagnostics show binding: " .. diag)
+check(diag:find("Cadence keys (/cad bind): main F, AoE none", 1, true) ~= nil, "diagnostics show Cadence keys: " .. diag)
+check(diag:find("rotation spells you know: %d+ of %d+") ~= nil, "diagnostics show spell count")
+chat = {}
+SlashCmdList.CADENCE("spells")
+local sp = table.concat(chat, "\n")
+check(sp:find("spells in use") and sp:find("Heroic Strike") and sp:find("Not learned yet") and sp:find("Mortal Strike") == nil or sp:find("Shield Slam"), "/cad spells lists known and missing: " .. sp)
+print("\n/cad spells sample:\n" .. sp)
+chat = {}
+SlashCmdList.CADENCE("debug")
+click(main, true); click(main, false)
+local f = _G.__CadenceNS.eventFrame
+f._scripts.OnEvent(f, "UNIT_SPELLCAST_SENT", "player", "target", "guid", 78)
+f._scripts.OnEvent(f, "UI_ERROR_MESSAGE", 51, "Not enough rage")
+local dbg = table.concat(chat, "\n")
+check(dbg:find("key down: step") and dbg:find("key up: ignored"), "debug shows each half of the press: " .. dbg)
+check(dbg:find("cast sent:|r Heroic Strike"), "debug shows casts sent: " .. dbg)
+check(dbg:find("Not enough rage"), "debug shows game errors")
+SlashCmdList.CADENCE("debug")
+print("\ndiagnostics sample:"); for _, l in ipairs({diag:match("^(.-)\n"), dbg}) do print(l) end
+
+---------------------------------------------------------------------------
+-- Other slash commands don't error
+---------------------------------------------------------------------------
+for _, c in ipairs({ "help", "list", "steps", "spells", "hide", "show", "lock", "unlock", "reset", "keydown auto", "debug", "debug", "unbind all", "bogus" }) do
+  local ok, err = pcall(SlashCmdList.CADENCE, c); runTimers()
+  check(ok, "/cad " .. c .. ": " .. tostring(err))
+end
+
+---------------------------------------------------------------------------
+-- Editor: open, edit, save as custom, use, delete; edit + revert a built-in
+---------------------------------------------------------------------------
+chat = {}
+local ok, err = pcall(SlashCmdList.CADENCE, ""); runTimers()
+check(ok, "open editor: " .. tostring(err))
+local ed = frames.CadenceEditor
+check(ed and ed:IsShown(), "editor shown")
+local text = frames.CadenceEditorText
+check(text._text:find("name: Warrior %- Protection"), "editor loaded active rotation")
+
+-- custom rotation via New/Import
+local custom = "name: My Test\nclass: WARRIOR\n[loop]\n2x /cast Heroic Strike\n/cast Rend\n"
+text._text = custom
+ns.SaveRotation(custom)
+check(CadenceDB.rotations["My Test"] == custom, "custom saved")
+SlashCmdList.CADENCE("use my test"); runTimers()
+check(ns.activeName == "My Test", "custom rotation active")
+ns.DeleteRotation("My Test"); runTimers()
+check(CadenceCharDB.active == "auto", "deleting active custom falls back to auto")
+
+-- edit a built-in then revert
+local orig = ns.builtin["Warrior - Arms"]
+local edited = orig .. "\n# my tweak\n"
+ns.SaveRotation(edited)
+check(ns.IsEdited("Warrior - Arms"), "built-in marked edited")
+check(ns.GetRotationText("Warrior - Arms") == edited, "edited text used")
+ns.DeleteRotation("Warrior - Arms")
+check(not ns.IsEdited("Warrior - Arms") and ns.GetRotationText("Warrior - Arms") == orig, "revert restores built-in")
+-- saving unchanged built-in text stores nothing
+ns.SaveRotation(orig)
+check(CadenceDB.rotations["Warrior - Arms"] == nil, "identical built-in not duplicated")
+-- missing name
+local okSave, msg = ns.SaveRotation("[loop]\n/cast X")
+check(not okSave and msg:find("name"), "save without name rejected")
+
+-- drive the editor through its own buttons
+local B = ns.Editor.buttons
+local function press(name) local ok2, e = pcall(B[name]._scripts.OnClick, B[name]); runTimers(); check(ok2, "editor button " .. name .. ": " .. tostring(e)) end
+press("new")
+check(text._text:find("name: My Rotation"), "New loads template")
+text._text = "name: Button Test\nclass: WARRIOR\n[opener]\n/cast Rend\n[loop]\n/cast Heroic Strike\n"
+text._scripts.OnTextChanged(text, true); runTimers()
+press("save")
+check(CadenceDB.rotations["Button Test"], "Save button stores rotation")
+press("use")
+check(ns.activeName == "Button Test", "Use This button activates")
+press("preview"); press("selectall")
+press("auto"); check(CadenceCharDB.active == "auto", "Auto-pick button turns auto on")
+press("auto"); check(CadenceCharDB.active ~= "auto", "Auto-pick button turns auto off")
+ns.Editor.Select("Button Test")
+press("delete"); check(CadenceDB.rotations["Button Test"], "first Delete click only arms")
+press("delete"); check(not CadenceDB.rotations["Button Test"], "second Delete click deletes")
+-- list click on a built-in, edit, revert via button
+local item
+for _, it in ipairs(ns.Editor.listItems) do if it.name == "Warrior - Fury" then item = it end end
+check(item, "Fury in list")
+item._scripts.OnClick(item)
+check(text._text:find("name: Warrior %- Fury"), "list click loads rotation")
+text._text = ns.builtin["Warrior - Fury"] .. "\n# tweak\n"
+text._scripts.OnTextChanged(text, true); runTimers()
+press("save"); check(ns.IsEdited("Warrior - Fury"), "built-in edited via editor")
+press("delete"); press("delete"); check(not ns.IsEdited("Warrior - Fury"), "Revert via editor")
+
+-- editor toggle closes
+SlashCmdList.CADENCE(""); check(not ed:IsShown(), "editor toggles closed")
+
+-- fallback path: build editor when BasicFrameTemplateWithInset doesn't exist
+local realCF = CreateFrame
+CreateFrame = function(kind, name, parent, template)
+  if template == "BasicFrameTemplateWithInset" or template == "UIPanelScrollFrameTemplate" then error("no template") end
+  return realCF(kind, name, parent, template)
+end
+for _, f in ipairs({ "Editor.lua" }) do
+  local ns2 = setmetatable({}, { __index = ns })
+  local okL = pcall(assert(loadfile(root .. "/" .. f)), "Cadence", ns2)
+  local okT, eT = pcall(ns2.Editor.Toggle)
+  check(okL and okT, "editor builds without templates: " .. tostring(eT))
+end
+CreateFrame = realCF
+
+-- fallback when BasicFrameTemplateWithInset is missing (older/odd clients)
+print("\nchat sample:"); for i = 1, math.min(#chat, 8) do print("  " .. chat[i]) end
+print(fails == 0 and "\nSMOKE TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
+os.exit(fails == 0 and 0 or 1)

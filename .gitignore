@@ -1,0 +1,5 @@
+*.zip
+notes.md
+__pycache__/
+updater/cadence-updater.json
+updater/backup/
