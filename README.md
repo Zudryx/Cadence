@@ -2,8 +2,8 @@
 
 One-button rotations and a rotation helper for **World of Warcraft: Forever**.
 
-- **One-button (GSE-style):** each press of your Cadence key casts the next step of your rotation.
-- **Rotation helper (Hekili-style):** a popup and a glow on your action bars show the best skill to use right now. Interrupts glow red and defensives orange, but only when needed.
+- **One-button:** each press of your Cadence key casts the next step of your rotation.
+- **Rotation helper:** a popup and a glow on your action bars show the best skill to use right now. Interrupts glow red and defensives orange, but only when needed.
 - **Grows with you:** spells you haven't learned are skipped, so one rotation works from level 1 to 60. Cadence reads your talents and weapons to pick Arms, Fury or Protection for you.
 - **Editable in game:** `/cad` opens an editor. Edit or write rotations and share them as text.
 

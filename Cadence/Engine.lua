@@ -1,6 +1,6 @@
 -- Cadence: the one-button engine.
 --
--- How it works (same idea as GSE):
+-- How it works:
 --   * Hidden secure buttons hold the compiled steps as attributes:
 --     step1, step2, ... Each step is a small macro.
 --   * Every press runs a tiny secure snippet that loads the next step into
@@ -48,7 +48,7 @@ local function CreateSequenceButton(name)
   b:SetAttribute("loopStart", 1)
   SecureHandlerWrapScript(b, "OnClick", b, PRE_CLICK)
   -- Fallback lines make failed casts normal, so hide the red error text
-  -- just for the duration of a Cadence press (like GSE does).
+  -- just for the duration of a Cadence press.
   b:HookScript("PreClick", function(self, button, down)
     ns.HideErrorsForPress(self, down)
   end)

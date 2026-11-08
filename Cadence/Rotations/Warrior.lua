@@ -2,14 +2,14 @@
 --
 -- Priorities are based on the WoW Forever Warrior guides on Icy Veins,
 -- Warcraft Tavern and Mobalytics (checked November 2026), turned into
--- GSE-style one-button sequences.
+-- one-button sequences.
 --
 -- Each rotation covers level 1-60: spells you haven't learned yet are
 -- skipped automatically, so the same rotation grows as you level.
 --
 -- Auto-pick: "tree:" matches the talent tree you've spent the most points
 -- in, "weapon:" (two-hand / dual / shield) is used before you have talents.
--- [priority] drives the rotation helper (bar highlight), Hekili-style: the
+-- [priority] drives the rotation helper (bar highlight and popup): the
 -- highest line that's ready right now is shown.
 -- You can edit any of these in game with /cad. Your edits are saved
 -- separately, and "Revert" brings back the version in this file.

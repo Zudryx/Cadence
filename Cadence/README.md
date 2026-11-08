@@ -1,8 +1,8 @@
-# Cadence 0.4.2: one-button rotations and a rotation helper for WoW Forever
+# Cadence 0.4.3: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
-- **One-button (GSE-style):** each press of your Cadence key casts the next step.
+- **One-button:** each press of your Cadence key casts the next step.
 - **Rotation helper:** press your own spells. Cadence puts a pulsing blue border on the next spell on your action bars, like retail's Assisted Highlight, and moves on as you cast.
 
 You can use both at once. Spells you haven't learned yet are skipped, so the same rotation works from level 1 to 60.
@@ -30,7 +30,7 @@ You can use both at once. Spells you haven't learned yet are skipped, so the sam
 - Out of combat, the first icon on the strip is your **PULL** (Charge): your first press charges in. Then the fight's **opener** plays (Bloodrage, Battle Shout if it's missing, Rend). After that it repeats the **loop**. The sequence restarts when combat ends.
 - **Two displays** (drag to move, then `/cad lock`):
   - **Key bar:** what your Cadence key will cast on its next 3 presses.
-  - **Helper popup** (Hekili-style): the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars.
+  - **Helper popup:** the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars.
   - `/cad hide key` or `/cad hide helper` if you only want one.
 - **Which rotation:** Cadence reads your build and picks for you: first the talent tree you've spent the most points in, then your weapons (two-hander = Arms, dual wield = Fury, shield = Protection). `/cad build` shows what it detected and why it picked what it did. To change it, use `/cad use prot`, `/cad use fury` or `/cad use arms`, or **Use This** in the editor. `/cad use auto` goes back to automatic.
 - When you learn new spells, the rotation updates on its own and prints *Added to your rotation: ...*. Warriors **buy new spells from a class trainer** (Rend and Charge at 4, Thunder Clap at 6, ...). Leveling up alone doesn't add them. `/cad spells` shows what's in use and what's still to learn.
@@ -39,7 +39,7 @@ You can use both at once. Spells you haven't learned yet are skipped, so the sam
 
 - On by default. Toggle it with `/cad highlight` or the **Bar highlight** button in `/cad`.
 - **How loud:** `/cad glow strong` (default: thick border, halo and a tinted icon), `/cad glow normal` or `/cad glow subtle`. `/cad glow test` shows a 3-second preview of all three colors on your bars, even out of combat.
-- **Best skill next (Hekili-style):** each rotation has a **priority list** built from the Forever guides. At any moment the glow shows the highest spell that's ready: Battle Shout if it's missing, AoE spells when 2-3+ enemies are nearby, Overpower when it procs, Rend when it's not on the target, and so on. The strip shows the top 3.
+- **Best skill next:** each rotation has a **priority list** built from the Forever guides. At any moment the glow shows the highest spell that's ready: Battle Shout if it's missing, AoE spells when 2-3+ enemies are nearby, Overpower when it procs, Rend when it's not on the target, and so on. The strip shows the top 3.
 - While you're pressing the Cadence key, the glow follows the key's sequence instead, so it matches what the key will cast. After a few seconds without a press it goes back to the priority list. `/cad helper priority` or `/cad helper sequence` locks it to one.
 - WoW Forever often won't tell addons which buffs and debuffs are up, so when you cast Battle Shout, Rend, Thunder Clap and similar spells, Cadence starts its own timer for them. If the game does report them, its answer wins.
 - WoW Forever hides your Rage and the target's health from addons, so the helper uses *"can this spell be cast right now?"* instead. That still covers Execute below 20%, Overpower procs, and spells you can't afford yet. AoE detection needs **enemy nameplates** turned on.
@@ -137,7 +137,7 @@ detect: Mortal Strike      # auto-pick this rotation once you know this spell
 ## Limits
 
 - **This hasn't been tested in the game yet.** It was written and tested outside WoW. If you get Lua errors, install **BugSack** + **BugGrabber** (or type `/console scriptErrors 1`) and send the error text.
-- WoW Forever hides cooldowns, procs and buffs from addons during combat. Like GSE, Cadence plays a fixed sequence with fallbacks instead of reacting, so some presses won't cast anything. That's normal.
+- WoW Forever hides cooldowns, procs and buffs from addons during combat. The Cadence key plays a fixed sequence with fallbacks instead of reacting, so some presses won't cast anything. That's normal.
 - Spell names are in English, so non-English game clients need translated rotations.
 - Stance numbers assume 1 = Battle, 2 = Defensive, 3 = Berserker. If you skipped the Defensive Stance quest, Berserker becomes stance 2. Edit the `nostance:` numbers if that applies to you.
 - A step longer than 255 characters may get cut off. The editor warns you if that happens.

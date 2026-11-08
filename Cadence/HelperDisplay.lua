@@ -1,4 +1,4 @@
--- Cadence: the helper popup (Hekili-style).
+-- Cadence: the helper popup.
 -- Big icon = best skill to use right now (from the rotation's [priority]
 -- list), two smaller icons = what comes after. To the right, an interrupt
 -- slot (red) and a defensive slot (orange) appear only when needed. Each

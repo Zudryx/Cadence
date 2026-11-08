@@ -7,7 +7,7 @@
 --     and puts a pulsing blue border (like retail's Assisted Highlight) on
 --     the next spell on your action bars.
 --
--- If the rotation has a [priority] list, the helper works like Hekili: at
+-- If the rotation has a [priority] list, the helper picks the best spell: at
 -- every moment it shows the highest line that's ready (off cooldown, usable,
 -- live checks passed). While you're pressing the Cadence key it shows the
 -- key's sequence instead, so the glow matches what the key will cast.

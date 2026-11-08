@@ -388,7 +388,7 @@ inCombat = false
 targetAuras["Rend"] = nil
 
 ---------------------------------------------------------------------------
--- 19) priority mode (Hekili-style)
+-- 19) priority mode (best spell right now)
 ---------------------------------------------------------------------------
 SlashCmdList.CADENCE("helper priority")
 inCombat = true; hasTarget = true; nameplates = 1; now = now + 60   -- let earlier Rend/Battle Shout timers run out
