@@ -1,4 +1,4 @@
--- Cadence: built-in Warrior rotations for WoW Forever.
+-- Tactara: built-in Warrior rotations for WoW Forever.
 --
 -- Priorities are based on the WoW Forever Warrior guides on Icy Veins,
 -- Warcraft Tavern and Mobalytics (checked November 2026), turned into
@@ -11,7 +11,7 @@
 -- in, "weapon:" (two-hand / dual / shield) is used before you have talents.
 -- [priority] drives the rotation helper (bar highlight and popup): the
 -- highest line that's ready right now is shown.
--- You can edit any of these in game with /cad. Your edits are saved
+-- You can edit any of these in game with /tac. Your edits are saved
 -- separately, and "Revert" brings back the version in this file.
 
 local ADDON, ns = ...
@@ -91,7 +91,7 @@ notes: Two-hander in Battle Stance. Overpower and Mortal Strike first, Slam to f
 /cast Heroic Strike
 
 # Interrupts (red): suggested when your target casts something you can
-# interrupt. The Cadence Interrupt key (/cad bind interrupt) tries these in
+# interrupt. The Tactara Interrupt key (/tac bind interrupt) tries these in
 # order, so it uses whichever works in your stance and gear.
 [interrupt]
 /cast Pummel
@@ -174,7 +174,7 @@ notes: Dual wield. Battle Stance while leveling; once you learn Whirlwind (36) i
 /cast Heroic Strike
 
 # Interrupts (red): suggested when your target casts something you can
-# interrupt. The Cadence Interrupt key (/cad bind interrupt) tries these in
+# interrupt. The Tactara Interrupt key (/tac bind interrupt) tries these in
 # order, so it uses whichever works in your stance and gear.
 [interrupt]
 /cast Pummel
@@ -254,7 +254,7 @@ notes: One-hander + shield in Defensive Stance (from level 10). Shield Slam and 
 /cast Heroic Strike
 
 # Interrupts (red): suggested when your target casts something you can
-# interrupt. The Cadence Interrupt key (/cad bind interrupt) tries these in
+# interrupt. The Tactara Interrupt key (/tac bind interrupt) tries these in
 # order, so it uses whichever works in your stance and gear.
 [interrupt]
 /cast Shield Bash

@@ -1,4 +1,4 @@
--- Cadence: rotation text parser + compiler.
+-- Tactara: rotation text parser + compiler.
 -- Pure Lua (no WoW API calls) so it can be tested outside the game.
 --
 -- Rotation text format (see README.md for the full reference):
@@ -14,7 +14,7 @@
 --   [aoe]                        steps for the AoE button (falls back to [loop])
 --   [aoe-opener]                 opener for the AoE button (falls back to [opener])
 --   [priority]                   for the rotation helper: best ready spell, top first
---   [interrupt]                  interrupts, tried in order (helper + Cadence Interrupt key)
+--   [interrupt]                  interrupts, tried in order (helper + Tactara Interrupt key)
 --   [defensive]                  defensive cooldowns the helper suggests in combat
 --
 --   3x /cast Mortal Strike       "3x" = this step appears 3 times per loop cycle
@@ -267,7 +267,7 @@ function ns.Compile(rot, which, env)
 
   -- [keypress] lines go on every step. A line like "/cast [nocombat,harm] Charge"
   -- is the pull: it's what fires first when you start a fight, so the display
-  -- and /cad steps show it as the opening move.
+  -- and /tac steps show it as the opening move.
   local prefix = {}
   for _, line in ipairs(rot.sections.keypress) do
     if LineAllowed(line, env) then
@@ -369,7 +369,7 @@ function ns.Compile(rot, which, env)
   out.defensives = compileList(rot.sections.defensive)
   local interruptCmds
   out.interrupts, interruptCmds = compileList(rot.sections.interrupt)
-  -- Cadence Interrupt key: every known interrupt as a fallback chain
+  -- Tactara Interrupt key: every known interrupt as a fallback chain
   out.interruptMacro = table.concat(interruptCmds, "\n")
   out.prefix = prefix
   out.loopStart = (#loop > 0) and (#opener + 1) or 1

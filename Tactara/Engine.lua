@@ -1,4 +1,4 @@
--- Cadence: the one-button engine.
+-- Tactara: the one-button engine.
 --
 -- How it works:
 --   * Hidden secure buttons hold the compiled steps as attributes:
@@ -10,8 +10,8 @@
 -- Nothing here reads hidden combat data or presses anything for you.
 --
 -- The buttons always fire on key down (pressAndHoldAction), which is what
--- real keypresses need. They're driven by key bindings: either /cad bind
--- (override binding, see Keys.lua) or Esc > Keybindings > AddOns > Cadence.
+-- real keypresses need. They're driven by key bindings: either /tac bind
+-- (override binding, see Keys.lua) or Esc > Keybindings > AddOns > Tactara.
 -- Action-bar macros can't drive them: WoW doesn't let a macro /click a
 -- button that runs another macro.
 
@@ -48,7 +48,7 @@ local function CreateSequenceButton(name)
   b:SetAttribute("loopStart", 1)
   SecureHandlerWrapScript(b, "OnClick", b, PRE_CLICK)
   -- Fallback lines make failed casts normal, so hide the red error text
-  -- just for the duration of a Cadence press.
+  -- just for the duration of a Tactara press.
   b:HookScript("PreClick", function(self, button, down)
     ns.HideErrorsForPress(self, down)
   end)
@@ -62,7 +62,7 @@ end
 local errorsHidden = false
 
 function ns.HideErrorsForPress(button, down)
-  if not (CadenceDB and CadenceDB.hideErrors) or not UIErrorsFrame then return end
+  if not (TactaraDB and TactaraDB.hideErrors) or not UIErrorsFrame then return end
   if (down and true or false) ~= (ns.useKeyDown and true or false) then return end
   if UIErrorsFrame:IsShown() then
     UIErrorsFrame:Hide()
@@ -78,10 +78,10 @@ function ns.RestoreErrors()
   end
 end
 
-ns.mainButton = CreateSequenceButton("CadenceMainButton")
-ns.aoeButton = CreateSequenceButton("CadenceAoEButton")
--- Cadence Interrupt key: one "step" holding every known interrupt as fallbacks.
-ns.interruptButton = CreateSequenceButton("CadenceInterruptButton")
+ns.mainButton = CreateSequenceButton("TactaraMainButton")
+ns.aoeButton = CreateSequenceButton("TactaraAoEButton")
+-- Tactara Interrupt key: one "step" holding every known interrupt as fallbacks.
+ns.interruptButton = CreateSequenceButton("TactaraInterruptButton")
 ns.interruptButton.isUtility = true
 ns.allButtons = { ns.mainButton, ns.aoeButton, ns.interruptButton }
 ns.lastClicked = ns.mainButton
@@ -102,7 +102,7 @@ function ns.OnSequenceClick(button, down)
     if accepted then ns.Debug("Interrupt key pressed: " .. (button:GetAttribute("step1") or "no interrupt known"):gsub("\n", " / ")) end
     return
   end
-  if CadenceDB and CadenceDB.debug then
+  if TactaraDB and TactaraDB.debug then
     local comp = ns.CompiledFor(button)
     local idx = button:GetAttribute("lastIdx") or "?"
     local step = accepted and comp and comp.steps[idx]
@@ -128,11 +128,11 @@ end
 -- macros send a key-down click. Result: one press = one step = one cast,
 -- with no dependence on the player's settings.
 --
--- /cad keydown off switches to the old key-up behaviour, for troubleshooting.
+-- /tac keydown off switches to the old key-up behaviour, for troubleshooting.
 ---------------------------------------------------------------------------
 
 function ns.SyncKeyDown()
-  local mode = CadenceCharDB and CadenceCharDB.keyDown
+  local mode = TactaraCharDB and TactaraCharDB.keyDown
   ns.useKeyDown = (mode ~= false)
   ns.cvarKeyDown = (GetCVarBool and GetCVarBool("ActionButtonUseKeyDown")) and true or false
   if InCombatLockdown() then
@@ -174,7 +174,7 @@ end
 -- Returns name, wasAuto, reason.
 function ns.ResolveActive()
   local class = ns.GetClassToken()
-  local chosen = CadenceCharDB and CadenceCharDB.active
+  local chosen = TactaraCharDB and TactaraCharDB.active
   if chosen and chosen ~= "auto" and ns.GetRotationText(chosen) then
     return chosen, false, "your choice"
   end
@@ -245,7 +245,7 @@ function ns.Rebuild(reason)
       ns.Print(("Using |cffffd100%s|r%s. %d opener + %d loop steps, %d helper priorities at your level.")
         :format(name, auto and (" (auto: " .. tostring(why) .. ")") or "", main.openerCount, main.loopCount, #main.priority))
     elseif ns.loggedIn then
-      ns.Print("No rotation for your class yet. Open /cad and click New to write one.")
+      ns.Print("No rotation for your class yet. Open /tac and click New to write one.")
     end
   elseif ns.lastSpells then
     local added = {}
@@ -277,6 +277,7 @@ function ns.OnCombatEnd()
     ns.SyncKeyDown()
   end
   if ns.bindAfterCombat then ns.ApplyBindings() end
+  if ns.migrateBindsAfterCombat then ns.MigrateOldKeybinds() end
   ns.rebuildAfterCombat = false
   ns.Rebuild("combat ended")   -- also restarts both sequences at the opener
 end
@@ -313,16 +314,16 @@ function ns.PrintSequence(comp, title, isAoE)
 end
 
 ---------------------------------------------------------------------------
--- /cad test: everything needed to diagnose "it cycles but doesn't cast"
+-- /tac test: everything needed to diagnose "it cycles but doesn't cast"
 ---------------------------------------------------------------------------
 
 function ns.Diagnose()
   local P = ns.Print
   local build = GetBuildInfo and select(4, GetBuildInfo())
-  P(("diagnostics - Cadence %s, game interface %s"):format(ns.VERSION, tostring(build)))
+  P(("diagnostics - Tactara %s, game interface %s"):format(ns.VERSION, tostring(build)))
   P(("  key-down setting (ActionButtonUseKeyDown): %s"):format(ns.cvarKeyDown and "ON" or "OFF"))
-  P(("  Cadence fires on: %s%s"):format(ns.useKeyDown and "key down (always)" or "key up",
-    (not ns.useKeyDown and ns.cvarKeyDown) and " |cffff5555- won't cast while the game setting is ON; use /cad keydown auto|r" or ""))
+  P(("  Tactara fires on: %s%s"):format(ns.useKeyDown and "key down (always)" or "key up",
+    (not ns.useKeyDown and ns.cvarKeyDown) and " |cffff5555- won't cast while the game setting is ON; use /tac keydown auto|r" or ""))
   for _, b in ipairs({ ns.mainButton, ns.aoeButton }) do
     local label = ns.IsAoEButton(b) and "AoE" or "Main"
     local key1, key2
@@ -332,22 +333,22 @@ function ns.Diagnose()
       :format(label, keys, b:GetAttribute("numSteps") or 0, tostring(b:GetAttribute("idx")),
         tostring(b:GetAttribute("pressAndHoldAction"))))
   end
-  P(("  Cadence keys (/cad bind): main %s, AoE %s, interrupt %s"):format(ns.KeyLabel("main"), ns.KeyLabel("aoe"), ns.KeyLabel("interrupt")))
+  P(("  Tactara keys (/tac bind): main %s, AoE %s, interrupt %s"):format(ns.KeyLabel("main"), ns.KeyLabel("aoe"), ns.KeyLabel("interrupt")))
   local u = ns.UtilityPicks()
   P(("  interrupts %s (target: %s) | defensives %s | your health: %s")
-    :format(CadenceCharDB.interrupts and "ON" or "OFF", tostring(u.castState or "-"),
-      CadenceCharDB.defensives and "ON" or "OFF", ns.PlayerHealthPct() and (math.floor(ns.PlayerHealthPct()) .. "%") or "hidden"))
+    :format(TactaraCharDB.interrupts and "ON" or "OFF", tostring(u.castState or "-"),
+      TactaraCharDB.defensives and "ON" or "OFF", ns.PlayerHealthPct() and (math.floor(ns.PlayerHealthPct()) .. "%") or "hidden"))
   P("  " .. ns.HelperDiagnose())
   local known, missing = ns.RotationSpells()
-  P(("  rotation spells you know: %d of %d (/cad spells for the list)"):format(#known, #known + #missing))
+  P(("  rotation spells you know: %d of %d (/tac spells for the list)"):format(#known, #known + #missing))
   P("  build: " .. ns.BuildSummary())
   P(("  rotation: %s (%s) | red error text while pressing: %s | debug: %s")
-    :format(tostring(ns.activeName), tostring(ns.activeWhy), CadenceDB.hideErrors and "hidden" or "shown", CadenceDB.debug and "on" or "off"))
-  P("  Tip: /cad debug, then press the button on a mob. Chat shows each press, each cast sent, and each error.")
+    :format(tostring(ns.activeName), tostring(ns.activeWhy), TactaraDB.hideErrors and "hidden" or "shown", TactaraDB.debug and "on" or "off"))
+  P("  Tip: /tac debug, then press the button on a mob. Chat shows each press, each cast sent, and each error.")
 end
 
 ---------------------------------------------------------------------------
--- /cad spells: which rotation spells Cadence sees as learned
+-- /tac spells: which rotation spells Tactara sees as learned
 ---------------------------------------------------------------------------
 
 function ns.RotationSpells()
@@ -384,6 +385,6 @@ function ns.ReportSpells()
   if #missing > 0 then
     ns.Print(("Not learned yet (%d): |cffaaaaaa%s|r"):format(#missing, table.concat(missing, ", ")))
     ns.Print("New Warrior spells are bought from a class trainer (some come from talents or class quests). "
-      .. "Cadence adds each one as soon as you learn it.")
+      .. "Tactara adds each one as soon as you learn it.")
   end
 end

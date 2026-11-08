@@ -1,10 +1,10 @@
--- Cadence: reading your build (talents + weapons) and nearby enemies.
+-- Tactara: reading your build (talents + weapons) and nearby enemies.
 --
 -- WoW Forever uses the modern talent system (C_ClassTalents / C_Traits), even
 -- though the trees look classic. This reader walks the active talent config,
 -- adds up your points per tree and names each tree by its signature talents
 -- (Mortal Strike = Arms, and so on). Everything is wrapped so that if the game
--- hides or lacks something, Cadence just falls back to weapons and spells.
+-- hides or lacks something, Tactara just falls back to weapons and spells.
 
 local ADDON, ns = ...
 

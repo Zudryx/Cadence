@@ -1,10 +1,10 @@
--- Cadence: buff/debuff timers from your own casts.
+-- Tactara: buff/debuff timers from your own casts.
 --
 -- WoW Forever often won't tell addons which buffs and debuffs are up
 -- (the lookup just comes back empty, in combat or even out of it). So when
 -- you cast a spell the rotation checks with @missing / @nodebuff / @ifmissing
--- (Battle Shout, Rend, Thunder Clap, ...), Cadence starts its own countdown.
--- If the game does answer, its answer wins and teaches Cadence the real
+-- (Battle Shout, Rend, Thunder Clap, ...), Tactara starts its own countdown.
+-- If the game does answer, its answer wins and teaches Tactara the real
 -- duration for next time.
 
 local ADDON, ns = ...

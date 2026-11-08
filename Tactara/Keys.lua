@@ -1,23 +1,23 @@
--- Cadence: pick a key for the rotation without touching your saved keybinds.
+-- Tactara: pick a key for the rotation without touching your saved keybinds.
 --
 -- WoW no longer lets an action-bar macro /click a button that runs another
--- macro, so a "Cadence" macro on your bar can't cast. Instead, /cad bind lets
--- you press any key (even one your action bar already uses, like 1). Cadence
+-- macro, so a "Tactara" macro on your bar can't cast. Instead, /tac bind lets
+-- you press any key (even one your action bar already uses, like 1). Tactara
 -- takes that key over with an *override* binding while the addon is loaded.
--- Your normal keybinds are never changed; /cad unbind hands the key back.
+-- Your normal keybinds are never changed; /tac unbind hands the key back.
 
 local ADDON, ns = ...
 
-local owner = CreateFrame("Frame", "CadenceBindingOwner", UIParent)
-local TARGETS = { main = "CadenceMainButton", aoe = "CadenceAoEButton", interrupt = "CadenceInterruptButton" }
+local owner = CreateFrame("Frame", "TactaraBindingOwner", UIParent)
+local TARGETS = { main = "TactaraMainButton", aoe = "TactaraAoEButton", interrupt = "TactaraInterruptButton" }
 local LABELS = { main = "main rotation", aoe = "AoE rotation", interrupt = "interrupt" }
 
-function ns.GetCadenceKey(which)
-  local b = CadenceCharDB and CadenceCharDB.binds
+function ns.GetTactaraKey(which)
+  local b = TactaraCharDB and TactaraCharDB.binds
   return b and b[which] or nil
 end
 
--- A key set in Esc > Options > Keybindings > AddOns > Cadence, if any.
+-- A key set in Esc > Options > Keybindings > AddOns > Tactara, if any.
 function ns.GetSettingsKey(which)
   if not GetBindingKey then return nil end
   return GetBindingKey("CLICK " .. TARGETS[which] .. ":LeftButton")
@@ -32,7 +32,7 @@ local function Pretty(key)
 end
 
 function ns.KeyLabel(which)
-  local k = ns.GetCadenceKey(which)
+  local k = ns.GetTactaraKey(which)
   if k then return Pretty(k) end
   k = ns.GetSettingsKey(which)
   if k then return Pretty(k) .. " (Keybindings)" end
@@ -46,7 +46,7 @@ function ns.ApplyBindings()
   end
   ns.bindAfterCombat = false
   ClearOverrideBindings(owner)
-  local b = CadenceCharDB and CadenceCharDB.binds
+  local b = TactaraCharDB and TactaraCharDB.binds
   if not b then return end
   for which, buttonName in pairs(TARGETS) do
     if b[which] then
@@ -55,14 +55,43 @@ function ns.ApplyBindings()
   end
 end
 
-function ns.SetCadenceKey(which, key)
-  CadenceCharDB.binds = CadenceCharDB.binds or {}
-  if key then
-    for w, k in pairs(CadenceCharDB.binds) do
-      if k == key then CadenceCharDB.binds[w] = nil end   -- one key, one button
+-- Before 0.5.0 this addon was called Cadence, so a key set in WoW's
+-- Keybindings menu still points at the old button names. Move each such key
+-- to the matching Tactara button, unless that button already has a key.
+local OLD_TARGETS = { main = "CadenceMainButton", aoe = "CadenceAoEButton", interrupt = "CadenceInterruptButton" }
+
+function ns.MigrateOldKeybinds()
+  if not (GetBindingKey and SetBinding) then return end
+  if InCombatLockdown() then
+    ns.migrateBindsAfterCombat = true
+    return
+  end
+  ns.migrateBindsAfterCombat = false
+  local moved = {}
+  for which, oldName in pairs(OLD_TARGETS) do
+    local newCmd = "CLICK " .. TARGETS[which] .. ":LeftButton"
+    if not GetBindingKey(newCmd) then
+      local keys = { GetBindingKey("CLICK " .. oldName .. ":LeftButton") }
+      for _, key in ipairs(keys) do
+        local ok, done = pcall(SetBinding, key, newCmd)
+        if ok and done ~= false and GetBindingKey(newCmd) then moved[#moved + 1] = Pretty(key) end
+      end
     end
   end
-  CadenceCharDB.binds[which] = key
+  if #moved > 0 then
+    if SaveBindings and GetCurrentBindingSet then pcall(SaveBindings, GetCurrentBindingSet()) end
+    ns.Print(("Kept your Keybindings-menu key%s: %s."):format(#moved > 1 and "s" or "", table.concat(moved, ", ")))
+  end
+end
+
+function ns.SetTactaraKey(which, key)
+  TactaraCharDB.binds = TactaraCharDB.binds or {}
+  if key then
+    for w, k in pairs(TactaraCharDB.binds) do
+      if k == key then TactaraCharDB.binds[w] = nil end   -- one key, one button
+    end
+  end
+  TactaraCharDB.binds[which] = key
   ns.ApplyBindings()
 end
 
@@ -89,8 +118,8 @@ local function Finish(which, key)
     ns.Print("Key setup cancelled.")
     return
   end
-  ns.SetCadenceKey(which, key)
-  ns.Print(("The %s is now on |cffffd100%s|r. Your normal keybinds weren't changed. /cad unbind gives the key back.")
+  ns.SetTactaraKey(which, key)
+  ns.Print(("The %s is now on |cffffd100%s|r. Your normal keybinds weren't changed. /tac unbind gives the key back.")
     :format(LABELS[which], Pretty(key)))
   if ns.Editor and ns.Editor.OnRebuilt then ns.Editor.OnRebuilt() end
 end
@@ -102,7 +131,7 @@ function ns.StartKeyCapture(which)
     return
   end
   if not capture then
-    capture = CreateFrame("Frame", "CadenceKeyCapture", UIParent)
+    capture = CreateFrame("Frame", "TactaraKeyCapture", UIParent)
     capture:SetSize(440, 90)
     capture:SetPoint("CENTER", UIParent, "CENTER", 0, 140)
     capture:SetFrameStrata("FULLSCREEN_DIALOG")
@@ -137,11 +166,11 @@ function ns.Unbind(which)
     return
   end
   if which == "all" then
-    for w in pairs(TARGETS) do ns.SetCadenceKey(w, nil) end
-    ns.Print("Cadence keys removed. Your normal keybinds are back.")
+    for w in pairs(TARGETS) do ns.SetTactaraKey(w, nil) end
+    ns.Print("Tactara keys removed. Your normal keybinds are back.")
   else
     which = TARGETS[which] and which or "main"
-    ns.SetCadenceKey(which, nil)
+    ns.SetTactaraKey(which, nil)
     ns.Print(("The %s key was removed. That key does what it did before."):format(LABELS[which]))
   end
   if ns.Editor and ns.Editor.OnRebuilt then ns.Editor.OnRebuilt() end

@@ -1,7 +1,7 @@
--- Cadence: the key bar.
--- Shows what your Cadence key will cast on its next 3 presses (the
+-- Tactara: the key bar.
+-- Shows what your Tactara key will cast on its next 3 presses (the
 -- one-button sequence). The helper popup (HelperDisplay.lua) shows the best
--- skill to use instead. Both come from Cadence's own data.
+-- skill to use instead. Both come from Tactara's own data.
 
 local ADDON, ns = ...
 
@@ -25,23 +25,23 @@ ns.SpellIcon = SpellIcon
 
 -- Shared by both displays: drag to move while unlocked, position saved per character.
 function ns.MakeMovable(f, key, defaultX, defaultY)
-  local pos = CadenceCharDB[key] or {}
+  local pos = TactaraCharDB[key] or {}
   f:SetPoint(pos.point or "CENTER", UIParent, pos.relPoint or "CENTER", pos.x or defaultX, pos.y or defaultY)
   f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" and not CadenceCharDB.locked then self:StartMoving() end
+    if button == "LeftButton" and not TactaraCharDB.locked then self:StartMoving() end
   end)
   f:SetScript("OnMouseUp", function(self)
     self:StopMovingOrSizing()
     local point, _, relPoint, x, y = self:GetPoint(1)
-    CadenceCharDB[key] = { point = point, relPoint = relPoint, x = x, y = y }
+    TactaraCharDB[key] = { point = point, relPoint = relPoint, x = x, y = y }
   end)
 end
 
 function ns.CreateDisplay()
   if display then return display end
-  local f = CreateFrame("Frame", "CadenceDisplay", UIParent)
+  local f = CreateFrame("Frame", "TactaraDisplay", UIParent)
   f:SetSize(BIG + 2 * (SMALL + 4), BIG)
   f:SetFrameStrata("MEDIUM")
   ns.MakeMovable(f, "display", 0, -180)
@@ -81,7 +81,7 @@ function ns.CreateDisplay()
   return f
 end
 
--- Next presses of the Cadence key: current step's ready fallback, then the
+-- Next presses of the Tactara key: current step's ready fallback, then the
 -- following steps. Out of combat the pull (Charge) comes first.
 function ns.KeyQueue(n)
   local btn = ns.lastClicked or ns.mainButton
@@ -106,12 +106,12 @@ end
 function ns.UpdateDisplay()
   local f = display
   if not f then return end
-  if not CadenceCharDB.showDisplay then
+  if not TactaraCharDB.showDisplay then
     f:Hide()
     return
   end
 
-  local locked = CadenceCharDB.locked
+  local locked = TactaraCharDB.locked
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
@@ -121,7 +121,7 @@ function ns.UpdateDisplay()
     if locked then f:Hide() return end
     f:Show()
     for i = 1, 3 do f.icons[i]:SetTexture(QUESTION_MARK) end
-    f.label:SetText("Cadence key: no steps yet (drag to move, /cad lock)")
+    f.label:SetText("Tactara key: no steps yet (drag to move, /tac lock)")
     return
   end
 
@@ -139,6 +139,6 @@ function ns.UpdateDisplay()
   if locked then
     f.label:SetText(ns.IsAoEButton(ns.lastClicked) and "Key (AoE)" or "")
   else
-    f.label:SetText("Cadence KEY: next presses (drag, /cad lock)")
+    f.label:SetText("Tactara KEY: next presses (drag, /tac lock)")
   end
 end

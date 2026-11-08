@@ -1,5 +1,0 @@
-<Bindings>
-	<Binding name="CLICK CadenceMainButton:LeftButton" header="CADENCE" category="ADDONS"/>
-	<Binding name="CLICK CadenceAoEButton:LeftButton" category="ADDONS"/>
-	<Binding name="CLICK CadenceInterruptButton:LeftButton" category="ADDONS"/>
-</Bindings>

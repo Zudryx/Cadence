@@ -24,8 +24,8 @@ local snippet = src:match("local PRE_CLICK = %[=%[(.-)%]=%]")
 local fn, err = load("local self, button, down = ...\n" .. snippet, "=PRE_CLICK")
 print(fn and "ok   PRE_CLICK snippet" or ("FAIL PRE_CLICK " .. err))
 if not fn then bad = bad + 1 end
--- version must match in Cadence.toc and Core.lua
-local toc = io.open(root .. "/Cadence.toc"):read("a")
+-- version must match in Tactara.toc and Core.lua
+local toc = io.open(root .. "/Tactara.toc"):read("a")
 local core = io.open(root .. "/Core.lua"):read("a")
 local tv = toc:match("## Version:%s*([%d%.]+)")
 local cv = core:match('ns.VERSION = "([%d%.]+)"')

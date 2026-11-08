@@ -91,7 +91,7 @@ function GetMacroIndexByName(n) for i, m in pairs(macros) do if m.name == n then
 function CreateMacro(name, icon, body, perChar) macroIdx = macroIdx + 1; macros[macroIdx] = { name = name, body = body }; return macroIdx end
 function EditMacro(i, name, icon, body) macros[i].body = body; return i end
 function GetMacroInfo(i) local m = macros[i]; if m then return m.name, 134400, m.body end end
-function GetBindingKey(action) if action == "CLICK CadenceMainButton:LeftButton" then return "F" end end
+function GetBindingKey(action) if action == "CLICK TactaraMainButton:LeftButton" then return "F" end end
 overrides = {}
 shiftDown = false
 function SetOverrideBindingClick(owner, prio, key, button) overrides[key] = button end
@@ -119,7 +119,7 @@ local function click(btn, down)
 end
 
 local function fire(event, ...)
-  local f = _G.__CadenceNS.eventFrame
+  local f = _G.__TactaraNS.eventFrame
   f._scripts.OnEvent(f, event, ...)
   runTimers()
 end
@@ -128,28 +128,28 @@ end
 -- Load the addon in TOC order
 ---------------------------------------------------------------------------
 local ns = {}
-_G.__CadenceNS = ns
-local toc = io.open(root .. "/Cadence.toc"):read("a")
+_G.__TactaraNS = ns
+local toc = io.open(root .. "/Tactara.toc"):read("a")
 for line in toc:gmatch("[^\r\n]+") do
   if not line:find("^##") and line:find("%.lua$") then
     local path = root .. "/" .. line:gsub("\\", "/")
     local fn = assert(loadfile(path))
-    local ok, err = pcall(fn, "Cadence", ns)
+    local ok, err = pcall(fn, "Tactara", ns)
     check(ok, "loading " .. line .. ": " .. tostring(err))
   end
 end
-check(SlashCmdList.CADENCE ~= nil, "slash command registered")
-check(frames.CadenceMainButton and frames.CadenceAoEButton, "secure buttons created")
-check(frames.CadenceMainButton._template == "SecureActionButtonTemplate,SecureHandlerBaseTemplate", "button template")
+check(SlashCmdList.TACTARA ~= nil, "slash command registered")
+check(frames.TactaraMainButton and frames.TactaraAoEButton, "secure buttons created")
+check(frames.TactaraMainButton._template == "SecureActionButtonTemplate,SecureHandlerBaseTemplate", "button template")
 
 ---------------------------------------------------------------------------
 -- Level 3 warrior logs in
 ---------------------------------------------------------------------------
 for _, s in ipairs({ "Battle Stance", "Battle Shout", "Heroic Strike" }) do known[s] = true end
-fire("ADDON_LOADED", "Cadence")
-check(CadenceDB and CadenceCharDB, "saved vars initialized")
+fire("ADDON_LOADED", "Tactara")
+check(TactaraDB and TactaraCharDB, "saved vars initialized")
 fire("PLAYER_LOGIN")
-local main = frames.CadenceMainButton
+local main = frames.TactaraMainButton
 check(main._attrs.numSteps and main._attrs.numSteps > 0, "main button has steps at L3")
 check(main._attrs.useKeyDown == true, "useKeyDown synced from cvar")
 check(ns.activeName == "Warrior - Arms", "auto-picked default Arms at L3, got " .. tostring(ns.activeName))
@@ -165,10 +165,10 @@ check(second and second:find("Heroic Strike"), "second press = Heroic Strike")
 check(second:find("/startattack") and second:find("Battle Stance"), "keypress lines included")
 check(errorsShownDuringCast == false, "error text hidden during the press")
 check(UIErrorsFrame:IsShown(), "error text restored after the press")
-SlashCmdList.CADENCE("errors")
+SlashCmdList.TACTARA("errors")
 click(main, true)
-check(errorsShownDuringCast == true, "/cad errors turns hiding off")
-SlashCmdList.CADENCE("errors")
+check(errorsShownDuringCast == true, "/tac errors turns hiding off")
+SlashCmdList.TACTARA("errors")
 -- loops back to loopStart, never back to opener
 for _ = 1, 20 do local c = click(main, true); check(not c:find("Battle Shout"), "opener not repeated in loop") end
 check(ns.display and ns.display.icons[1]._texture ~= nil, "display updated")
@@ -217,10 +217,10 @@ fire("CHARACTER_POINTS_CHANGED")
 check(ns.activeName == "Warrior - Protection", "auto-detect Protection via Shield Slam, got " .. tostring(ns.activeName))
 
 -- manual choice overrides auto
-SlashCmdList.CADENCE("use fury"); runTimers()
-check(ns.activeName == "Warrior - Fury", "/cad use fury")
-SlashCmdList.CADENCE("use auto"); runTimers()
-check(ns.activeName == "Warrior - Protection", "/cad use auto")
+SlashCmdList.TACTARA("use fury"); runTimers()
+check(ns.activeName == "Warrior - Fury", "/tac use fury")
+SlashCmdList.TACTARA("use auto"); runTimers()
+check(ns.activeName == "Warrior - Protection", "/tac use auto")
 
 ---------------------------------------------------------------------------
 -- Key-down handling no longer depends on the game setting
@@ -233,21 +233,21 @@ check(main._attrs.pressAndHoldAction == true, "pressAndHold kept with game setti
 check(click(main, true) ~= nil, "key-down half fires with game setting OFF")
 check(click(main, false) == nil, "key-up half ignored with game setting OFF")
 
--- troubleshooting mode: /cad keydown off
-SlashCmdList.CADENCE("keydown off")
+-- troubleshooting mode: /tac keydown off
+SlashCmdList.TACTARA("keydown off")
 check(main._attrs.useKeyDown == false and main._attrs.pressAndHoldAction == nil, "keydown off -> key-up mode, no pressAndHold")
 check(click(main, true) == nil and click(main, false) ~= nil, "key-up mode accepts only key up")
 
 ---------------------------------------------------------------------------
--- /cad bind: override binding, keybinds untouched
+-- /tac bind: override binding, keybinds untouched
 ---------------------------------------------------------------------------
-SlashCmdList.CADENCE("keydown auto")
+SlashCmdList.TACTARA("keydown auto")
 chat = {}
-SlashCmdList.CADENCE("macro")
-check(table.concat(chat, " "):find("/cad bind"), "/cad macro explains to use /cad bind")
+SlashCmdList.TACTARA("macro")
+check(table.concat(chat, " "):find("/tac bind"), "/tac macro explains to use /tac bind")
 check(macroIdx == 0, "no macros created any more")
-SlashCmdList.CADENCE("bind")
-local cap = frames.CadenceKeyCapture
+SlashCmdList.TACTARA("bind")
+local cap = frames.TactaraKeyCapture
 check(cap and cap:IsShown(), "key prompt shown")
 shiftDown = true
 cap._scripts.OnKeyDown(cap, "LSHIFT")          -- modifier alone: keep waiting
@@ -255,37 +255,37 @@ check(cap:IsShown(), "modifier alone doesn't finish")
 cap._scripts.OnKeyDown(cap, "1")
 shiftDown = false
 check(not cap:IsShown(), "prompt closes after a key")
-check(CadenceCharDB.binds.main == "SHIFT-1", "main key saved with modifier: " .. tostring(CadenceCharDB.binds.main))
-check(overrides["SHIFT-1"] == "CadenceMainButton", "override binding set")
-SlashCmdList.CADENCE("bind aoe")
+check(TactaraCharDB.binds.main == "SHIFT-1", "main key saved with modifier: " .. tostring(TactaraCharDB.binds.main))
+check(overrides["SHIFT-1"] == "TactaraMainButton", "override binding set")
+SlashCmdList.TACTARA("bind aoe")
 cap._scripts.OnMouseDown(cap, "Button4")
-check(overrides["BUTTON4"] == "CadenceAoEButton", "mouse button 4 bound to AoE")
+check(overrides["BUTTON4"] == "TactaraAoEButton", "mouse button 4 bound to AoE")
 -- re-using a key moves it
-SlashCmdList.CADENCE("bind aoe")
+SlashCmdList.TACTARA("bind aoe")
 cap._scripts.OnKeyDown(cap, "ESCAPE")
-check(CadenceCharDB.binds.aoe == "BUTTON4", "Esc cancels without changes")
-SlashCmdList.CADENCE("bind aoe")
+check(TactaraCharDB.binds.aoe == "BUTTON4", "Esc cancels without changes")
+SlashCmdList.TACTARA("bind aoe")
 shiftDown = true; cap._scripts.OnKeyDown(cap, "1"); shiftDown = false
-check(CadenceCharDB.binds.aoe == "SHIFT-1" and CadenceCharDB.binds.main == nil, "a key drives only one button")
-check(overrides["SHIFT-1"] == "CadenceAoEButton" and overrides["BUTTON4"] == nil, "overrides rebuilt")
+check(TactaraCharDB.binds.aoe == "SHIFT-1" and TactaraCharDB.binds.main == nil, "a key drives only one button")
+check(overrides["SHIFT-1"] == "TactaraAoEButton" and overrides["BUTTON4"] == nil, "overrides rebuilt")
 -- in combat: applied after combat
 inCombat = true
-SlashCmdList.CADENCE("bind")
+SlashCmdList.TACTARA("bind")
 check(not cap:IsShown(), "can't open key prompt in combat")
 inCombat = false
-SlashCmdList.CADENCE("bind"); cap._scripts.OnKeyDown(cap, "F")
-SlashCmdList.CADENCE("unbind aoe")
-check(CadenceCharDB.binds.aoe == nil and overrides["SHIFT-1"] == nil, "unbind aoe")
-check(overrides["F"] == "CadenceMainButton", "main still bound")
+SlashCmdList.TACTARA("bind"); cap._scripts.OnKeyDown(cap, "F")
+SlashCmdList.TACTARA("unbind aoe")
+check(TactaraCharDB.binds.aoe == nil and overrides["SHIFT-1"] == nil, "unbind aoe")
+check(overrides["F"] == "TactaraMainButton", "main still bound")
 -- login re-applies saved keys
 for k in pairs(overrides) do overrides[k] = nil end
 fire("PLAYER_LOGIN")
-check(overrides["F"] == "CadenceMainButton", "keys re-applied at login")
+check(overrides["F"] == "TactaraMainButton", "keys re-applied at login")
 
 ---------------------------------------------------------------------------
 -- PULL icon: Charge shows first out of combat, steps in combat
 ---------------------------------------------------------------------------
-SlashCmdList.CADENCE("reset")
+SlashCmdList.TACTARA("reset")
 ns.UpdateDisplay()
 check(ns.display.icons[1]._texture == "icon:Charge", "out of combat: first icon is Charge, got " .. tostring(ns.display.icons[1]._texture))
 check(ns.display.pullTag:IsShown(), "PULL tag shown")
@@ -296,65 +296,65 @@ inCombat = false
 fire("PLAYER_REGEN_ENABLED")
 check(ns.display.icons[1]._texture == "icon:Charge", "after combat: Charge back first")
 chat = {}
-SlashCmdList.CADENCE("steps")
-check(table.concat(chat, "\n"):find("pull|r Charge"), "/cad steps lists the pull")
+SlashCmdList.TACTARA("steps")
+check(table.concat(chat, "\n"):find("pull|r Charge"), "/tac steps lists the pull")
 
 ---------------------------------------------------------------------------
 -- Diagnostics + debug output
 ---------------------------------------------------------------------------
 chat = {}
-local okD, eD = pcall(SlashCmdList.CADENCE, "test")
-check(okD, "/cad test runs: " .. tostring(eD))
+local okD, eD = pcall(SlashCmdList.TACTARA, "test")
+check(okD, "/tac test runs: " .. tostring(eD))
 local diag = table.concat(chat, "\n")
 check(diag:find("Main key binding: F") ~= nil, "diagnostics show binding: " .. diag)
-check(diag:find("Cadence keys (/cad bind): main F, AoE none", 1, true) ~= nil, "diagnostics show Cadence keys: " .. diag)
+check(diag:find("Tactara keys (/tac bind): main F, AoE none", 1, true) ~= nil, "diagnostics show Tactara keys: " .. diag)
 check(diag:find("rotation spells you know: %d+ of %d+") ~= nil, "diagnostics show spell count")
 chat = {}
-SlashCmdList.CADENCE("spells")
+SlashCmdList.TACTARA("spells")
 local sp = table.concat(chat, "\n")
-check(sp:find("spells in use") and sp:find("Heroic Strike") and sp:find("Not learned yet") and sp:find("Mortal Strike") == nil or sp:find("Shield Slam"), "/cad spells lists known and missing: " .. sp)
-print("\n/cad spells sample:\n" .. sp)
+check(sp:find("spells in use") and sp:find("Heroic Strike") and sp:find("Not learned yet") and sp:find("Mortal Strike") == nil or sp:find("Shield Slam"), "/tac spells lists known and missing: " .. sp)
+print("\n/tac spells sample:\n" .. sp)
 chat = {}
-SlashCmdList.CADENCE("debug")
+SlashCmdList.TACTARA("debug")
 click(main, true); click(main, false)
-local f = _G.__CadenceNS.eventFrame
+local f = _G.__TactaraNS.eventFrame
 f._scripts.OnEvent(f, "UNIT_SPELLCAST_SENT", "player", "target", "guid", 78)
 f._scripts.OnEvent(f, "UI_ERROR_MESSAGE", 51, "Not enough rage")
 local dbg = table.concat(chat, "\n")
 check(dbg:find("key down: step") and dbg:find("key up: ignored"), "debug shows each half of the press: " .. dbg)
 check(dbg:find("cast sent:|r Heroic Strike"), "debug shows casts sent: " .. dbg)
 check(dbg:find("Not enough rage"), "debug shows game errors")
-SlashCmdList.CADENCE("debug")
+SlashCmdList.TACTARA("debug")
 print("\ndiagnostics sample:"); for _, l in ipairs({diag:match("^(.-)\n"), dbg}) do print(l) end
 
 ---------------------------------------------------------------------------
 -- Other slash commands don't error
 ---------------------------------------------------------------------------
 for _, c in ipairs({ "help", "list", "steps", "spells", "hide", "show", "lock", "unlock", "reset", "keydown auto", "debug", "debug", "unbind all", "bogus" }) do
-  local ok, err = pcall(SlashCmdList.CADENCE, c); runTimers()
-  check(ok, "/cad " .. c .. ": " .. tostring(err))
+  local ok, err = pcall(SlashCmdList.TACTARA, c); runTimers()
+  check(ok, "/tac " .. c .. ": " .. tostring(err))
 end
 
 ---------------------------------------------------------------------------
 -- Editor: open, edit, save as custom, use, delete; edit + revert a built-in
 ---------------------------------------------------------------------------
 chat = {}
-local ok, err = pcall(SlashCmdList.CADENCE, ""); runTimers()
+local ok, err = pcall(SlashCmdList.TACTARA, ""); runTimers()
 check(ok, "open editor: " .. tostring(err))
-local ed = frames.CadenceEditor
+local ed = frames.TactaraEditor
 check(ed and ed:IsShown(), "editor shown")
-local text = frames.CadenceEditorText
+local text = frames.TactaraEditorText
 check(text._text:find("name: Warrior %- Protection"), "editor loaded active rotation")
 
 -- custom rotation via New/Import
 local custom = "name: My Test\nclass: WARRIOR\n[loop]\n2x /cast Heroic Strike\n/cast Rend\n"
 text._text = custom
 ns.SaveRotation(custom)
-check(CadenceDB.rotations["My Test"] == custom, "custom saved")
-SlashCmdList.CADENCE("use my test"); runTimers()
+check(TactaraDB.rotations["My Test"] == custom, "custom saved")
+SlashCmdList.TACTARA("use my test"); runTimers()
 check(ns.activeName == "My Test", "custom rotation active")
 ns.DeleteRotation("My Test"); runTimers()
-check(CadenceCharDB.active == "auto", "deleting active custom falls back to auto")
+check(TactaraCharDB.active == "auto", "deleting active custom falls back to auto")
 
 -- edit a built-in then revert
 local orig = ns.builtin["Warrior - Arms"]
@@ -366,7 +366,7 @@ ns.DeleteRotation("Warrior - Arms")
 check(not ns.IsEdited("Warrior - Arms") and ns.GetRotationText("Warrior - Arms") == orig, "revert restores built-in")
 -- saving unchanged built-in text stores nothing
 ns.SaveRotation(orig)
-check(CadenceDB.rotations["Warrior - Arms"] == nil, "identical built-in not duplicated")
+check(TactaraDB.rotations["Warrior - Arms"] == nil, "identical built-in not duplicated")
 -- missing name
 local okSave, msg = ns.SaveRotation("[loop]\n/cast X")
 check(not okSave and msg:find("name"), "save without name rejected")
@@ -379,15 +379,15 @@ check(text._text:find("name: My Rotation"), "New loads template")
 text._text = "name: Button Test\nclass: WARRIOR\n[opener]\n/cast Rend\n[loop]\n/cast Heroic Strike\n"
 text._scripts.OnTextChanged(text, true); runTimers()
 press("save")
-check(CadenceDB.rotations["Button Test"], "Save button stores rotation")
+check(TactaraDB.rotations["Button Test"], "Save button stores rotation")
 press("use")
 check(ns.activeName == "Button Test", "Use This button activates")
 press("preview"); press("selectall")
-press("auto"); check(CadenceCharDB.active == "auto", "Auto-pick button turns auto on")
-press("auto"); check(CadenceCharDB.active ~= "auto", "Auto-pick button turns auto off")
+press("auto"); check(TactaraCharDB.active == "auto", "Auto-pick button turns auto on")
+press("auto"); check(TactaraCharDB.active ~= "auto", "Auto-pick button turns auto off")
 ns.Editor.Select("Button Test")
-press("delete"); check(CadenceDB.rotations["Button Test"], "first Delete click only arms")
-press("delete"); check(not CadenceDB.rotations["Button Test"], "second Delete click deletes")
+press("delete"); check(TactaraDB.rotations["Button Test"], "first Delete click only arms")
+press("delete"); check(not TactaraDB.rotations["Button Test"], "second Delete click deletes")
 -- list click on a built-in, edit, revert via button
 local item
 for _, it in ipairs(ns.Editor.listItems) do if it.name == "Warrior - Fury" then item = it end end
@@ -400,7 +400,7 @@ press("save"); check(ns.IsEdited("Warrior - Fury"), "built-in edited via editor"
 press("delete"); press("delete"); check(not ns.IsEdited("Warrior - Fury"), "Revert via editor")
 
 -- editor toggle closes
-SlashCmdList.CADENCE(""); check(not ed:IsShown(), "editor toggles closed")
+SlashCmdList.TACTARA(""); check(not ed:IsShown(), "editor toggles closed")
 
 -- fallback path: build editor when BasicFrameTemplateWithInset doesn't exist
 local realCF = CreateFrame
@@ -410,11 +410,44 @@ CreateFrame = function(kind, name, parent, template)
 end
 for _, f in ipairs({ "Editor.lua" }) do
   local ns2 = setmetatable({}, { __index = ns })
-  local okL = pcall(assert(loadfile(root .. "/" .. f)), "Cadence", ns2)
+  local okL = pcall(assert(loadfile(root .. "/" .. f)), "Tactara", ns2)
   local okT, eT = pcall(ns2.Editor.Toggle)
   check(okL and okT, "editor builds without templates: " .. tostring(eT))
 end
 CreateFrame = realCF
+
+-- keys bound under the addon's old name move to the new buttons
+do
+  local realGBK = GetBindingKey
+  local binds = { ["CTRL-1"] = "CLICK CadenceMainButton:LeftButton", ["F5"] = "CLICK CadenceAoEButton:LeftButton",
+                  ["G"] = "CLICK TactaraInterruptButton:LeftButton", ["H"] = "CLICK CadenceInterruptButton:LeftButton" }
+  local saved = false
+  GetBindingKey = function(cmd)
+    local out = {}
+    for k, c in pairs(binds) do if c == cmd then out[#out + 1] = k end end
+    table.sort(out)
+    return table.unpack(out)
+  end
+  SetBinding = function(key, cmd) binds[key] = cmd; return true end
+  SaveBindings = function() saved = true end
+  GetCurrentBindingSet = function() return 2 end
+  inCombat = true
+  ns.MigrateOldKeybinds()
+  check(binds["CTRL-1"] == "CLICK CadenceMainButton:LeftButton", "no key migration in combat")
+  inCombat = false
+  ns.OnCombatEnd(); runTimers()
+  check(binds["CTRL-1"] == "CLICK TactaraMainButton:LeftButton", "old main key moved after combat")
+  check(binds["F5"] == "CLICK TactaraAoEButton:LeftButton", "old AoE key moved")
+  check(binds["H"] == "CLICK CadenceInterruptButton:LeftButton", "interrupt key kept when new button already bound")
+  check(saved, "bindings saved after migration")
+  local said = false
+  for _, m in ipairs(chat) do if m:find("Kept your Keybindings%-menu keys") then said = m end end
+  check(said, "migration tells the player"); if said then print("  " .. said) end
+  saved = false
+  ns.MigrateOldKeybinds()
+  check(not saved, "migration only runs once")
+  GetBindingKey = realGBK
+end
 
 -- fallback when BasicFrameTemplateWithInset is missing (older/odd clients)
 print("\nchat sample:"); for i = 1, math.min(#chat, 8) do print("  " .. chat[i]) end

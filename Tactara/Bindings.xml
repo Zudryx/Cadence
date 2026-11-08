@@ -1,0 +1,5 @@
+<Bindings>
+	<Binding name="CLICK TactaraMainButton:LeftButton" header="TACTARA" category="ADDONS"/>
+	<Binding name="CLICK TactaraAoEButton:LeftButton" category="ADDONS"/>
+	<Binding name="CLICK TactaraInterruptButton:LeftButton" category="ADDONS"/>
+</Bindings>

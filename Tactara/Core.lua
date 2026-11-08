@@ -1,13 +1,13 @@
--- Cadence: core (namespace, saved variables, rotation storage, spell checks, events, slash commands)
+-- Tactara: core (namespace, saved variables, rotation storage, spell checks, events, slash commands)
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.4.3"
+ns.VERSION = "0.5.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
 
-local PREFIX = "|cff4fc3f7Cadence|r: "
+local PREFIX = "|cff4fc3f7Tactara|r: "
 
 function ns.Print(...)
   local parts = {}
@@ -16,14 +16,14 @@ function ns.Print(...)
 end
 
 function ns.Debug(...)
-  if CadenceDB and CadenceDB.debug then ns.Print("|cff888888[debug]|r", ...) end
+  if TactaraDB and TactaraDB.debug then ns.Print("|cff888888[debug]|r", ...) end
 end
 
--- Key binding labels (Esc > Options > Keybindings > AddOns > Cadence)
-BINDING_HEADER_CADENCE = "Cadence"
-_G["BINDING_NAME_CLICK CadenceMainButton:LeftButton"] = "Main rotation button"
-_G["BINDING_NAME_CLICK CadenceAoEButton:LeftButton"] = "AoE rotation button"
-_G["BINDING_NAME_CLICK CadenceInterruptButton:LeftButton"] = "Interrupt (best for your stance/gear)"
+-- Key binding labels (Esc > Options > Keybindings > AddOns > Tactara)
+BINDING_HEADER_TACTARA = "Tactara"
+_G["BINDING_NAME_CLICK TactaraMainButton:LeftButton"] = "Main rotation button"
+_G["BINDING_NAME_CLICK TactaraAoEButton:LeftButton"] = "AoE rotation button"
+_G["BINDING_NAME_CLICK TactaraInterruptButton:LeftButton"] = "Interrupt (best for your stance/gear)"
 
 ---------------------------------------------------------------------------
 -- Rotation storage
@@ -31,13 +31,13 @@ _G["BINDING_NAME_CLICK CadenceInterruptButton:LeftButton"] = "Interrupt (best fo
 
 function ns.RegisterBuiltin(text)
   local rot = ns.Parse(text)
-  if not rot or not rot.name then error("Cadence: built-in rotation is missing a name: line") end
+  if not rot or not rot.name then error("Tactara: built-in rotation is missing a name: line") end
   if not ns.builtin[rot.name] then table.insert(ns.builtinOrder, rot.name) end
   ns.builtin[rot.name] = text
 end
 
 local function Saved()
-  return (CadenceDB and CadenceDB.rotations) or {}
+  return (TactaraDB and TactaraDB.rotations) or {}
 end
 
 function ns.GetRotationText(name)
@@ -54,19 +54,19 @@ function ns.SaveRotation(text)
   if not rot then return false, err end
   if not rot.name then return false, "Add a 'name:' line so the rotation can be saved." end
   if ns.builtin[rot.name] == text then
-    CadenceDB.rotations[rot.name] = nil        -- identical to built-in: nothing to store
+    TactaraDB.rotations[rot.name] = nil        -- identical to built-in: nothing to store
   else
-    CadenceDB.rotations[rot.name] = text
+    TactaraDB.rotations[rot.name] = text
   end
   return true, rot.name
 end
 
 -- Deletes a custom rotation, or reverts an edited built-in to the shipped version.
 function ns.DeleteRotation(name)
-  if not name or not CadenceDB then return end
-  CadenceDB.rotations[name] = nil
-  if CadenceCharDB and CadenceCharDB.active == name and not ns.IsBuiltin(name) then
-    CadenceCharDB.active = "auto"
+  if not name or not TactaraDB then return end
+  TactaraDB.rotations[name] = nil
+  if TactaraCharDB and TactaraCharDB.active == name and not ns.IsBuiltin(name) then
+    TactaraCharDB.active = "auto"
   end
 end
 
@@ -213,21 +213,21 @@ end
 ---------------------------------------------------------------------------
 
 local function InitDB()
-  CadenceDB = CadenceDB or {}
-  CadenceDB.rotations = CadenceDB.rotations or {}
-  CadenceDB.version = ns.VERSION
-  if CadenceDB.hideErrors == nil then CadenceDB.hideErrors = true end
-  CadenceDB.glowStyle = CadenceDB.glowStyle or "strong"
-  CadenceCharDB = CadenceCharDB or {}
-  CadenceCharDB.active = CadenceCharDB.active or "auto"
-  if CadenceCharDB.showDisplay == nil then CadenceCharDB.showDisplay = true end
-  if CadenceCharDB.locked == nil then CadenceCharDB.locked = false end
-  if CadenceCharDB.highlight == nil then CadenceCharDB.highlight = true end
-  CadenceCharDB.helperMode = CadenceCharDB.helperMode or "auto"
-  if CadenceCharDB.showHelper == nil then CadenceCharDB.showHelper = true end
-  if CadenceCharDB.interrupts == nil then CadenceCharDB.interrupts = true end
-  if CadenceCharDB.defensives == nil then CadenceCharDB.defensives = true end
-  CadenceCharDB.display = CadenceCharDB.display or {}
+  TactaraDB = TactaraDB or {}
+  TactaraDB.rotations = TactaraDB.rotations or {}
+  TactaraDB.version = ns.VERSION
+  if TactaraDB.hideErrors == nil then TactaraDB.hideErrors = true end
+  TactaraDB.glowStyle = TactaraDB.glowStyle or "strong"
+  TactaraCharDB = TactaraCharDB or {}
+  TactaraCharDB.active = TactaraCharDB.active or "auto"
+  if TactaraCharDB.showDisplay == nil then TactaraCharDB.showDisplay = true end
+  if TactaraCharDB.locked == nil then TactaraCharDB.locked = false end
+  if TactaraCharDB.highlight == nil then TactaraCharDB.highlight = true end
+  TactaraCharDB.helperMode = TactaraCharDB.helperMode or "auto"
+  if TactaraCharDB.showHelper == nil then TactaraCharDB.showHelper = true end
+  if TactaraCharDB.interrupts == nil then TactaraCharDB.interrupts = true end
+  if TactaraCharDB.defensives == nil then TactaraCharDB.defensives = true end
+  TactaraCharDB.display = TactaraCharDB.display or {}
 end
 
 ---------------------------------------------------------------------------
@@ -251,7 +251,7 @@ SafeRegister("PLAYER_REGEN_ENABLED")
 SafeRegister("PLAYER_REGEN_DISABLED")
 SafeRegister("CVAR_UPDATE")
 SafeRegister("UNIT_AURA", "player")
--- only printed with /cad debug on: shows whether presses turn into casts
+-- only printed with /tac debug on: shows whether presses turn into casts
 SafeRegister("UI_ERROR_MESSAGE")
 SafeRegister("UNIT_SPELLCAST_SENT", "player")
 SafeRegister("UNIT_SPELLCAST_SUCCEEDED", "player")
@@ -291,7 +291,7 @@ local function SpellNameFromID(id)
 end
 
 local function DebugCombatEvent(event, ...)
-  if not (CadenceDB and CadenceDB.debug) then return end
+  if not (TactaraDB and TactaraDB.debug) then return end
   pcall(function(...)
     if event == "UI_ERROR_MESSAGE" then
       local _, message = ...
@@ -321,10 +321,11 @@ events:SetScript("OnEvent", function(self, event, arg1, ...)
     ns.loggedIn = true
     ns.SyncKeyDown()
     ns.ApplyBindings()
+    C_Timer.After(2, ns.MigrateOldKeybinds)   -- bindings are fully loaded by then
     ns.CreateDisplay()
     ns.CreateHelperPopup()
     ns.RequestRebuild("login", 1)
-    ns.Print(("v%s loaded. Type |cffffd100/cad|r to open the editor, |cffffd100/cad help|r for commands."):format(ns.VERSION))
+    ns.Print(("v%s loaded. Type |cffffd100/tac|r to open the editor, |cffffd100/tac help|r for commands."):format(ns.VERSION))
     return
   elseif event == "PLAYER_REGEN_ENABLED" then
     ns.OnCombatEnd()
@@ -347,27 +348,27 @@ end)
 ---------------------------------------------------------------------------
 
 local HELP = {
-  "|cffffd100/cad|r  open the rotation editor",
-  "|cffffd100/cad use <name>|r  use a rotation (e.g. /cad use prot), or |cffffd100/cad use auto|r",
-  "|cffffd100/cad list|r  list rotations for your class",
-  "|cffffd100/cad bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
-  "|cffffd100/cad bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/cad unbind|r [aoe / interrupt / all]",
-  "|cffffd100/cad highlight|r  glow on the next spell on your action bars (on/off)",
-  "|cffffd100/cad glow strong / normal / subtle|r  how loud the glow is   |cffffd100/cad glow test|r  3-second preview",
-  "|cffffd100/cad helper auto / priority / sequence|r  what the glow follows (auto: priority list, or the key's sequence while you press it)",
-  "|cffffd100/cad build|r  your detected talents and weapons, and the rotation they pick",
-  "|cffffd100/cad steps|r  print the current compiled sequence",
-  "|cffffd100/cad spells|r  which rotation spells you've learned and which are still to come",
-  "|cffffd100/cad show|r / |cffffd100hide|r [key / helper]  the key bar and/or the helper popup",
-  "|cffffd100/cad lock|r / |cffffd100unlock|r  lock or move both",
-  "|cffffd100/cad interrupts|r / |cffffd100defensives|r  red interrupt / orange defensive suggestions on or off",
-  "|cffffd100/cad reset|r  restart the sequence from the opener",
-  "|cffffd100/cad errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
-  "|cffffd100/cad test|r  print diagnostics (key binding, macros, settings)",
-  "|cffffd100/cad probe|r  check what the game lets addons read (run out of combat and in combat)",
-  "|cffffd100/cad debug|r  print every press, cast and game error to chat",
-  "|cffffd100/cad keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
-  "Key bindings: Esc > Options > Keybindings > AddOns > Cadence",
+  "|cffffd100/tac|r  open the rotation editor",
+  "|cffffd100/tac use <name>|r  use a rotation (e.g. /tac use prot), or |cffffd100/tac use auto|r",
+  "|cffffd100/tac list|r  list rotations for your class",
+  "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
+  "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
+  "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
+  "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
+  "|cffffd100/tac helper auto / priority / sequence|r  what the glow follows (auto: priority list, or the key's sequence while you press it)",
+  "|cffffd100/tac build|r  your detected talents and weapons, and the rotation they pick",
+  "|cffffd100/tac steps|r  print the current compiled sequence",
+  "|cffffd100/tac spells|r  which rotation spells you've learned and which are still to come",
+  "|cffffd100/tac show|r / |cffffd100hide|r [key / helper]  the key bar and/or the helper popup",
+  "|cffffd100/tac lock|r / |cffffd100unlock|r  lock or move both",
+  "|cffffd100/tac interrupts|r / |cffffd100defensives|r  red interrupt / orange defensive suggestions on or off",
+  "|cffffd100/tac reset|r  restart the sequence from the opener",
+  "|cffffd100/tac errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
+  "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
+  "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
+  "|cffffd100/tac debug|r  print every press, cast and game error to chat",
+  "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
+  "Key bindings: Esc > Options > Keybindings > AddOns > Tactara",
 }
 
 local function HandleSlash(msg)
@@ -381,66 +382,66 @@ local function HandleSlash(msg)
     for _, l in ipairs(HELP) do ns.Print(l) end
   elseif cmd == "use" then
     if rest:lower() == "auto" or rest == "" then
-      CadenceCharDB.active = "auto"
+      TactaraCharDB.active = "auto"
       ns.Print("Auto-pick on: the rotation follows your talents.")
     else
       local name = ns.FindRotation(rest, ns.GetClassToken())
       if not name then
-        ns.Print("No rotation matching '" .. rest .. "'. Try /cad list.")
+        ns.Print("No rotation matching '" .. rest .. "'. Try /tac list.")
         return
       end
-      CadenceCharDB.active = name
+      TactaraCharDB.active = name
     end
     ns.RequestRebuild("use", 0.05)
   elseif cmd == "list" then
     local list = ns.ListRotations(ns.GetClassToken())
-    if #list == 0 then ns.Print("No rotations for your class yet. Make one with /cad.") end
+    if #list == 0 then ns.Print("No rotations for your class yet. Make one with /tac.") end
     for _, r in ipairs(list) do
       local tag = r.edited and " (edited)" or (r.builtin and "" or " (yours)")
       local mark = (r.name == ns.activeName) and " |cff00ff00< active|r" or ""
       ns.Print("- " .. r.name .. tag .. mark)
     end
-    ns.Print("Mode: " .. (CadenceCharDB.active == "auto" and "auto-pick" or "manual"))
+    ns.Print("Mode: " .. (TactaraCharDB.active == "auto" and "auto-pick" or "manual"))
   elseif cmd == "bind" then
     ns.StartKeyCapture(rest:lower())
   elseif cmd == "unbind" then
     ns.Unbind(rest:lower())
   elseif cmd == "macro" or cmd == "macros" then
-    ns.Print("WoW doesn't let an action-bar macro run Cadence (a macro can't /click another macro). "
-      .. "Use |cffffd100/cad bind|r instead: pick any key, even one your action bar uses, and Cadence "
-      .. "takes it over without changing your keybinds. You can delete old 'Cadence' macros.")
+    ns.Print("WoW doesn't let an action-bar macro run Tactara (a macro can't /click another macro). "
+      .. "Use |cffffd100/tac bind|r instead: pick any key, even one your action bar uses, and Tactara "
+      .. "takes it over without changing your keybinds. You can delete old 'Tactara' macros.")
   elseif cmd == "steps" or cmd == "dump" or cmd == "preview" then
     ns.PrintSequence(ns.compiled.main, "Main button")
     ns.PrintSequence(ns.compiled.aoe, "AoE button", true)
   elseif cmd == "show" or cmd == "hide" then
     local on = (cmd == "show")
     local what = rest:lower()
-    if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then CadenceCharDB.showDisplay = on end
-    if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then CadenceCharDB.showHelper = on end
+    if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then TactaraCharDB.showDisplay = on end
+    if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then TactaraCharDB.showHelper = on end
     ns.HelperRefresh()
   elseif cmd == "lock" then
-    CadenceCharDB.locked = true
+    TactaraCharDB.locked = true
     ns.HelperRefresh()
   elseif cmd == "unlock" then
-    CadenceCharDB.locked = false
+    TactaraCharDB.locked = false
     ns.HelperRefresh()
   elseif cmd == "interrupts" or cmd == "defensives" then
     local v = rest:lower()
-    local cur = CadenceCharDB[cmd]
+    local cur = TactaraCharDB[cmd]
     if v == "on" then cur = true elseif v == "off" then cur = false else cur = not cur end
-    CadenceCharDB[cmd] = cur
+    TactaraCharDB[cmd] = cur
     ns.HelperRefresh()
     ns.Print((cmd == "interrupts" and "Interrupt suggestions " or "Defensive suggestions ") .. (cur and "on." or "off."))
   elseif cmd == "reset" then
     ns.ResetSequence()
   elseif cmd == "keydown" then
     local v = rest:lower()
-    if v == "off" then CadenceCharDB.keyDown = false else CadenceCharDB.keyDown = nil end
+    if v == "off" then TactaraCharDB.keyDown = false else TactaraCharDB.keyDown = nil end
     ns.SyncKeyDown()
-    ns.Print("Cadence now fires on " .. (ns.useKeyDown and "key down (default)" or "key up")
-      .. ". Your existing Cadence macros were updated too.")
+    ns.Print("Tactara now fires on " .. (ns.useKeyDown and "key down (default)" or "key up")
+      .. ". Your existing Tactara macros were updated too.")
     if not ns.useKeyDown and ns.cvarKeyDown then
-      ns.Print("|cffff5555Your game is set to cast on key down, so key-up mode won't cast. Use /cad keydown auto.|r")
+      ns.Print("|cffff5555Your game is set to cast on key down, so key-up mode won't cast. Use /tac keydown auto.|r")
     end
   elseif cmd == "test" or cmd == "diag" then
     ns.Diagnose()
@@ -452,46 +453,46 @@ local function HandleSlash(msg)
     local style = rest:lower()
     if style == "test" or style == "preview" then style = nil end
     if style and not ns.GLOW_STYLES[style] then
-      ns.Print("Glow styles: strong (default), normal, subtle. /cad glow test shows a preview.")
+      ns.Print("Glow styles: strong (default), normal, subtle. /tac glow test shows a preview.")
       return
     end
     ns.SetGlowStyle(style)
     ns.Print(("Glow: %s. Previewing on your bars for 3 seconds (blue = next, red = interrupt, orange = defensive).")
-      :format(CadenceDB.glowStyle))
+      :format(TactaraDB.glowStyle))
   elseif cmd == "highlight" or cmd == "glow" then
     local v = rest:lower()
-    if v == "on" then CadenceCharDB.highlight = true
-    elseif v == "off" then CadenceCharDB.highlight = false
-    else CadenceCharDB.highlight = not CadenceCharDB.highlight end
+    if v == "on" then TactaraCharDB.highlight = true
+    elseif v == "off" then TactaraCharDB.highlight = false
+    else TactaraCharDB.highlight = not TactaraCharDB.highlight end
     ns.HelperRefresh()
-    ns.Print("Bar highlight " .. (CadenceCharDB.highlight and "on" or "off") .. ".")
+    ns.Print("Bar highlight " .. (TactaraCharDB.highlight and "on" or "off") .. ".")
     if ns.Editor and ns.Editor.OnRebuilt then ns.Editor.OnRebuilt() end
   elseif cmd == "helper" then
     local v = rest:lower()
     if v == "priority" or v == "sequence" or v == "auto" then
-      CadenceCharDB.helperMode = v
+      TactaraCharDB.helperMode = v
       ns.HelperRefresh()
     end
-    ns.Print("Helper follows: " .. (CadenceCharDB.helperMode == "auto"
-      and "auto (priority list, or the key's sequence while you're pressing it)" or CadenceCharDB.helperMode))
+    ns.Print("Helper follows: " .. (TactaraCharDB.helperMode == "auto"
+      and "auto (priority list, or the key's sequence while you're pressing it)" or TactaraCharDB.helperMode))
   elseif cmd == "build" then
     ns.InvalidateBuild()
     ns.Print(ns.BuildSummary())
     local name, auto, why = ns.ResolveActive()
     ns.Print(("Rotation for this build: |cffffd100%s|r (%s)%s"):format(tostring(name), tostring(why),
-      auto and "" or " - auto-pick is off, /cad use auto to turn it on"))
+      auto and "" or " - auto-pick is off, /tac use auto to turn it on"))
   elseif cmd == "errors" then
-    CadenceDB.hideErrors = not CadenceDB.hideErrors
-    ns.Print("Error text while pressing Cadence buttons: " .. (CadenceDB.hideErrors and "hidden" or "shown"))
+    TactaraDB.hideErrors = not TactaraDB.hideErrors
+    ns.Print("Error text while pressing Tactara buttons: " .. (TactaraDB.hideErrors and "hidden" or "shown"))
   elseif cmd == "debug" then
-    CadenceDB.debug = not CadenceDB.debug
-    ns.Print("Debug " .. (CadenceDB.debug and "on" or "off"))
+    TactaraDB.debug = not TactaraDB.debug
+    ns.Print("Debug " .. (TactaraDB.debug and "on" or "off"))
   else
-    ns.Print("Unknown command. /cad help for the list.")
+    ns.Print("Unknown command. /tac help for the list.")
   end
 end
 
-SLASH_CADENCE1 = "/cadence"
-SLASH_CADENCE2 = "/cad"
-SlashCmdList["CADENCE"] = HandleSlash
+SLASH_TACTARA1 = "/tactara"
+SLASH_TACTARA2 = "/tac"
+SlashCmdList["TACTARA"] = HandleSlash
 ns.HandleSlash = HandleSlash

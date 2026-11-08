@@ -1,15 +1,15 @@
--- Cadence: rotation helper (bar highlight).
+-- Tactara: rotation helper (bar highlight).
 --
 -- Two ways to play with the same rotation:
---   * One-button: press your Cadence key. The highlight shows what it's
+--   * One-button: press your Tactara key. The highlight shows what it's
 --     about to cast.
---   * Visual helper: press your own spells. Cadence follows what you cast
+--   * Visual helper: press your own spells. Tactara follows what you cast
 --     and puts a pulsing blue border (like retail's Assisted Highlight) on
 --     the next spell on your action bars.
 --
 -- If the rotation has a [priority] list, the helper picks the best spell: at
 -- every moment it shows the highest line that's ready (off cooldown, usable,
--- live checks passed). While you're pressing the Cadence key it shows the
+-- live checks passed). While you're pressing the Tactara key it shows the
 -- key's sequence instead, so the glow matches what the key will cast.
 -- Without a [priority] list it follows the sequence, skipping fallbacks
 -- that are on cooldown or unusable.
@@ -24,9 +24,9 @@ local H = { idx = 1, button = nil, lastPress = 0 }
 ns.Helper = H
 
 local TICK = 0.2            -- refresh rate while there's something to show
-local PRESS_GRACE = 0.6     -- ignore cast events this soon after a Cadence press
+local PRESS_GRACE = 0.6     -- ignore cast events this soon after a Tactara press
 local LOOKAHEAD = 3         -- manual cast may skip up to this many steps
-local SEQUENCE_HOLD = 3     -- seconds after a Cadence press that the helper shows the key's sequence
+local SEQUENCE_HOLD = 3     -- seconds after a Tactara press that the helper shows the key's sequence
 local GLOW_COLORS = {
   next = { 0.30, 0.75, 1.00 },        -- blue: next spell (like retail's Assisted Highlight)
   interrupt = { 1.00, 0.20, 0.20 },   -- red: interrupt now
@@ -35,7 +35,7 @@ local GLOW_COLORS = {
 ns.GLOW_COLORS = GLOW_COLORS
 
 ---------------------------------------------------------------------------
--- Sequence position (shared with the Cadence buttons)
+-- Sequence position (shared with the Tactara buttons)
 ---------------------------------------------------------------------------
 
 function ns.HelperComp()
@@ -58,7 +58,7 @@ function ns.HelperReset()
   H.idx = 1
 end
 
--- A Cadence key press: jump to wherever the button is now.
+-- A Tactara key press: jump to wherever the button is now.
 function ns.HelperSync(button)
   H.button = button
   H.idx = button:GetAttribute("idx") or 1
@@ -118,7 +118,7 @@ end
 ---------------------------------------------------------------------------
 
 -- Is this buff (on you) / your debuff (on the target) missing or about to run out?
--- The game's answer wins when it gives one; otherwise Cadence's own timer
+-- The game's answer wins when it gives one; otherwise Tactara's own timer
 -- from your cast decides. true = missing, false = up, nil = can't tell.
 local REFRESH = 3
 local function AuraMissing(unit, name, filter)
@@ -203,7 +203,7 @@ end
 
 function ns.HelperUsesPriority(comp)
   if not comp or not comp.priority or #comp.priority == 0 then return false end
-  local mode = CadenceCharDB and CadenceCharDB.helperMode or "auto"
+  local mode = TactaraCharDB and TactaraCharDB.helperMode or "auto"
   if mode == "sequence" then return false end
   if mode == "priority" then return true end
   return (GetTime() - H.lastPress) > SEQUENCE_HOLD or #comp.steps == 0
@@ -288,7 +288,7 @@ function ns.OnPlayerCast(spellID)
   ns.TrackCast(SpellName(spellID))                           -- buff/debuff timers (Tracker.lua)
   if GetTime() - H.lastPress < PRESS_GRACE then
     ns.HelperRefresh()
-    return                                                   -- the Cadence key already moved us
+    return                                                   -- the Tactara key already moved us
   end
   local comp = ns.HelperComp()
   if not comp or #comp.steps == 0 then ns.HelperRefresh() return end
@@ -391,9 +391,9 @@ end
 
 local glows = {}
 local lit = {}
-H.lit, H.glows = lit, glows   -- for /cad test and the test suite
+H.lit, H.glows = lit, glows   -- for /tac test and the test suite
 
--- Glow strength (/cad glow strong | normal | subtle). Strong is the default.
+-- Glow strength (/tac glow strong | normal | subtle). Strong is the default.
 --   edge  = solid border just outside the button
 --   halo  = soft glow ring around that border
 --   inner = tint over the icon itself
@@ -406,7 +406,7 @@ local GLOW_STYLES = {
 ns.GLOW_STYLES = GLOW_STYLES
 
 local function GlowStyle()
-  local name = CadenceDB and CadenceDB.glowStyle
+  local name = TactaraDB and TactaraDB.glowStyle
   return GLOW_STYLES[name] or GLOW_STYLES.strong, GLOW_STYLES[name] and name or "strong"
 end
 
@@ -497,7 +497,7 @@ function ns.UpdateHighlight()
   local want = {}
   local spell
   local util = ns.UtilityPicks()          -- also feeds the helper popup's red/orange slots
-  if CadenceCharDB and CadenceCharDB.highlight then
+  if TactaraCharDB and TactaraCharDB.highlight then
     spell = ns.HelperPick()
     local function mark(name, kind)
       if not name then return end
@@ -519,10 +519,10 @@ function ns.UpdateHighlight()
   ns.lastUtility = util
 end
 
--- /cad glow <style>: switch style and show a 3-second preview of all three
+-- /tac glow <style>: switch style and show a 3-second preview of all three
 -- colors on your bars (blue next, red interrupt, orange defensive).
 function ns.SetGlowStyle(name)
-  if name and GLOW_STYLES[name] then CadenceDB.glowStyle = name end
+  if name and GLOW_STYLES[name] then TactaraDB.glowStyle = name end
   for btn in pairs(lit) do
     HideGlow(btn)
     lit[btn] = nil
@@ -621,6 +621,6 @@ function ns.HelperDiagnose()
   local comp = ns.HelperComp()
   local mode = ns.HelperUsesPriority(comp) and "priority list" or "sequence"
   return ("bar highlight %s (%s) | timers: %s | %d action buttons found | now pointing at: %s%s"):format(
-    CadenceCharDB.highlight and "ON" or "OFF", mode, ns.TrackerSummary(), total, tostring(spell or "nothing (no enemy targeted)"),
+    TactaraCharDB.highlight and "ON" or "OFF", mode, ns.TrackerSummary(), total, tostring(spell or "nothing (no enemy targeted)"),
     spell and (" (on " .. #btns .. " button" .. (#btns == 1 and "" or "s") .. ")") or "")
 end

@@ -1,4 +1,4 @@
--- Cadence: in-game rotation editor (/cad)
+-- Tactara: in-game rotation editor (/tac)
 -- Left: rotations for your class. Right: the rotation text.
 -- Import = click New, paste, Save. Export = Select All, Ctrl+C.
 
@@ -149,9 +149,9 @@ local function UpdateHeader()
     if selectedName then buttons.delete:Enable() else buttons.delete:Disable() end
   end
   if selectedName then buttons.use:Enable() else buttons.use:Disable() end
-  local auto = CadenceCharDB.active == "auto"
+  local auto = TactaraCharDB.active == "auto"
   buttons.auto:SetText(auto and "Auto-pick: ON" or "Auto-pick: OFF")
-  buttons.highlight:SetText("Bar highlight: " .. (CadenceCharDB.highlight and "ON" or "OFF"))
+  buttons.highlight:SetText("Bar highlight: " .. (TactaraCharDB.highlight and "ON" or "OFF"))
   buttons.keyMain:SetText("Main key: " .. ns.KeyLabel("main"))
   buttons.keyAoE:SetText("AoE key: " .. ns.KeyLabel("aoe"))
   buttons.keyInt:SetText("Interrupt key: " .. ns.KeyLabel("interrupt"))
@@ -225,15 +225,15 @@ end
 local function DoUse()
   if not selectedName then return end
   if dirty then DoSave() end
-  CadenceCharDB.active = selectedName
+  TactaraCharDB.active = selectedName
   ns.RequestRebuild("editor use", 0.05)
 end
 
 local function DoAuto()
-  if CadenceCharDB.active == "auto" then
-    CadenceCharDB.active = ns.activeName or "auto"
+  if TactaraCharDB.active == "auto" then
+    TactaraCharDB.active = ns.activeName or "auto"
   else
-    CadenceCharDB.active = "auto"
+    TactaraCharDB.active = "auto"
   end
   ns.RequestRebuild("editor auto", 0.05)
   UpdateHeader()
@@ -281,11 +281,11 @@ end
 
 local function Build()
   local templated
-  frame, templated = SafeFrame("Frame", "CadenceEditor", UIParent, "BasicFrameTemplateWithInset")
+  frame, templated = SafeFrame("Frame", "TactaraEditor", UIParent, "BasicFrameTemplateWithInset")
   if not templated then
     frame:Hide()
     frame = nil
-    frame = SafeFrame("Frame", "CadenceEditorPlain", UIParent, "BackdropTemplate")
+    frame = SafeFrame("Frame", "TactaraEditorPlain", UIParent, "BackdropTemplate")
     if frame.SetBackdrop then
       frame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -312,7 +312,7 @@ local function Build()
 
   local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   title:SetPoint("TOP", frame, "TOP", 0, -6)
-  title:SetText("Cadence " .. ns.VERSION .. " - one-button rotations")
+  title:SetText("Tactara " .. ns.VERSION .. " - one-button rotations")
 
   -- left: rotation list
   listTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -360,7 +360,7 @@ local function Build()
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine("Bar highlight")
     GameTooltip:AddLine("A pulsing blue border on the next spell on your action bars.", 1, 1, 1, true)
-    GameTooltip:AddLine("Use it with the Cadence key, or on its own as a rotation helper: press the glowing spell and Cadence moves to the next one.", 1, 1, 1, true)
+    GameTooltip:AddLine("Use it with the Tactara key, or on its own as a rotation helper: press the glowing spell and Tactara moves to the next one.", 1, 1, 1, true)
     GameTooltip:Show()
   end)
   buttons.highlight:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -378,7 +378,7 @@ local function Build()
   buttons.auto:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine("Auto-pick")
-    GameTooltip:AddLine("ON: Cadence switches rotation based on the talents you have (detect: line).", 1, 1, 1, true)
+    GameTooltip:AddLine("ON: Tactara switches rotation based on the talents you have (detect: line).", 1, 1, 1, true)
     GameTooltip:AddLine("OFF: it keeps using the one you chose with Use This.", 1, 1, 1, true)
     GameTooltip:Show()
   end)
@@ -407,9 +407,9 @@ local function Build()
   box:SetColorTexture(0, 0, 0, 0.45)
 
   local okScroll
-  okScroll, scrollFrame = pcall(CreateFrame, "ScrollFrame", "CadenceEditorScroll", frame, "UIPanelScrollFrameTemplate")
+  okScroll, scrollFrame = pcall(CreateFrame, "ScrollFrame", "TactaraEditorScroll", frame, "UIPanelScrollFrameTemplate")
   if not okScroll or not scrollFrame then
-    scrollFrame = CreateFrame("ScrollFrame", "CadenceEditorScroll", frame)
+    scrollFrame = CreateFrame("ScrollFrame", "TactaraEditorScroll", frame)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
       local cur, max = self:GetVerticalScroll(), self:GetVerticalScrollRange()
@@ -419,7 +419,7 @@ local function Build()
   scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 206, -58)
   scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -34, 76)
 
-  editBox = CreateFrame("EditBox", "CadenceEditorText", scrollFrame)
+  editBox = CreateFrame("EditBox", "TactaraEditorText", scrollFrame)
   editBox:SetMultiLine(true)
   editBox:SetAutoFocus(false)
   editBox:SetFontObject(ChatFontNormal)

@@ -1,5 +1,5 @@
 *.zip
 notes.md
 __pycache__/
-updater/cadence-updater.json
+updater/tactara-updater.json
 updater/backup/

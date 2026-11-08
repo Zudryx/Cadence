@@ -1,4 +1,4 @@
--- Cadence: interrupts and defensives for the rotation helper.
+-- Tactara: interrupts and defensives for the rotation helper.
 --
 -- These only appear when the moment calls for it:
 --   * Interrupt (red): your target is casting something you can interrupt.
@@ -7,8 +7,8 @@
 --   * Defensive (orange): in combat, the first [defensive] line whose checks
 --     pass (e.g. "@health 30") and that's ready.
 -- They're never part of the one-button sequence, so the rotation key won't
--- waste an interrupt or a big cooldown. The separate Cadence Interrupt key
--- (/cad bind interrupt) casts the right interrupt for your stance and gear.
+-- waste an interrupt or a big cooldown. The separate Tactara Interrupt key
+-- (/tac bind interrupt) casts the right interrupt for your stance and gear.
 
 local ADDON, ns = ...
 
@@ -45,12 +45,12 @@ end
 function ns.UtilityPicks()
   local out = {}
   local comp = ns.compiled and ns.compiled.main
-  if not comp or not CadenceCharDB then return out end
-  if CadenceCharDB.interrupts and comp.interrupts and #comp.interrupts > 0 then
+  if not comp or not TactaraCharDB then return out end
+  if TactaraCharDB.interrupts and comp.interrupts and #comp.interrupts > 0 then
     out.castState = ns.TargetCastState()
     if out.castState == "interruptible" then out.interrupt = FirstReady(comp.interrupts) end
   end
-  if CadenceCharDB.defensives and InCombat() and comp.defensives and #comp.defensives > 0 then
+  if TactaraCharDB.defensives and InCombat() and comp.defensives and #comp.defensives > 0 then
     out.defensive = FirstReady(comp.defensives)
   end
   return out

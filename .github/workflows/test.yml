@@ -14,10 +14,10 @@ jobs:
       - name: Install Lua
         run: sudo apt-get update && sudo apt-get install -y lua5.4
       - name: Syntax + version
-        run: lua5.4 tests/syntax.lua Cadence
+        run: lua5.4 tests/syntax.lua Tactara
       - name: Rotation compiler
-        run: lua5.4 tests/compile_test.lua Cadence
+        run: lua5.4 tests/compile_test.lua Tactara
       - name: Addon smoke test (simulated WoW API)
-        run: lua5.4 tests/smoke_test.lua Cadence
+        run: lua5.4 tests/smoke_test.lua Tactara
       - name: Helper, interrupts, defensives, build detection
-        run: lua5.4 tests/helper_test.lua Cadence
+        run: lua5.4 tests/helper_test.lua Tactara

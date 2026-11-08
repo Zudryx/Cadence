@@ -1,4 +1,4 @@
--- Cadence: /cad probe
+-- Tactara: /tac probe
 -- Reports which game information WoW Forever lets addons read, so the
 -- build-aware "best next skill" feature can use whatever is available.
 -- Run it once out of combat and once in combat (on a mob in the open world).
@@ -68,7 +68,7 @@ function ns.Probe()
       tostring(UnitName and UnitName("target") or "none")))
 
   -- talents / build
-  Check("talents (Cadence reader)", function()
+  Check("talents (Tactara reader)", function()
     local t = ns.ReadTalents(ns.GetClassToken())
     local parts = {}
     for _, tr in ipairs(t.trees) do parts[#parts + 1] = tr.name .. " " .. tr.points end
@@ -97,7 +97,7 @@ function ns.Probe()
     return ("config %s, %d trees, %d nodes, %d sub-trees, x %s-%s"):format(
       tostring(configID), trees, nodes, subCount, tostring(minX), tostring(maxX))
   end)
-  Check("weapon (Cadence reader)", function() return ns.ReadWeapon() end)
+  Check("weapon (Tactara reader)", function() return ns.ReadWeapon() end)
   Check("main hand / off hand", function()
     local f = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
     local function loc(slot)
@@ -109,7 +109,7 @@ function ns.Probe()
     return loc(16), loc(17)
   end)
   Check("dual wielding", function() return need(IsDualWielding, "IsDualWielding")() end)
-  Check("enemies near (Cadence)", function() return ns.CountEnemies() end)
+  Check("enemies near (Tactara)", function() return ns.CountEnemies() end)
 
   -- what can be read during a fight
   Check("your rage", function() return need(UnitPower, "UnitPower")("player") end)
@@ -124,7 +124,7 @@ function ns.Probe()
     end
     return name, notInt
   end)
-  Check("Cadence reads target cast as", function() return ns.TargetCastState() end)
+  Check("Tactara reads target cast as", function() return ns.TargetCastState() end)
   Check("Battle Shout on you", function()
     local a = need(C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName, "GetAuraDataBySpellName")("player", "Battle Shout", "HELPFUL")
     if a == nil then return "not up" end

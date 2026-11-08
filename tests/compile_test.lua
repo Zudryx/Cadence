@@ -3,7 +3,7 @@ local root = arg[1]
 local ns = {}
 local function loadAddonFile(f)
   local fn = assert(loadfile(root .. "/" .. f))
-  fn("Cadence", ns)
+  fn("Tactara", ns)
 end
 -- minimal RegisterBuiltin (Core.lua's version needs saved vars)
 ns.builtin, ns.builtinOrder = {}, {}
@@ -123,7 +123,7 @@ do -- Fury stance handling
   end
 end
 
-do -- pull spell (Charge) is surfaced for the display and /cad steps
+do -- pull spell (Charge) is surfaced for the display and /tac steps
   for name, spec in pairs({ ["Warrior - Arms"] = "arms", ["Warrior - Fury"] = "fury", ["Warrior - Protection"] = "prot" }) do
     local rot = ns.Parse(ns.builtin[name])
     check(ns.Compile(rot, "main", env(3, spec)).pull == nil, name .. " no pull before Charge is learned")

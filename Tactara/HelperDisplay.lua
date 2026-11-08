@@ -1,4 +1,4 @@
--- Cadence: the helper popup.
+-- Tactara: the helper popup.
 -- Big icon = best skill to use right now (from the rotation's [priority]
 -- list), two smaller icons = what comes after. To the right, an interrupt
 -- slot (red) and a defensive slot (orange) appear only when needed. Each
@@ -53,7 +53,7 @@ end
 
 function ns.CreateHelperPopup()
   if popup then return popup end
-  local f = CreateFrame("Frame", "CadenceHelperPopup", UIParent)
+  local f = CreateFrame("Frame", "TactaraHelperPopup", UIParent)
   f:SetSize(BIG + 2 * (SMALL + 4) + 2 * (UTIL + 8), BIG)
   f:SetFrameStrata("MEDIUM")
   ns.MakeMovable(f, "helperPos", 0, -110)
@@ -95,11 +95,11 @@ end
 function ns.UpdateHelperPopup()
   local f = popup
   if not f then return end
-  if not CadenceCharDB.showHelper then
+  if not TactaraCharDB.showHelper then
     f:Hide()
     return
   end
-  local locked = CadenceCharDB.locked
+  local locked = TactaraCharDB.locked
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
@@ -112,7 +112,7 @@ function ns.UpdateHelperPopup()
     f:Show()
     SetIcon(f.icons[1], nil); SetIcon(f.icons[2], nil); SetIcon(f.icons[3], nil)
     SetIcon(f.interrupt, nil); SetIcon(f.defensive, nil)
-    f.label:SetText("Cadence helper: no rotation yet (drag to move, /cad lock)")
+    f.label:SetText("Tactara helper: no rotation yet (drag to move, /tac lock)")
     return
   end
 
@@ -129,6 +129,6 @@ function ns.UpdateHelperPopup()
   if locked then
     f.label:SetText("")
   else
-    f.label:SetText("Cadence HELPER: best skill now (drag, /cad lock)")
+    f.label:SetText("Tactara HELPER: best skill now (drag, /tac lock)")
   end
 end
