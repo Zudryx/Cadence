@@ -9,6 +9,21 @@ One-button rotations and a rotation helper for **World of Warcraft: Forever**.
 
 Currently: **Warrior** (Arms, Fury, Protection). More classes to come.
 
+## Fair play
+
+Tactara is an assistant. It shows you what to press and can put your rotation on one key, but it never plays for you.
+
+- **You press every key.** Each press of the Tactara key does what one press of a normal WoW macro does. WoW only lets an addon cast when you press a key or click, so Tactara can't cast by itself or repeat presses, and the key can't react to the fight on its own.
+- **The rotation is set before the fight.** Once combat starts, WoW locks addon buttons, so Tactara can't rewrite the rotation mid-fight. The key just steps through a list you can read with `/tac steps` and edit with `/tac`.
+- **The helper only points.** The popup and the glow show a spell. Using it is up to you.
+- **Nothing outside the game controls it.** Tactara runs only inside WoW's own addon system. It doesn't move, target or click for you, and it doesn't read the game's memory. The Windows updater only downloads Tactara's files. It never connects to or controls the game.
+- **No turbo keys.** Don't combine Tactara with turbo keys, key repeaters or programs that press keys for you. Those break Blizzard's rules whatever addon you use.
+- **Free and open.** No price, no ads, no donation requests in game, and all of the code can be read here, as Blizzard's addon policy requires.
+
+Blizzard decides what addons may do and can switch off any addon feature, so Tactara sticks to what the game's addon system allows.
+
+Tactara is a fan-made project. It isn't made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.
+
 ## Install
 
 **With the updater (recommended):** download `TactaraUpdater.zip` from the [latest release](../../releases/latest) and unzip it anywhere, e.g. your Desktop. Double-click **Update Tactara.bat**. It finds your `World of Warcraft\_forever_\Interface\AddOns` folder and installs or updates Tactara. Run it again any time to get the newest version.
@@ -41,4 +56,3 @@ lua5.4 tests/helper_test.lua Tactara   # helper, timers, interrupts, defensives,
 
 GitHub Actions runs them on every pull request and before every release.
 
-Tactara is free, and its code is open to read, as Blizzard's addon policy requires.

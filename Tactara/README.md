@@ -1,4 +1,4 @@
-# Tactara 0.5.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.5.1: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -6,6 +6,14 @@ Rotations that grow with your level, played two ways:
 - **Rotation helper:** press your own spells. Tactara puts a pulsing blue border on the next spell on your action bars, like retail's Assisted Highlight, and moves on as you cast.
 
 You can use both at once. Spells you haven't learned yet are skipped, so the same rotation works from level 1 to 60.
+
+## Fair play
+
+Tactara is an assistant, not a bot. **You press every key:** each press of the Tactara key does what one press of a normal macro does, and WoW only lets addons cast when you press something. Tactara can't cast by itself, repeat presses or change its plan mid-fight, and the helper only shows you a spell. Nothing outside the game controls it, and the updater only downloads files.
+
+Use one key press per cast. Turbo keys, key repeaters and programs that press keys for you break Blizzard's rules whatever addon you use.
+
+Tactara is a fan-made project, not made or endorsed by Blizzard Entertainment.
 
 ## Install
 
@@ -136,9 +144,8 @@ detect: Mortal Strike      # auto-pick this rotation once you know this spell
 
 ## Limits
 
-- **This hasn't been tested in the game yet.** It was written and tested outside WoW. If you get Lua errors, install **BugSack** + **BugGrabber** (or type `/console scriptErrors 1`) and send the error text.
+- If you get Lua errors, type `/console scriptErrors 1` to show them and send the error text.
 - WoW Forever hides cooldowns, procs and buffs from addons during combat. The Tactara key plays a fixed sequence with fallbacks instead of reacting, so some presses won't cast anything. That's normal.
 - Spell names are in English, so non-English game clients need translated rotations.
 - Stance numbers assume 1 = Battle, 2 = Defensive, 3 = Berserker. If you skipped the Defensive Stance quest, Berserker becomes stance 2. Edit the `nostance:` numbers if that applies to you.
 - A step longer than 255 characters may get cut off. The editor warns you if that happens.
-- Use one keypress per cast. Turbo keys and key repeaters break Blizzard's rules.

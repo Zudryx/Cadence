@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.5.0"
+ns.VERSION = "0.5.1"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -369,6 +369,7 @@ local HELP = {
   "|cffffd100/tac debug|r  print every press, cast and game error to chat",
   "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
   "Key bindings: Esc > Options > Keybindings > AddOns > Tactara",
+  "Tactara is an assistant: it never presses anything for you. Every cast comes from your own key press.",
 }
 
 local function HandleSlash(msg)

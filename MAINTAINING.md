@@ -2,6 +2,11 @@
 
 These are the steps the scheduled rotation review follows. A person can follow them too.
 
+## Ground rules
+
+- **Tactara stays an assistant.** Never add anything that casts without the player's own key press, repeats presses, changes what the key casts mid-fight on its own, or controls the game from outside (the updater only downloads files). If a guide's advice could only be followed by automating play, leave it out and say so in the pull request.
+- **Don't name other rotation or one-button addons** in the addon, its guide, the changelog or pull requests, and never suggest Tactara is one of them or works with them. (Listing the action-bar addons the glow works with is fine.)
+
 ## 1. Check the guides
 
 For every class in `Tactara/Rotations/`, check the current **WoW Forever** guides for each spec:

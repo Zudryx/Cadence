@@ -2,6 +2,11 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.5.1
+- Added a fair-play note to the guide, the GitHub page and `/tac help`: Tactara is an assistant, and every cast comes from your own key press. The addon list now says "You press every key."
+- Removed the old "not tested in game yet" warning from the guide.
+- No gameplay changes.
+
 ## 0.5.0
 - New name: Cadence is now **Tactara**, because another addon already uses the old name. The slash command is now `/tac` (or `/tactara`).
 - Your settings come with you. The updater copies your rotation edits, keys and options over to Tactara and moves the old folder out of AddOns. Keys you set in WoW's Keybindings menu move over the first time you log in.
