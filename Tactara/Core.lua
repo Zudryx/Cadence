@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.5.1"
+ns.VERSION = "0.6.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -82,7 +82,7 @@ function ns.ListRotations(classToken)
     if classToken and cls and cls ~= "" and cls ~= "ANY" and cls ~= classToken then return end
     out[#out + 1] = {
       name = name, class = cls, detect = rot.meta.detect, default = rot.isDefault,
-      tree = rot.meta.tree, weapon = rot.meta.weapon,
+      tree = rot.meta.tree, weapon = rot.meta.weapon, prefer = rot.meta.prefer,
       builtin = ns.IsBuiltin(name), edited = ns.IsEdited(name),
     }
   end
@@ -177,6 +177,10 @@ function ns.IsKnown(name)
         local ok, r = pcall(IsSpellKnown, id)
         if ok and r then known = true end
       end
+      if not known and IsSpellKnown then   -- pet abilities (Spell Lock, Growl, ...)
+        local ok, r = pcall(IsSpellKnown, id, true)
+        if ok and r then known = true end
+      end
     end
   end
 
@@ -265,6 +269,7 @@ for _, e in ipairs({
 }) do
   SafeRegister(e)
 end
+SafeRegister("UNIT_PET", "player")   -- pet abilities (Spell Lock, ...) come and go with the pet
 
 local rebuildQueued = false
 

@@ -155,6 +155,26 @@ function ns.CheckLive(c)
     local pct = ns.PlayerHealthPct()
     if not pct then return nil end
     return pct < (tonumber(c.arg:match("%d+")) or 35)
+  elseif c.kind == "creature" then
+    local ok, kind = pcall(function()
+      if not UnitExists("target") then return false end
+      local t = UnitCreatureType("target")
+      return t and (tostring(t) .. "") or false   -- errors if the game hides it
+    end)
+    if not ok then return nil end
+    if not kind then return false end
+    for want in c.arg:gmatch("[^,/]+") do
+      if ns.trim(want):lower() == kind:lower() then return true end
+    end
+    return false
+  elseif c.kind == "combo" then
+    return (ns.ComboPoints() or 0) >= (tonumber(c.arg:match("%d+")) or 5)
+  elseif c.kind == "nopet" then
+    local ok, missing = pcall(function()
+      return not UnitExists("pet") or UnitIsDead("pet") == true
+    end)
+    if not ok then return nil end
+    return missing and true or false
   end
   return true
 end
@@ -240,7 +260,14 @@ function ns.HelperQueue(n, forDisplay, forceMode)
     for _, s in ipairs(ns.PriorityCandidates(comp, n)) do
       if #q < n and s ~= q[1] then q[#q + 1] = s end
     end
-    if #q == 0 then q[1] = comp.priority[1].spell end
+    if #q == 0 then
+      -- nothing ready: show the first line that applies right now (the next
+      -- one off cooldown), not a buff or pet line that isn't needed
+      for _, e in ipairs(comp.priority) do
+        if LiveOK(e) and #e.live == 0 then q[1] = e.spell break end
+      end
+      q[1] = q[1] or comp.priority[1].spell
+    end
   elseif #comp.steps > 0 then
     local i = ClampIdx(comp)
     q[#q + 1] = ns.PickForStep(comp, i)

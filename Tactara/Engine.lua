@@ -188,12 +188,19 @@ function ns.ResolveActive()
     local points = 0
     for _, t in ipairs(build.talents.trees or {}) do if t.name == build.top then points = t.points end end
     local reason = ("%d talent points in %s"):format(points, build.top)
+    -- Several rotations can share a tree (Druid cat and bear): prefer the one
+    -- that fits your weapon, then the one whose "prefer:" talents you took.
+    local best, bestScore
     for _, r in ipairs(list) do
-      if r.tree and r.tree:lower() == top and weaponFits(r) then return r.name, true, reason end
+      if r.tree and r.tree:lower() == top then
+        local score = weaponFits(r) and 1000 or 0
+        for t in (r.prefer or ""):gmatch("[^,]+") do
+          score = score + ((build.talents.talents or {})[ns.trim(t)] or 0)
+        end
+        if not bestScore or score > bestScore then best, bestScore = r, score end
+      end
     end
-    for _, r in ipairs(list) do
-      if r.tree and r.tree:lower() == top then return r.name, true, reason end
-    end
+    if best then return best.name, true, reason end
   end
   for _, r in ipairs(list) do
     if r.detect and ns.IsKnown(r.detect) then return r.name, true, "you know " .. r.detect end
@@ -384,7 +391,7 @@ function ns.ReportSpells()
     #known > 0 and table.concat(known, ", ") or "none"))
   if #missing > 0 then
     ns.Print(("Not learned yet (%d): |cffaaaaaa%s|r"):format(#missing, table.concat(missing, ", ")))
-    ns.Print("New Warrior spells are bought from a class trainer (some come from talents or class quests). "
+    ns.Print("New spells are bought from your class trainer (some come from talents or class quests). "
       .. "Tactara adds each one as soon as you learn it.")
   end
 end

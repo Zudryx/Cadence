@@ -1,7 +1,12 @@
 -- Syntax check every addon Lua file (compile only, don't run).
 local root = arg[1]
-local files = { "Core.lua", "Parser.lua", "Rotations/Warrior.lua", "Build.lua", "Engine.lua", "Keys.lua", "Tracker.lua", "Helper.lua", "Utility.lua", "Probe.lua", "Display.lua", "HelperDisplay.lua", "Editor.lua" }
+-- every .lua file the game loads, in Tactara.toc order
+local files = {}
+for line in io.open(root .. "/Tactara.toc"):read("a"):gmatch("[^\r\n]+") do
+  if not line:find("^##") and line:find("%.lua$") then files[#files + 1] = (line:gsub("\\", "/")) end
+end
 local bad = 0
+if #files < 13 then print("FAIL only " .. #files .. " files listed in Tactara.toc"); bad = bad + 1 end
 for _, f in ipairs(files) do
   local fn, err = loadfile(root .. "/" .. f)
   if fn then print("ok   " .. f) else print("FAIL " .. err); bad = bad + 1 end

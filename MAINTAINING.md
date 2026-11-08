@@ -9,7 +9,7 @@ These are the steps the scheduled rotation review follows. A person can follow t
 
 ## 1. Check the guides
 
-For every class in `Tactara/Rotations/`, check the current **WoW Forever** guides for each spec:
+For every class in `Tactara/Rotations/` (all nine classes), check the current **WoW Forever** guides for each spec:
 
 - Icy Veins (`icy-veins.com/wow-forever/...`). Use web search results only. Icy Veins blocks automated page reading: don't try to get around that and don't scrape it.
 - Warcraft Tavern (`warcrafttavern.com/forever/...`)

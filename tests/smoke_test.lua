@@ -449,6 +449,26 @@ do
   GetBindingKey = realGBK
 end
 
+-- every class gets its own rotation picked and built without errors
+do
+  local realClass = UnitClass
+  local NAMES = { PALADIN = "Paladin", HUNTER = "Hunter", ROGUE = "Rogue", PRIEST = "Priest", SHAMAN = "Shaman",
+    MAGE = "Mage", WARLOCK = "Warlock", DRUID = "Druid", WARRIOR = "Warrior" }
+  local saved = TactaraCharDB.active
+  TactaraCharDB.active = "auto"
+  for token, label in pairs(NAMES) do
+    UnitClass = function() return label, token, 1 end
+    local ok, err = pcall(ns.Rebuild, "class test")
+    check(ok, token .. " rebuild: " .. tostring(err))
+    check(ns.activeName and ns.activeName:find("^" .. label .. " %- ") ~= nil, token .. " picks a " .. label .. " rotation (" .. tostring(ns.activeName) .. ")")
+    local okH, errH = pcall(ns.HelperRefresh)
+    check(okH, token .. " helper refresh: " .. tostring(errH))
+  end
+  UnitClass = realClass
+  TactaraCharDB.active = saved
+  ns.Rebuild("back to warrior")
+end
+
 -- fallback when BasicFrameTemplateWithInset is missing (older/odd clients)
 print("\nchat sample:"); for i = 1, math.min(#chat, 8) do print("  " .. chat[i]) end
 print(fails == 0 and "\nSMOKE TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))

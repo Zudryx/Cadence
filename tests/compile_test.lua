@@ -1,4 +1,4 @@
--- Unit tests for Parser.lua + the built-in Warrior rotations.
+-- Unit tests for Parser.lua + every built-in rotation.
 local root = arg[1]
 local ns = {}
 local function loadAddonFile(f)
@@ -14,33 +14,28 @@ function ns.RegisterBuiltin(text)
   table.insert(ns.builtinOrder, rot.name)
   ns.builtin[rot.name] = text
 end
-loadAddonFile("Rotations/Warrior.lua")
+-- load every rotation file listed in Tactara.toc
+for line in io.open(root .. "/Tactara.toc"):read("a"):gmatch("[^\r\n]+") do
+  if line:find("^Rotations") then loadAddonFile((line:gsub("\\", "/"))) end
+end
 
 local fails = 0
 local function check(cond, msg) if not cond then fails = fails + 1; print("  FAIL: " .. msg) end end
 
--- Warrior spells by level (Warcraft Tavern WoW Forever milestones)
-local BY_LEVEL = {
-  {1, "Battle Stance"}, {1, "Battle Shout"}, {1, "Heroic Strike"},
-  {4, "Rend"}, {4, "Charge"}, {6, "Thunder Clap"}, {8, "Hamstring"},
-  {10, "Defensive Stance"}, {10, "Bloodrage"}, {10, "Taunt"}, {10, "Sunder Armor"},
-  {12, "Overpower"}, {12, "Shield Bash"}, {14, "Revenge"}, {14, "Demoralizing Shout"},
-  {16, "Shield Block"}, {20, "Victory Rush"}, {20, "Cleave"}, {20, "Slam"}, {20, "Retaliation"},
-  {24, "Execute"}, {30, "Berserker Stance"}, {30, "Intercept"}, {36, "Whirlwind"},
-}
-local TALENTS = {
-  arms = { {30, "Sweeping Strikes"}, {40, "Mortal Strike"} },
-  fury = { {40, "Bloodthirst"} },
-  prot = { {40, "Shield Slam"} },
-}
-local function knownSet(level, spec)
+local D = dofile("tests/class_data.lua")
+local SPEC_CLASS = {}
+for name, spec in pairs(D.SPEC_OF) do
+  SPEC_CLASS[spec] = ns.Parse(ns.builtin[name] or "").meta.class
+end
+local function knownSet(level, spec, class)
+  class = class or SPEC_CLASS[spec] or "WARRIOR"
   local s = {}
-  for _, e in ipairs(BY_LEVEL) do if e[1] <= level then s[e[2]] = true end end
-  for _, e in ipairs(TALENTS[spec] or {}) do if e[1] <= level then s[e[2]] = true end end
+  for _, e in ipairs(D.BY_LEVEL[class] or {}) do if e[1] <= level then s[e[2]] = true end end
+  for _, e in ipairs(D.TALENTS[spec] or {}) do if e[1] <= level then s[e[2]] = true end end
   return s
 end
-local function env(level, spec, buffs)
-  local k = knownSet(level, spec)
+local function env(level, spec, buffs, class)
+  local k = knownSet(level, spec, class)
   return {
     isKnown = function(n) return k[n] == true end,
     hasBuff = function(n) if buffs then return buffs[n] == true end return nil end,
@@ -51,13 +46,15 @@ end
 for _, name in ipairs(ns.builtinOrder) do
   local rot = ns.Parse(ns.builtin[name])
   check(#rot.warnings == 0, name .. " has parse warnings: " .. table.concat(rot.warnings, "; "))
-  check(rot.meta.class == "WARRIOR", name .. " class")
+  check(D.SPEC_OF[name] ~= nil, name .. " has test data (SPEC_OF)")
 end
-check(#ns.builtinOrder == 3, "three warrior rotations registered")
+local warriors = 0
+for _, name in ipairs(ns.builtinOrder) do if name:find("^Warrior") then warriors = warriors + 1 end end
+check(warriors == 3, "three warrior rotations registered")
 
--- 2) print compiled sequences per level
-local SPEC_OF = { ["Warrior - Arms"] = "arms", ["Warrior - Fury"] = "fury", ["Warrior - Protection"] = "prot" }
-for _, name in ipairs(ns.builtinOrder) do
+-- 2) print compiled sequences per level (Warrior; other classes in section 7)
+local SPEC_OF = D.SPEC_OF
+for _, name in ipairs(ns.builtinOrder) do if name:find("^Warrior") then
   local rot = ns.Parse(ns.builtin[name])
   print("\n=== " .. name .. " ===")
   for _, lvl in ipairs({3, 4, 12, 20, 30, 40, 60}) do
@@ -76,7 +73,7 @@ for _, name in ipairs(ns.builtinOrder) do
   local labels = {}
   for _, st in ipairs(a.steps) do labels[#labels + 1] = (st.kind == "opener" and "*" or "") .. st.label end
   print(("AoE L60 %d+%d: %s"):format(a.openerCount, a.loopCount, table.concat(labels, " | ")))
-end
+end end
 
 -- 3) specific behaviours
 do
@@ -200,6 +197,82 @@ do
   local c = ns.Compile(rot, "main", env(10))
   check(#c.steps == 0, "empty rotation compiles to no steps")
   check(ns.Compile(nil, "main", env(10)).loopStart == 1, "nil rotation safe")
+end
+
+
+-- 7) every class: each rotation from level 1 to 60
+do
+  local LEVELS = { 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 30, 36, 40, 44, 50, 60 }
+  local verbose = os.getenv("TACTARA_VERBOSE") ~= nil
+  local function onlyConditional(step, class)
+    local cond = D.CONDITIONAL[class] or {}
+    if not step.spells or #step.spells == 0 then return false end
+    for _, sp in ipairs(step.spells) do if not cond[sp] then return false end end
+    return true
+  end
+  local perClass = {}
+  for _, name in ipairs(ns.builtinOrder) do
+    local rot = ns.Parse(ns.builtin[name])
+    local class, spec = rot.meta.class, D.SPEC_OF[name]
+    perClass[class] = (perClass[class] or 0) + 1
+    check(D.BY_LEVEL[class] ~= nil, name .. ": no test spell list for " .. tostring(class))
+    -- every spell the rotation names must be a real spell for the class (catches typos)
+    local all = {}
+    for _, e in ipairs(D.BY_LEVEL[class] or {}) do all[e[2]] = true end
+    for s2, list in pairs(D.TALENTS) do
+      if SPEC_CLASS[s2] == class then for _, e in ipairs(list) do all[e[2]] = true end end
+    end
+    for _, list in pairs(rot.sections) do
+      for _, item in ipairs(list) do
+        for _, line in ipairs(item.lines or { item }) do
+          for _, sp in ipairs(line.spells or {}) do
+            check(all[sp] or D.ANY_CLASS[sp] or (D.PET[class] or {})[sp], name .. ": unknown spell '" .. sp .. "'")
+          end
+          for _, c in ipairs(line.conds or {}) do
+            if c.kind == "if" or c.kind == "unless" or c.kind == "missing" or c.kind == "ifmissing" or c.kind == "nodebuff" then
+              check(all[c.arg] or (D.BUFFS[class] or {})[c.arg] or (D.PET[class] or {})[c.arg],
+                name .. ": unknown spell/buff '" .. c.arg .. "' in @" .. c.kind)
+            end
+          end
+        end
+      end
+    end
+    local firstLevel, lowPrio
+    for _, lvl in ipairs(LEVELS) do
+      local e = env(lvl, spec, nil, class)
+      for _, which in ipairs({ "main", "aoe" }) do
+        local c = ns.Compile(rot, which, e)
+        if #c.steps > 0 and not firstLevel then firstLevel = lvl end
+        if lvl >= 6 then check(#c.steps > 0, ("%s %s L%d has no steps"):format(name, which, lvl)) end
+        for _, st in ipairs(c.steps) do
+          check(#st.text <= 255, ("%s %s L%d step '%s' is %d chars"):format(name, which, lvl, st.label, #st.text))
+          check(not onlyConditional(st, class),
+            ("%s %s L%d step '%s' only has situational spells"):format(name, which, lvl, st.label))
+        end
+        if which == "main" then
+          if lvl <= 10 and #c.priority > 0 then lowPrio = lowPrio or #c.priority end
+          if verbose and (lvl == 10 or lvl == 30 or lvl == 60) then
+            local labels = {}
+            for _, st in ipairs(c.steps) do labels[#labels + 1] = (st.kind == "opener" and "*" or "") .. st.label end
+            print(("%s L%d pull=%s %d+%d: %s"):format(name, lvl, tostring(c.pull), c.openerCount, c.loopCount, table.concat(labels, " | ")))
+          end
+        end
+      end
+    end
+    local c60 = ns.Compile(rot, "main", env(60, spec, nil, class))
+    check(#c60.priority >= 4, name .. " has a helper priority list at 60")
+    check(not lowPrio or #c60.priority > lowPrio, name .. " priority grows with level")
+    check(#c60.defensives > 0, name .. " suggests defensives at 60")
+    check(firstLevel ~= nil and firstLevel <= 6, name .. " has key steps by level 6 (first at " .. tostring(firstLevel) .. ")")
+    if verbose then
+      local labels = {}
+      for _, en in ipairs(c60.priority) do labels[#labels + 1] = en.spell end
+      print(name .. " priority L60: " .. table.concat(labels, " > "))
+    end
+  end
+  for class in pairs(D.BY_LEVEL) do
+    check((perClass[class] or 0) >= 3, class .. " has at least 3 built-in rotations (" .. tostring(perClass[class]) .. ")")
+  end
 end
 
 print(fails == 0 and "\nALL TESTS PASSED" or ("\n" .. fails .. " FAILURE(S)"))

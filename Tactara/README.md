@@ -1,4 +1,4 @@
-# Tactara 0.5.1: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.6.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -32,16 +32,39 @@ Tactara is a fan-made project, not made or endorsed by Blizzard Entertainment.
 
 *Action-bar macros can't run Tactara.* WoW doesn't let a macro `/click` a button that runs another macro. If you made "Tactara" macros with an older version, you can delete them.
 
+## Rotations included
+
+Every class has a rotation for each spec, built from the WoW Forever guides:
+
+| Class | Rotations |
+|---|---|
+| Warrior | Arms, Fury, Protection |
+| Paladin | Retribution, Protection, Holy |
+| Hunter | Beast Mastery, Marksmanship, Survival |
+| Rogue | Combat, Assassination, Subtlety |
+| Priest | Shadow, Discipline, Holy |
+| Shaman | Enhancement, Elemental, Restoration |
+| Mage | Frost, Fire, Arcane |
+| Warlock | Affliction, Demonology, Destruction |
+| Druid | Feral (Cat), Feral (Bear), Balance, Restoration |
+
+- **Healers** (Holy Paladin, Discipline and Holy Priest, Restoration Shaman and Druid): the key can't choose who to heal, so these rotations are the solo damage you level with. You heal your group with your own keys. Self-heals still show up as orange suggestions when you're hurt.
+- **Pets** (Hunter, Warlock): every press sends your pet in, and the helper reminds you when your pet is missing.
+- **Rogues and Cat Druids:** WoW doesn't tell addons your combo points, so the key mixes about four builders per finisher. The helper counts your builders to guess when to spend.
+- **Forms and stances** (Warrior, Druid, Priest's Shadowform): the key moves you into the right one. Druids: after a heal in caster form, the next press shifts back.
+- **Channels** (Mind Flay, Drain Life, Arcane Missiles): pressing again during the channel cuts it short. Let it finish when you can.
+- **Ground spells** (Blizzard, Flamestrike, Rain of Fire, Volley, Hurricane) need you to aim, so they're only suggested by the helper for groups.
+
 ## Using it
 
 - Press the button repeatedly in combat. **One press = one step.** It never presses anything by itself.
-- Out of combat, the first icon on the strip is your **PULL** (Charge): your first press charges in. Then the fight's **opener** plays (Bloodrage, Battle Shout if it's missing, Rend). After that it repeats the **loop**. The sequence restarts when combat ends.
+- Out of combat, the first icon on the strip can be your **PULL** (a Warrior's Charge, a Rogue's Cheap Shot, a Druid's Faerie Fire): your first press uses it. Then the fight's **opener** plays (for a Warrior: Bloodrage, Battle Shout if it's missing, Rend). After that it repeats the **loop**. The sequence restarts when combat ends.
 - **Two displays** (drag to move, then `/tac lock`):
   - **Key bar:** what your Tactara key will cast on its next 3 presses.
   - **Helper popup:** the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars.
   - `/tac hide key` or `/tac hide helper` if you only want one.
-- **Which rotation:** Tactara reads your build and picks for you: first the talent tree you've spent the most points in, then your weapons (two-hander = Arms, dual wield = Fury, shield = Protection). `/tac build` shows what it detected and why it picked what it did. To change it, use `/tac use prot`, `/tac use fury` or `/tac use arms`, or **Use This** in the editor. `/tac use auto` goes back to automatic.
-- When you learn new spells, the rotation updates on its own and prints *Added to your rotation: ...*. Warriors **buy new spells from a class trainer** (Rend and Charge at 4, Thunder Clap at 6, ...). Leveling up alone doesn't add them. `/tac spells` shows what's in use and what's still to learn.
+- **Which rotation:** Tactara reads your build and picks for you: first the talent tree you've spent the most points in, then your weapons (for a Warrior: two-hander = Arms, dual wield = Fury, shield = Protection), then a sensible default for your class. Druids with points in Feral get Cat or Bear depending on the talents they took. `/tac build` shows what it detected and why it picked what it did. To change it, use `/tac use` with part of the name (`/tac use prot`, `/tac use bear`, `/tac use fire`), or **Use This** in the editor. `/tac use auto` goes back to automatic.
+- When you learn new spells, the rotation updates on its own and prints *Added to your rotation: ...*. New spells are **bought from your class trainer** (a Warrior gets Rend and Charge at 4, Thunder Clap at 6, ...). Leveling up alone doesn't add them. `/tac spells` shows what's in use and what's still to learn.
 
 ## Rotation helper (bar highlight)
 
@@ -123,6 +146,10 @@ detect: Mortal Strike      # auto-pick this rotation once you know this spell
 - `[priority]` section (rotation helper): one spell per line, best first. Live checks: `@missing Buff` (not on you), `@nodebuff Debuff` (your debuff not on the target), `@enemies 3` (at least 3 enemies nearby). If WoW hides what a check needs, that line is skipped.
 - `[interrupt]`: interrupts, best first (helper + interrupt key). `[defensive]`: defensives with checks like `@health 30`.
 - `@health 35`: only when your health is below 35%.
+- `@creature Undead, Demon`: only when the target is one of these (Exorcism, Holy Wrath).
+- `@nopet`: only when your pet is missing or dead (Call Pet, summons).
+- `@combo 4`: only with at least 4 combo points (the game's number if it shows it, otherwise Tactara's count of your builders).
+- `prefer: Talent, Talent`: when two rotations use the same talent tree (Druid Cat and Bear), auto-pick takes the one whose talents you have more of.
 - `tree: Arms` and `weapon: two-hand` / `dual` / `shield` tell auto-pick when to choose your rotation.
 - `@if Spell` / `@unless Spell`: only include the line if you do or don't know that spell, e.g. `@unless Whirlwind`.
 - Anything WoW macros accept also works here: `[conditions]`, `/startattack`, `/use`, and so on.

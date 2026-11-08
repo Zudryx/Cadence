@@ -8,12 +8,93 @@
 
 local ADDON, ns = ...
 
--- Signature talents used to name talent trees (extend for other classes).
+-- Signature talents used to name talent trees. A tree gets the name whose
+-- list matches the most of its talents, so a few renamed or removed talents
+-- don't matter. Classic names plus the new WoW Forever ones.
 local TREE_SIGNATURES = {
   WARRIOR = {
-    Arms = { "Mortal Strike", "Sweeping Strikes", "Deep Wounds", "Tactical Mastery", "Improved Overpower" },
-    Fury = { "Bloodthirst", "Death Wish", "Flurry", "Cruelty", "Improved Slam" },
-    Protection = { "Shield Slam", "Last Stand", "Concussion Blow", "Shield Specialization", "Defiance" },
+    Arms = { "Mortal Strike", "Sweeping Strikes", "Deep Wounds", "Tactical Mastery", "Improved Overpower",
+      "Anger Management", "Impale", "Two-Handed Weapon Specialization", "Improved Rend" },
+    Fury = { "Bloodthirst", "Death Wish", "Flurry", "Cruelty", "Improved Slam", "Enrage",
+      "Unbridled Wrath", "Dual Wield Specialization", "Improved Berserker Rage" },
+    Protection = { "Shield Slam", "Last Stand", "Concussion Blow", "Shield Specialization", "Defiance",
+      "Improved Shield Block", "Toughness", "Improved Revenge", "One-Handed Weapon Specialization" },
+  },
+  PALADIN = {
+    Holy = { "Holy Shock", "Divine Favor", "Light's Vigil", "Illumination", "Infusion of Light", "Voice of Truth",
+      "Spiritual Focus", "Healing Light", "Divine Intellect", "Holy Power", "Improved Holy Strike", "Consecrated Ground" },
+    Protection = { "Templar's Bulwark", "Holy Shield", "Swift Judgement", "Improved Seal of Fury", "Iron Creed",
+      "Redoubt", "Reckoning", "Sacred Duty", "Shield Specialization", "Blessing of Sanctuary", "Improved Righteous Fury" },
+    Retribution = { "Seal of Command", "Sacred Arbiter", "Twist of Light", "Repentance", "Vengeance",
+      "Sanctified Judgement", "Holy Conduit", "Champion of the Light", "Vindication", "Conviction", "Benediction" },
+  },
+  HUNTER = {
+    ["Beast Mastery"] = { "Bestial Wrath", "Intimidation", "Frenzy", "Ferocity", "Unleashed Fury", "Spirit Bond",
+      "Endurance Training", "Bestial Discipline", "Improved Mend Pet", "Thick Hide", "Improved Aspect of the Hawk" },
+    Marksmanship = { "Trueshot Aura", "Aimed Shot", "Scatter Shot", "Mortal Shots", "Lethal Shots", "Efficiency",
+      "Barrage", "Hawk Eye", "Improved Serpent Sting", "Ranged Weapon Specialization", "Improved Arcane Shot" },
+    Survival = { "Wyvern Sting", "Counterattack", "Deterrence", "Lightning Reflexes", "Killer Instinct",
+      "Surefooted", "Savage Strikes", "Entrapment", "Monster Slaying", "Humanoid Slaying", "Trap Mastery" },
+  },
+  ROGUE = {
+    Assassination = { "Mutilate", "Venom", "Cold Blood", "Seal Fate", "Vigor", "Lethality", "Malice",
+      "Ruthlessness", "Relentless Strikes", "Blood Splatter", "Vile Poisons", "Improved Poisons", "Improved Slice and Dice" },
+    Combat = { "Adrenaline Rush", "Blade Flurry", "Riposte", "Aggression", "Weapon Expertise", "Hack and Slash",
+      "Flawless Execution", "Flash of Steel", "Coup de Grace", "Puncturing Wounds", "Composure", "Precision" },
+    Subtlety = { "Hemorrhage", "Premeditation", "Preparation", "Ghostly Strike", "Opportunity", "Initiative",
+      "Death Mark", "Boot Knife", "Dirty Tricks", "Quick Getaway", "Setup", "Serrated Blades", "Dirty Deeds" },
+  },
+  PRIEST = {
+    Discipline = { "Penance", "Power Infusion", "Inner Focus", "Mental Agility", "Soul Warding", "Renewed Hope",
+      "Divine Aegis", "Power in Light", "Twin Disciplines", "Meditation", "Martyrdom", "Improved Power Word: Shield",
+      "Wand Specialization", "Silent Resolve", "Mental Strength" },
+    Holy = { "Prayer of Mending", "Binding Heal", "Litany of Light", "Spirit of Redemption", "Holy Nova",
+      "Spiritual Guidance", "Spiritual Healing", "Inspiration", "Divine Fury", "Searing Light", "Twilight Focus",
+      "Improved Renew", "Blessed Recovery", "Holy Precision" },
+    Shadow = { "Shadowform", "Vampiric Embrace", "Mind Flay", "Improved Mind Flay", "Silence", "Shadow Weaving",
+      "Spirit Tap", "Blackout", "Darkness", "Devouring Contagion", "Early Demise", "Shadow Focus", "Shadow Reach" },
+  },
+  SHAMAN = {
+    Elemental = { "Lava Burst", "Lightning Overload", "Earthbound", "Elemental Alacrity", "Elemental Fury",
+      "Call of Thunder", "Concussion", "Convection", "Elemental Focus", "Reverberation", "Eye of the Storm",
+      "Elemental Reach", "Call of Flame", "Improved Fire Nova", "Elemental Devastation" },
+    Enhancement = { "Stormstrike", "Rage of the Farseer", "Maelstrom Weapon", "Improved Stormstrike",
+      "Mental Quickness", "Mental Dexterity", "Spirit Weapons", "Shamanistic Focus", "Flurry", "Elemental Weapons",
+      "Thundering Strikes", "Ancestral Knowledge", "Improved Ghost Wolf", "Anticipation" },
+    Restoration = { "Riptide", "Water Shield", "Mana Tide Totem", "Nature's Swiftness", "Purification", "Healing Way",
+      "Tidal Mastery", "Totemic Focus", "Mindfulness", "Natural Grace", "Ancestral Healing", "Restorative Totems",
+      "Healing Focus", "Tidal Focus" },
+  },
+  MAGE = {
+    Arcane = { "Arcane Power", "Presence of Mind", "Arcane Blast", "Arcane Wrath", "Missile Barrage",
+      "Arcane Instability", "Arcane Mind", "Arcane Concentration", "Arcane Focus", "Arcane Subtlety",
+      "Arcane Geometry", "Arcane Impact", "Arcane Shielding", "Magic Absorption", "Arcane Meditation" },
+    Fire = { "Combustion", "Blast Wave", "Pyroblast", "Heating Up", "Ignite", "Impact", "Critical Mass", "Fire Power",
+      "Wake of Fire", "Incineration", "Accelerant", "Improved Fireball", "Improved Scorch", "Master of Elements",
+      "Burning Soul" },
+    Frost = { "Ice Barrier", "Ice Lance", "Fingers of Frost", "Ice Block", "Cold Snap", "Shatter", "Winter's Chill",
+      "Frostbite", "Ice Shards", "Improved Frostbolt", "Permafrost", "Frost Channeling", "Improved Blizzard" },
+  },
+  WARLOCK = {
+    Affliction = { "Wrack", "Siphon Life", "Dark Pact", "Nightfall", "Shadow Mastery", "Malediction",
+      "Improved Drains", "Pandemic", "Malevolence", "Soul Siphon", "Amplify Curse", "Grim Reach",
+      "Improved Corruption", "Improved Life Tap", "Suppression" },
+    Demonology = { "Demonic Pact", "Demonic Sacrifice", "Soul Link", "Master Demonologist", "Fel Domination",
+      "Demonic Aegis", "Fel Vitality", "Demonic Energies", "Decimation", "Demonic Brand", "Demonic Knowledge",
+      "Unholy Power", "Demonic Embrace", "Master Summoner" },
+    Destruction = { "Incinerate", "Conflagrate", "Bane of Havoc", "Shadowburn", "Shadow and Flame", "Molten Skin",
+      "Ruin", "Emberstorm", "Devastation", "Bane", "Cataclysm", "Improved Shadow Bolt", "Aftermath", "Pyroclasm" },
+  },
+  DRUID = {
+    Balance = { "Moonkin Form", "Eclipse", "Insect Swarm", "Nature's Grace", "Moonfury", "Moonglow", "Vengeance",
+      "Genesis", "Nature's Majesty", "Nature's Splendor", "Overgrowth", "Improved Wrath", "Improved Moonfire",
+      "Nature's Reach", "Improved Entangling Roots" },
+    Feral = { "Berserk", "Primal Bite", "Shifting Power", "Leader of the Pack", "Heart of the Wild", "Feral Charge",
+      "Feral Swiftness", "Savage Fury", "Shredding Attacks", "Natural Reaction", "Rend and Tear", "Blood Frenzy",
+      "Predatory Strikes", "Sharpened Claws", "Thick Hide", "Ferocity", "Brutal Impact" },
+    Restoration = { "Wild Growth", "Swiftmend", "Gift of the Earthmother", "Living Spirit", "Naturalist",
+      "Nature's Swiftness", "Gift of Nature", "Improved Regrowth", "Improved Rejuvenation", "Furor", "Reflection",
+      "Nature's Focus", "Subtlety", "Natural Shapeshifter", "Improved Tranquility" },
   },
 }
 

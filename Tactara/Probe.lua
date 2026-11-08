@@ -112,7 +112,16 @@ function ns.Probe()
   Check("enemies near (Tactara)", function() return ns.CountEnemies() end)
 
   -- what can be read during a fight
-  Check("your rage", function() return need(UnitPower, "UnitPower")("player") end)
+  Check("your power (rage, energy or mana)", function() return need(UnitPower, "UnitPower")("player") end)
+  Check("combo points (game / Tactara count)", function()
+    local game = GetComboPoints and GetComboPoints("player", "target")
+    return game, ns.ComboPoints()
+  end)
+  Check("pet", function()
+    if not UnitExists("pet") then return "none" end
+    return UnitName("pet"), UnitIsDead("pet") and "dead" or "alive"
+  end)
+  Check("target creature type", function() return UnitCreatureType("target") end)
   Check("target health / max", function() return UnitHealth("target"), UnitHealthMax("target") end)
   Check("YOUR health / max", function() return UnitHealth("player"), UnitHealthMax("player") end)
   Check("target casting (name, interruptible?)", function()
@@ -125,26 +134,35 @@ function ns.Probe()
     return name, notInt
   end)
   Check("Tactara reads target cast as", function() return ns.TargetCastState() end)
-  Check("Battle Shout on you", function()
-    local a = need(C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName, "GetAuraDataBySpellName")("player", "Battle Shout", "HELPFUL")
-    if a == nil then return "not up" end
-    return a.expirationTime, a.duration
-  end)
-  Check("Rend on target", function()
-    local a = need(C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName, "GetAuraDataBySpellName")("target", "Rend", "HARMFUL")
-    if a == nil then return "not up" end
-    return a.expirationTime, a.duration
-  end)
+  -- a buff and a debuff your rotation checks, and two of its spells
+  local comp = ns.compiled and ns.compiled.main
+  local buff, debuff
+  for _, e in ipairs(comp and comp.priority or {}) do
+    for _, c in ipairs(e.live or {}) do
+      if c.kind == "missing" and not buff then buff = c.arg end
+      if c.kind == "nodebuff" and not debuff then debuff = c.arg end
+    end
+  end
+  if buff then
+    Check(buff .. " on you", function()
+      local a = need(C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName, "GetAuraDataBySpellName")("player", buff, "HELPFUL")
+      if a == nil then return "not up" end
+      return a.expirationTime, a.duration
+    end)
+  end
+  if debuff then
+    Check(debuff .. " on target", function()
+      local a = need(C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName, "GetAuraDataBySpellName")("target", debuff, "HARMFUL")
+      if a == nil then return "not up" end
+      return a.expirationTime, a.duration
+    end)
+  end
   local knownSpells = {}
-  for _, s in ipairs({ "Rend", "Heroic Strike", "Charge", "Thunder Clap", "Overpower", "Execute" }) do
+  for _, s in ipairs(comp and comp.spells or {}) do
     if ns.IsKnown(s) and #knownSpells < 2 then knownSpells[#knownSpells + 1] = s end
   end
   for _, sp in ipairs(knownSpells) do
     Check(sp .. " cooldown", function() return need(C_Spell and C_Spell.GetSpellCooldown, "GetSpellCooldown")(sp) end)
-    Check(sp .. " usable / no rage", function() return need(C_Spell and C_Spell.IsSpellUsable, "IsSpellUsable")(sp) end)
+    Check(sp .. " usable / no power", function() return need(C_Spell and C_Spell.IsSpellUsable, "IsSpellUsable")(sp) end)
   end
-  Check("Execute usable (only below 20%)", function()
-    if not ns.IsKnown("Execute") then return "not learned yet" end
-    return C_Spell.IsSpellUsable("Execute")
-  end)
 end

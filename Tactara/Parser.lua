@@ -7,6 +7,8 @@
 --   class: WARRIOR
 --   detect: Mortal Strike        (auto-pick this rotation once this spell is known)
 --   default: yes                 (auto-pick this one when nothing is detected)
+--   prefer: Primal Bite, ...     (when two rotations share a tree, the one whose
+--                                 talents you took more of wins)
 --
 --   [keypress]                   lines added to EVERY press (stance, /startattack, ...)
 --   [opener]                     steps played once at the start of each fight
@@ -28,6 +30,9 @@
 --   @nodebuff Rend               only when your debuff isn't on the target
 --   @enemies 3                   only with at least 3 enemies nearby (nameplates)
 --   @health 35                   only when your health is below 35%
+--   @creature Undead, Demon      only when the target is one of these creature types
+--   @nopet                       only when your pet is missing or dead
+--   @combo 4                     only with at least 4 combo points
 
 local ADDON, ns = ...
 ns = ns or {}
@@ -49,8 +54,11 @@ local SECTION_ALIASES = {
 }
 
 local KNOWN_ANN = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true,
-  ["missing"] = true, ["nodebuff"] = true, ["enemies"] = true, ["health"] = true }
-local LIVE_ANN = { ["missing"] = true, ["nodebuff"] = true, ["enemies"] = true, ["health"] = true }
+  ["missing"] = true, ["nodebuff"] = true, ["enemies"] = true, ["health"] = true,
+  ["creature"] = true, ["nopet"] = true, ["combo"] = true }
+local LIVE_ANN = { ["missing"] = true, ["nodebuff"] = true, ["enemies"] = true, ["health"] = true,
+  ["creature"] = true, ["nopet"] = true, ["combo"] = true }
+local NO_ARG_ANN = { ["nopet"] = true }   -- written without a value: "@nopet"
 ns.LIVE_ANN = LIVE_ANN
 
 local MAX_WEIGHT = 20
@@ -61,9 +69,10 @@ ns.MACRO_SOFT_LIMIT = 255
 local function SplitAnnotations(line)
   local from = 1
   while true do
-    local s, e, word = line:find("%s@(%a+)%s", from)
+    local s, e, word = line:find("%s@(%a+)", from)
     if not s then return trim(line), nil end
-    if KNOWN_ANN[word:lower()] then
+    local after = line:sub(e + 1, e + 1)
+    if (after == "" or after:match("%s")) and KNOWN_ANN[word:lower()] then
       return trim(line:sub(1, s - 1)), line:sub(s + 1)
     end
     from = e
@@ -75,8 +84,10 @@ local function ParseAnnotationTail(tail, warnings, lineNo)
   if not tail then return conds end
   for chunk in tail:gmatch("@([^@]+)") do
     local word, arg = chunk:match("^(%a+)%s+(.-)%s*$")
-    if word and KNOWN_ANN[word:lower()] and arg and arg ~= "" then
-      conds[#conds + 1] = { kind = word:lower(), arg = arg }
+    if not word then word, arg = chunk:match("^(%a+)%s*$"), "" end
+    local kind = word and word:lower()
+    if kind and KNOWN_ANN[kind] and ((arg and arg ~= "") or NO_ARG_ANN[kind]) then
+      conds[#conds + 1] = { kind = kind, arg = arg or "" }
     else
       warnings[#warnings + 1] = ("line %d: couldn't read '@%s'"):format(lineNo, trim(chunk))
     end

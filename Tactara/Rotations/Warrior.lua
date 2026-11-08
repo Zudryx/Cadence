@@ -54,6 +54,8 @@ notes: Two-hander in Battle Stance. Overpower and Mortal Strike first, Slam to f
 1x /cast Victory Rush
     /cast Overpower
     /cast Execute
+    /cast Slam
+    /cast Heroic Strike @unless Slam
 1x /cast Rend
     /cast Overpower
 1x /cast Sunder Armor
@@ -72,6 +74,8 @@ notes: Two-hander in Battle Stance. Overpower and Mortal Strike first, Slam to f
 1x /cast Mortal Strike
     /cast Overpower
     /cast Execute
+    /cast Cleave
+    /cast Heroic Strike @unless Cleave
 2x /cast Cleave
 1x /cast Heroic Strike @unless Cleave
 
@@ -145,6 +149,7 @@ notes: Dual wield. Battle Stance while leveling; once you learn Whirlwind (36) i
 1x /cast Victory Rush
     /cast Execute
     /cast Bloodthirst
+    /cast Heroic Strike
 1x /cast Rend @unless Whirlwind
     /cast Overpower @unless Whirlwind
 2x /cast Heroic Strike

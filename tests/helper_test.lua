@@ -687,5 +687,62 @@ local p3 = table.concat(chat, "\n")
 check(p3:find("YOUR health / max: 40, 100") and p3:find("Tactara reads target cast as: none"), "probe health + cast lines")
 inCombat = false
 
+-- new live checks: @creature, @nopet, @combo
+do
+  local creature = "Undead"
+  UnitCreatureType = function() return creature end
+  hasTarget = true
+  check(ns.CheckLive({ kind = "creature", arg = "Undead, Demon" }) == true, "@creature matches Undead")
+  creature = "Humanoid"
+  check(ns.CheckLive({ kind = "creature", arg = "Undead, Demon" }) == false, "@creature skips Humanoid")
+  UnitCreatureType = function() error("secret value") end
+  check(ns.CheckLive({ kind = "creature", arg = "Undead" }) == nil, "@creature unknown when hidden")
+  local realExists = UnitExists
+  local petUp = false
+  UnitExists = function(u) if u == "pet" then return petUp end return realExists(u) end
+  check(ns.CheckLive({ kind = "nopet", arg = "" }) == true, "@nopet with no pet")
+  petUp = true
+  check(ns.CheckLive({ kind = "nopet", arg = "" }) == false, "@nopet with a pet")
+  UnitExists = realExists
+  -- combo points: hidden by the game -> counted from builders, reset by finishers
+  GetComboPoints = function() error("secret value") end
+  inCombat = false
+  ns.trackerFrame._scripts.OnEvent(ns.trackerFrame, "PLAYER_REGEN_ENABLED")
+  ns.TrackCast("Sinister Strike"); ns.TrackCast("Sinister Strike"); ns.TrackCast("Mutilate")
+  check(ns.ComboPoints() == 4, "combo count from builders (" .. tostring(ns.ComboPoints()) .. ")")
+  check(ns.CheckLive({ kind = "combo", arg = "4" }) == true and ns.CheckLive({ kind = "combo", arg = "5" }) == false, "@combo uses the count")
+  ns.TrackCast("Mutilate"); ns.TrackCast("Mutilate")
+  check(ns.ComboPoints() == 5, "combo count caps at 5")
+  ns.TrackCast("Eviscerate")
+  check(ns.ComboPoints() == 0, "finisher resets the count")
+  GetComboPoints = function() return 3 end
+  check(ns.ComboPoints() == 3, "game's combo points win when shown")
+  GetComboPoints = nil
+  hasTarget = false
+  -- parser: @nopet needs no value, [@player] is still a macro target
+  local r = ns.Parse("name: t\n[priority]\n/cast Call Pet @nopet\n/cast [@player] Flash Heal @health 40\n/cast Exorcism @creature Undead, Demon")
+  check(#r.warnings == 0, "new annotations parse: " .. table.concat(r.warnings, "; "))
+  check(r.sections.priority[1].conds[1].kind == "nopet", "@nopet parsed")
+  check(r.sections.priority[2].cmd == "/cast [@player] Flash Heal", "[@player] kept in the command")
+end
+
+-- two rotations on one tree: the one whose "prefer:" talents you took wins
+do
+  local realList, realBuild = ns.ListRotations, ns.ReadBuild
+  ns.ListRotations = function() return {
+    { name = "Cat", tree = "Feral", prefer = "Shifting Power", default = true },
+    { name = "Bear", tree = "Feral", prefer = "Primal Bite, Natural Reaction" },
+  } end
+  ns.ReadBuild = function() return { top = "Feral", weapon = nil,
+    talents = { trees = { { name = "Feral", points = 20 } }, talents = { ["Primal Bite"] = 1, ["Natural Reaction"] = 2 } } } end
+  local saved = TactaraCharDB.active
+  TactaraCharDB.active = "auto"
+  check(ns.ResolveActive() == "Bear", "bear talents pick the bear rotation")
+  ns.ReadBuild = function() return { top = "Feral", weapon = nil,
+    talents = { trees = { { name = "Feral", points = 20 } }, talents = { ["Shifting Power"] = 1 } } } end
+  check(ns.ResolveActive() == "Cat", "cat talents pick the cat rotation")
+  ns.ListRotations, ns.ReadBuild, TactaraCharDB.active = realList, realBuild, saved
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

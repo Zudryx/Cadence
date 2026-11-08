@@ -4,10 +4,10 @@ One-button rotations and a rotation helper for **World of Warcraft: Forever**.
 
 - **One-button:** each press of your Tactara key casts the next step of your rotation.
 - **Rotation helper:** a popup and a glow on your action bars show the best skill to use right now. Interrupts glow red and defensives orange, but only when needed.
-- **Grows with you:** spells you haven't learned are skipped, so one rotation works from level 1 to 60. Tactara reads your talents and weapons to pick Arms, Fury or Protection for you.
+- **Grows with you:** spells you haven't learned are skipped, so one rotation works from level 1 to 60. Tactara reads your talents and weapons to pick the right spec for you.
 - **Editable in game:** `/tac` opens an editor. Edit or write rotations and share them as text.
 
-Currently: **Warrior** (Arms, Fury, Protection). More classes to come.
+Every class and spec is included: **Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock and Druid** (Cat and Bear are separate). Healing specs get the solo damage rotation you level with; healing your group stays in your hands. See [Tactara/README.md](Tactara/README.md#rotations-included) for the details per class.
 
 ## Fair play
 
