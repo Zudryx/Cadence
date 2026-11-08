@@ -1,0 +1,23 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]   # main is tested by the release workflow
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Syntax + version
+        run: lua5.4 tests/syntax.lua Cadence
+      - name: Rotation compiler
+        run: lua5.4 tests/compile_test.lua Cadence
+      - name: Addon smoke test (simulated WoW API)
+        run: lua5.4 tests/smoke_test.lua Cadence
+      - name: Helper, interrupts, defensives, build detection
+        run: lua5.4 tests/helper_test.lua Cadence

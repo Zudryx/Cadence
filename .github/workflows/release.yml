@@ -1,0 +1,53 @@
+name: Release
+
+# Every push to main: run the tests, and if the version in Cadence.toc
+# hasn't been released yet, publish GitHub release vX.Y.Z with the addon zip.
+# Merging a pull request that bumps the version = a new release.
+# The Windows updater installs the latest release.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+
+      - name: Tests
+        run: |
+          lua5.4 tests/syntax.lua Cadence
+          lua5.4 tests/compile_test.lua Cadence
+          lua5.4 tests/smoke_test.lua Cadence
+          lua5.4 tests/helper_test.lua Cadence
+
+      - name: Read version
+        id: v
+        run: |
+          VERSION=$(grep -m1 '^## Version:' Cadence/Cadence.toc | sed 's/## Version:[[:space:]]*//' | tr -d '\r[:space:]')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release if this version is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "v$VERSION is already released - nothing to do."
+            exit 0
+          fi
+          zip -r "Cadence-$VERSION.zip" Cadence -x "*.DS_Store"
+          sed -i "s#__REPO__#${GITHUB_REPOSITORY}#" "updater/Update-Cadence.ps1"
+          (cd updater && zip -r ../CadenceUpdater.zip "Update Cadence.bat" "Update-Cadence.ps1")
+          # release notes = this version's section of CHANGELOG.md
+          awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
+          [ -s notes.md ] || echo "Cadence $VERSION" > notes.md
+          gh release create "v$VERSION" "Cadence-$VERSION.zip" CadenceUpdater.zip --title "Cadence $VERSION" --notes-file notes.md
