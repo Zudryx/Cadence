@@ -496,7 +496,15 @@ do
     RegisterCanvasLayoutCategory = function(frame, name) return { canvas = frame, name = name, GetID = function() return 7 end } end,
   }
   CreateSettingsListSectionHeaderInitializer = function(t) return { header = t } end
-  CreateSettingsButtonInitializer = function(label, text, fn) return { button = label, fn = fn } end
+  CreateSettingsButtonInitializer = function(label, text, fn)
+    local init = { button = label, fn = fn, data = { name = label, buttonText = text, buttonClick = fn } }
+    function init:InitFrame(frame) frame.elementData = self; frame.Button:SetText(self.data.buttonText) end
+    return init
+  end
+  local function RowFrame()
+    return { Button = { text = "", SetText = function(b, t) b.text = t end },
+             GetElementData = function(f) return f.elementData end }
+  end
 
   ns.Options.Register()
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
@@ -506,6 +514,30 @@ do
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
   local function Btn(label) for _, i in ipairs(reg.inits) do if i.button == label then return i.fn end end end
+  -- key rows show the key they're set to, and update while the page is open
+  local function Init(label) for _, i in ipairs(reg.inits) do if i.button == label then return i end end end
+  TactaraCharDB.binds = {}
+  local wasCombat = inCombat
+  ns.Options.OnKeysChanged()
+  local row = RowFrame()
+  Init("One-button key"):InitFrame(row)
+  check(row.Button.text == "F (Keybindings)", "main key row shows the Keybindings-menu key (" .. row.Button.text .. ")")
+  local aoeRow = RowFrame()
+  Init("AoE key"):InitFrame(aoeRow)
+  check(aoeRow.Button.text == "Not set (click)", "unset key row says so (" .. aoeRow.Button.text .. ")")
+  inCombat = false
+  ns.SetTactaraKey("aoe", "G")
+  check(aoeRow.Button.text == "G", "setting a key updates the open page (" .. aoeRow.Button.text .. ")")
+  Init("Interrupt key"):InitFrame(aoeRow)          -- the list reused that frame for another row
+  ns.SetTactaraKey("aoe", "H")
+  check(aoeRow.Button.text ~= "H", "a reused row frame isn't overwritten")
+  local again = RowFrame()
+  Init("AoE key"):InitFrame(again)
+  check(again.Button.text == "H", "reopening the page shows the new key")
+  Btn("Give keys back")()
+  check(row.Button.text == "F (Keybindings)", "giving keys back refreshes the rows")
+  inCombat = wasCombat
+
   local headers = 0
   for _, i in ipairs(reg.inits) do if i.header then headers = headers + 1 end end
   check(headers == 5, "five sections on the page (" .. headers .. ")")

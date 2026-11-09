@@ -93,6 +93,7 @@ function ns.SetTactaraKey(which, key)
   end
   TactaraCharDB.binds[which] = key
   ns.ApplyBindings()
+  if ns.Options and ns.Options.OnKeysChanged then ns.Options.OnKeysChanged() end
 end
 
 ---------------------------------------------------------------------------

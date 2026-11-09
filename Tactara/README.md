@@ -1,4 +1,4 @@
-# Tactara 0.7.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.7.1: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 

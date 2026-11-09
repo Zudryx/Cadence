@@ -15,6 +15,28 @@ ns.Options = Options
 
 local category
 local registered = false
+local keyRows = {}   -- which -> { init = initializer, frame = row frame on screen }
+
+-- What a key button says: the key it's set to, or how to set one.
+local function KeyButtonText(which)
+  local label = ns.KeyLabel(which)
+  if not label or label == "none" then return "Not set (click)" end
+  return label
+end
+
+-- Update the key buttons after a key changes, including while the page is open.
+function Options.OnKeysChanged()
+  for which, row in pairs(keyRows) do
+    local text = KeyButtonText(which)
+    if row.init.data then row.init.data.buttonText = text end
+    local f = row.frame
+    -- the list reuses row frames, so only touch one that still shows this row
+    if f and f.Button and f.Button.SetText and f.GetElementData then
+      local ok, data = pcall(f.GetElementData, f)
+      if ok and data == row.init then f.Button:SetText(text) end
+    end
+  end
+end
 
 local function VarType(kind)
   local vt = Settings and Settings.VarType
@@ -138,6 +160,24 @@ local function BuildVertical()
     end
   end
 
+  -- A key row: the button shows the key it's set to; click it to pick another.
+  local function KeyRow(which, label, tooltip)
+    if not CreateSettingsButtonInitializer then return end
+    local init = CreateSettingsButtonInitializer(label, KeyButtonText(which),
+      function() ns.StartKeyCapture(which) end, tooltip, true)
+    local row = { init = init }
+    keyRows[which] = row
+    local initFrame = init.InitFrame
+    if type(initFrame) == "function" then
+      init.InitFrame = function(self, frame, ...)
+        if self.data then self.data.buttonText = KeyButtonText(which) end
+        initFrame(self, frame, ...)
+        row.frame = frame
+      end
+    end
+    layout:AddInitializer(init)
+  end
+
   -- Rotation ---------------------------------------------------------------
   Header("Rotation")
   local rotation = Proxy("active", "string", "Rotation", "auto",
@@ -160,12 +200,10 @@ local function BuildVertical()
 
   -- Keys -------------------------------------------------------------------
   Header("Keys")
-  Button("One-button key", "Set key", "Press any key (even one on your action bar). Tactara takes it over while loaded; your keybinds aren't changed.",
-    function() ns.StartKeyCapture("main") end)
-  Button("AoE key", "Set key", "A second key that plays the AoE version of your rotation.",
-    function() ns.StartKeyCapture("aoe") end)
-  Button("Interrupt key", "Set key", "Casts the best interrupt you have.",
-    function() ns.StartKeyCapture("interrupt") end)
+  local HOW = "\n\nClick, then press any key (even one on your action bar). Tactara takes it over while it's loaded; your keybinds aren't changed."
+  KeyRow("main", "One-button key", "The key that plays your rotation, one step per press." .. HOW)
+  KeyRow("aoe", "AoE key", "A second key that plays the AoE version of your rotation." .. HOW)
+  KeyRow("interrupt", "Interrupt key", "Casts the best interrupt you have." .. HOW)
   Button("Give keys back", "Remove", "Removes all Tactara keys. Each key goes back to what it did before.",
     function() ns.Unbind("all") end)
   Check(TactaraDB, "hideErrors", "Hide \"not ready\" errors", "Hides the red error text (\"Not enough rage\", \"Ability not ready\") while you press Tactara keys. Normal key presses still show them.", true)
@@ -250,6 +288,11 @@ function Options.Register()
   end
   if ok then category = cat end
 end
+
+-- Keys set in WoW's own Keybindings menu show up here too.
+local watcher = CreateFrame("Frame")
+pcall(watcher.RegisterEvent, watcher, "UPDATE_BINDINGS")
+watcher:SetScript("OnEvent", function() Options.OnKeysChanged() end)
 
 function Options.Open()
   if not category then

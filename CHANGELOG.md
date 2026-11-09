@@ -2,6 +2,9 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.7.1
+- The key buttons on the settings page now show the key each one is set to (or "Not set"), and update as soon as you set or remove a key, or change it in WoW's Keybindings menu.
+
 ## 0.7.0
 - **Settings page:** Esc > Options > AddOns > Tactara (or `/tac options`, or the new **Settings** button in the `/tac` window). Rotation choice, keys, both displays, the bar glow and suggestions are all on one page now; the `/tac` commands still work.
 - **Display size:** make the helper popup and the key bar anywhere from 50% to 200%. They stay where you put them when you resize.
