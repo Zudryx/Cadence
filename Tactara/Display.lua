@@ -103,6 +103,35 @@ function ns.KeyQueue(n)
   return q, pull
 end
 
+---------------------------------------------------------------------------
+-- When you're not fighting (out of combat, no living enemy targeted), each
+-- display can show normally ("show"), be see-through ("fade") or hide.
+-- While unlocked, "hide" shows see-through instead, so you can still move them.
+---------------------------------------------------------------------------
+
+function ns.NotFighting()
+  local inCombat = InCombatLockdown() or (UnitAffectingCombat and UnitAffectingCombat("player"))
+  if inCombat then return false end
+  local ok, enemy = pcall(function()
+    return UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDead("target")
+  end)
+  return not (ok and enemy)
+end
+
+-- Returns false when the display should stay hidden right now.
+function ns.ApplyIdleLook(f, mode)
+  if mode == "show" or not ns.NotFighting() then
+    f:SetAlpha(1)
+    return true
+  end
+  if mode == "hide" and TactaraCharDB.locked then
+    f:Hide()
+    return false
+  end
+  f:SetAlpha(tonumber(TactaraCharDB.fadeAlpha) or 0.45)
+  return true
+end
+
 function ns.UpdateDisplay()
   local f = display
   if not f then return end
@@ -126,6 +155,7 @@ function ns.UpdateDisplay()
   end
 
   f:Show()
+  if not ns.ApplyIdleLook(f, TactaraCharDB.keyIdle) then return end
   if pull then f.pullTag:Show() else f.pullTag:Hide() end
   for n = 1, 3 do
     if shown[n] then

@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.9.0"
+ns.VERSION = "0.10.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -236,6 +236,11 @@ local function InitDB()
   TactaraCharDB.helperScale = tonumber(TactaraCharDB.helperScale) or 1
   if TactaraCharDB.helperCooldowns == nil then TactaraCharDB.helperCooldowns = true end
   if TactaraCharDB.helperTint == nil then TactaraCharDB.helperTint = true end
+  local IDLE = { show = true, fade = true, hide = true }
+  if not IDLE[TactaraCharDB.helperIdle] then TactaraCharDB.helperIdle = "fade" end
+  if not IDLE[TactaraCharDB.keyIdle] then TactaraCharDB.keyIdle = "show" end
+  local fa = tonumber(TactaraCharDB.fadeAlpha)
+  TactaraCharDB.fadeAlpha = (fa and fa >= 0.1 and fa <= 0.9) and fa or 0.45
 end
 
 ---------------------------------------------------------------------------
@@ -365,6 +370,7 @@ local HELP = {
   "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
   "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
   "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
+  "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
   "|cffffd100/tac helper auto / priority / sequence|r  what the glow follows (auto: priority list, or the key's sequence while you press it)",
   "|cffffd100/tac build|r  your detected talents and weapons, and the rotation they pick",
@@ -433,6 +439,22 @@ local function HandleSlash(msg)
     if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then TactaraCharDB.showDisplay = on end
     if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then TactaraCharDB.showHelper = on end
     ns.HelperRefresh()
+  elseif cmd == "fade" then
+    local a, b = rest:lower():match("^(%S*)%s*(%S*)")
+    local pct = tonumber(a)
+    local MODES = { show = "show", normal = "show", fade = "fade", ["see-through"] = "fade", hide = "hide" }
+    if pct then
+      TactaraCharDB.fadeAlpha = math.max(10, math.min(90, pct)) / 100
+    elseif (a == "helper" or a == "popup" or a == "key" or a == "bar") and MODES[b] then
+      TactaraCharDB[(a == "key" or a == "bar") and "keyIdle" or "helperIdle"] = MODES[b]
+    elseif MODES[a] then
+      TactaraCharDB.helperIdle, TactaraCharDB.keyIdle = MODES[a], MODES[a]
+    else
+      ns.Print("/tac fade helper|key show|fade|hide, or /tac fade 40 for how visible see-through is (10-90%).")
+    end
+    ns.HelperRefresh()
+    ns.Print(("When not fighting: helper %s, key bar %s, see-through %d%%."):format(
+      TactaraCharDB.helperIdle, TactaraCharDB.keyIdle, math.floor(TactaraCharDB.fadeAlpha * 100 + 0.5)))
   elseif cmd == "lock" then
     TactaraCharDB.locked = true
     ns.HelperRefresh()

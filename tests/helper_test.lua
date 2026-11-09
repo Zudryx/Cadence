@@ -49,6 +49,8 @@ newObj = function(kind, name)
     CreateAnimation = function() return newObj("Animation") end,
     SetTexture = function(self, t) self._texture = t end,
     GetFrameLevel = function() return 5 end,
+    SetAlpha = function(self, a) self._alpha = a end,
+    GetAlpha = function(self) return self._alpha or 1 end,
     IsVisible = function(self) return self._shown end,
   }
   return setmetatable(o, { __index = function(t, k)
@@ -679,6 +681,42 @@ SlashCmdList.TACTARA("hide key")
 check(not ns.display:IsShown(), "hide key")
 SlashCmdList.TACTARA("show")
 check(ns.helperPopup:IsShown() and ns.display:IsShown(), "show brings both back")
+
+-- between fights: show / see-through / hide
+do
+  local wasCombat, wasTarget, wasLocked = inCombat, hasTarget, TactaraCharDB.locked
+  TactaraCharDB.locked = true
+  check(TactaraCharDB.helperIdle == "fade" and TactaraCharDB.keyIdle == "show" and TactaraCharDB.fadeAlpha == 0.45,
+    "defaults: helper see-through, key bar normal, 45%")
+  inCombat, hasTarget = false, false
+  ns.HelperRefresh()
+  check(ns.helperPopup:IsShown() and ns.helperPopup:GetAlpha() == 0.45, "helper see-through between fights")
+  check(ns.display:IsShown() and ns.display:GetAlpha() == 1, "key bar normal between fights")
+  SlashCmdList.TACTARA("fade key hide")
+  check(TactaraCharDB.keyIdle == "hide" and not ns.display:IsShown(), "/tac fade key hide")
+  SlashCmdList.TACTARA("fade 30")
+  check(TactaraCharDB.fadeAlpha == 0.3 and ns.helperPopup:GetAlpha() == 0.3, "/tac fade 30")
+  SlashCmdList.TACTARA("fade 5")
+  check(TactaraCharDB.fadeAlpha == 0.1, "see-through can't go below 10%")
+  hasTarget = true
+  ns.HelperRefresh()
+  check(ns.display:IsShown() and ns.display:GetAlpha() == 1 and ns.helperPopup:GetAlpha() == 1, "targeting an enemy brings both back")
+  hasTarget = false; inCombat = true
+  ns.HelperRefresh()
+  check(ns.display:IsShown() and ns.helperPopup:GetAlpha() == 1, "in combat: both full")
+  inCombat = false
+  TactaraCharDB.locked = false
+  ns.HelperRefresh()
+  check(ns.display:IsShown() and ns.display:GetAlpha() == 0.1, "unlocked: hidden key bar shows see-through so you can move it")
+  TactaraCharDB.locked = true
+  SlashCmdList.TACTARA("fade show")
+  ns.HelperRefresh()
+  check(TactaraCharDB.helperIdle == "show" and ns.helperPopup:GetAlpha() == 1 and ns.display:IsShown(), "/tac fade show sets both")
+  SlashCmdList.TACTARA("fade helper fade"); SlashCmdList.TACTARA("fade 45")
+  check(TactaraCharDB.helperIdle == "fade" and TactaraCharDB.keyIdle == "show" and TactaraCharDB.fadeAlpha == 0.45, "back to defaults")
+  inCombat, hasTarget, TactaraCharDB.locked = wasCombat, wasTarget, wasLocked
+  ns.HelperRefresh()
+end
 
 -- probe has the new lines
 chat = {}

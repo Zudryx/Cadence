@@ -509,7 +509,8 @@ do
   ns.Options.Register()
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
-      "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint" }) do
+      "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
+      "helperIdle", "keyIdle", "fadeAlpha" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
@@ -551,6 +552,11 @@ do
   check(TactaraCharDB.helperPos and math.abs(TactaraCharDB.helperPos.x - 10 / 1.5) < 0.01, "resizing keeps the popup in place")
   Btn("Positions")()
   check(TactaraCharDB.helperScale == 1 and ns.helperPopup:GetScale() == 1, "reset puts the size back")
+  S("keyIdle"):SetValue("hide")
+  check(TactaraCharDB.keyIdle == "hide", "key bar between-fights dropdown")
+  S("fadeAlpha"):SetValue(0.6)
+  check(TactaraCharDB.fadeAlpha == 0.6, "see-through slider")
+  S("keyIdle"):SetValue("show"); S("fadeAlpha"):SetValue(0.45)
 
   local opts
   for _, i in ipairs(reg.inits) do if i.kind == "dropdown" and i.s == S("active") then opts = i.opts() end end

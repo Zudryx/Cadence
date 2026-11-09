@@ -202,7 +202,6 @@ function ns.UpdateHelperPopup()
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
-  local inCombat = InCombatLockdown() or (UnitAffectingCombat and UnitAffectingCombat("player"))
   local shown, pull = ns.HelperQueue(3, true, "priority")
   local util = ns.lastUtility or {}
 
@@ -216,10 +215,8 @@ function ns.UpdateHelperPopup()
   end
 
   f:Show()
-  -- idle out of combat with nothing targeted: dim it
-  local okT, hostile = pcall(function() return UnitExists("target") and UnitCanAttack("player", "target") end)
-  local idle = not inCombat and not (okT and hostile)
-  f:SetAlpha(idle and 0.45 or 1)
+  -- not fighting: normal, see-through or hidden (settings page)
+  if not ns.ApplyIdleLook(f, TactaraCharDB.helperIdle) then return end
   for i = 1, 3 do SetIcon(f.icons[i], shown[i]) end
   if pull then f.pullTag:Show() else f.pullTag:Hide() end
   SetIcon(f.interrupt, util.interrupt)

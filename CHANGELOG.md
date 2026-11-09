@@ -2,6 +2,14 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.10.0
+- **Between fights, your choice:** the helper popup and the key bar can each show normally, go see-through or hide when you're out of combat with no enemy targeted. They come back the moment you target an enemy or combat starts.
+- A slider sets how visible see-through is (10% to 90%).
+- Defaults match before: the helper popup goes see-through, the key bar stays as it is.
+- On the settings page (Displays), or `/tac fade helper|key show|fade|hide` and `/tac fade 40`.
+- While the displays are unlocked, "hide" shows them see-through instead so you can still move them.
+- No gameplay changes.
+
 ## 0.9.0
 - **Helper icons tell you more**, like your action bars do: a clock sweep while a spell is on cooldown, red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used right now. In boss fights and arenas, where WoW hides this, the icons stay plain.
 - Both can be turned off on the settings page (Displays).

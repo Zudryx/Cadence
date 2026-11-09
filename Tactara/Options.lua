@@ -141,17 +141,22 @@ local function BuildVertical()
     return s
   end
 
-  local function SizeSlider(key, label, tooltip)
+  -- A slider that shows its value as a percentage.
+  local function PercentSlider(key, label, tooltip, default, min, max, fn)
     local variable = "Tactara_" .. key
-    local s = Settings.RegisterAddOnSetting(cat, variable, key, TactaraCharDB, VarType("number"), label, 1)
-    local opts = Settings.CreateSliderOptions(0.5, 2, 0.05)
+    local s = Settings.RegisterAddOnSetting(cat, variable, key, TactaraCharDB, VarType("number"), label, default)
+    local opts = Settings.CreateSliderOptions(min, max, 0.05)
     if opts.SetLabelFormatter and MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label then
       opts:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(v)
         return ("%d%%"):format(math.floor(v * 100 + 0.5))
       end)
     end
     Settings.CreateSlider(cat, s, opts, tooltip)
-    OnChange(s, variable, function() ns.ApplyDisplayScales() end)
+    OnChange(s, variable, fn)
+  end
+
+  local function SizeSlider(key, label, tooltip)
+    PercentSlider(key, label, tooltip, 1, 0.5, 2, function() ns.ApplyDisplayScales() end)
   end
 
   local function Button(label, text, tooltip, fn)
@@ -223,6 +228,15 @@ local function BuildVertical()
   Check(TactaraCharDB, "helperTint", "Color helper icons", "Red when the target is out of range, blue when you're short on mana, rage or energy, grey when the spell can't be used right now.", true, Refresh)
   Check(TactaraCharDB, "showDisplay", "Show the key bar", "What your Tactara key will cast on its next presses.", true, Refresh)
   SizeSlider("displayScale", "Key bar size", "Makes the key bar bigger or smaller.")
+  local IDLE_CHOICES = {
+    { "show", "Show normally" },
+    { "fade", "See-through" },
+    { "hide", "Hide" },
+  }
+  local IDLE_TIP = " \"Not fighting\" means out of combat with no enemy targeted; target an enemy and it's back. While the displays are unlocked, Hide shows them see-through instead so you can still move them."
+  Dropdown(TactaraCharDB, "helperIdle", "Helper popup when not fighting", "How the helper popup looks between fights." .. IDLE_TIP, "fade", IDLE_CHOICES, Refresh)
+  Dropdown(TactaraCharDB, "keyIdle", "Key bar when not fighting", "How the key bar looks between fights." .. IDLE_TIP, "show", IDLE_CHOICES, Refresh)
+  PercentSlider("fadeAlpha", "See-through amount", "How visible a see-through display is: lower is fainter.", 0.45, 0.1, 0.9, Refresh)
   Check(TactaraCharDB, "locked", "Lock positions", "Turn off to drag the displays where you want them.", false, Refresh)
   Button("Positions", "Reset", "Moves both displays back to the middle of the screen at normal size.", ns.ResetDisplayPositions)
 
@@ -256,6 +270,8 @@ local COMMANDS = {
   "/tac bind  - pick your one-button key",
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
+  "/tac fade helper|key show|fade|hide  - between fights",
+  "/tac fade 40  - how visible see-through is",
   "/tac highlight  - bar glow on/off",
   "/tac glow strong | normal | subtle | test",
   "/tac helper auto | priority | sequence",
