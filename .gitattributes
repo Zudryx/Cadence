@@ -5,3 +5,6 @@
 *.lua text eol=lf
 *.toc text eol=lf
 *.xml text eol=lf
+# images
+*.tga binary
+*.png binary

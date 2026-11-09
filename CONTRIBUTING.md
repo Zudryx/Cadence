@@ -33,6 +33,8 @@ Open a [rotation suggestion](https://github.com/Zudryx/Tactara/issues/new/choose
 | `Tactara/Build.lua` | Talent tree names used to auto-pick a spec. |
 | `Tactara/Tracker.lua` | How long buffs and debuffs last, for the helper's timers. |
 | `Tactara/Options.lua` | The settings page in Esc > Options > AddOns. |
+| `Tactara/Media/Icon.tga` | The icon in WoW's addon list (64x64, 32-bit TGA). |
+| `media/` | Logo (`logo.svg` is the source), CurseForge logo and the GitHub banner. Not part of the addon download. |
 | `tests/class_data.lua` | Which spells each class learns at which level, used by the tests. |
 | `MAINTAINING.md` | The checklist for rotation updates. |
 | `updater/` | The Windows updater. |

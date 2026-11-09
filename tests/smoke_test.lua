@@ -594,6 +594,19 @@ do
   Settings = nil
 end
 
+-- minimap addon-menu entry
+do
+  check(type(Tactara_OnAddonCompartmentClick) == "function", "addon menu click handler exists")
+  local okE = pcall(Tactara_OnAddonCompartmentEnter, nil, UIParent)
+  local okL = pcall(Tactara_OnAddonCompartmentLeave)
+  local opened = false
+  local realOpen = ns.Options.Open
+  ns.Options.Open = function() opened = true end
+  Tactara_OnAddonCompartmentClick(nil, "RightButton")
+  ns.Options.Open = realOpen
+  check(okE and okL and opened, "addon menu: tooltip and right-click opens settings")
+end
+
 -- every class gets its own rotation picked and built without errors
 do
   local realClass = UnitClass

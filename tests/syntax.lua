@@ -6,6 +6,24 @@ for line in io.open(root .. "/Tactara.toc"):read("a"):gmatch("[^\r\n]+") do
   if not line:find("^##") and line:find("%.lua$") then files[#files + 1] = (line:gsub("\\", "/")) end
 end
 local bad = 0
+-- the addon-list icon named in Tactara.toc must exist and be a 32-bit TGA with power-of-two sides
+do
+  local toc = io.open(root .. "/Tactara.toc"):read("a")
+  local icon = toc:match("## IconTexture:%s*Interface\\AddOns\\Tactara\\([^\r\n]+)")
+  if not icon then print("FAIL no IconTexture in Tactara.toc"); bad = bad + 1
+  else
+    local f = io.open(root .. "/" .. icon:gsub("\\", "/") .. ".tga", "rb")
+    if not f then print("FAIL icon file missing: " .. icon .. ".tga"); bad = bad + 1
+    else
+      local h = f:read(18); f:close()
+      local w, ht = h:byte(13) + 256 * h:byte(14), h:byte(15) + 256 * h:byte(16)
+      local pow2 = function(n) return n > 0 and (n & (n - 1)) == 0 end
+      if h:byte(3) ~= 2 or h:byte(17) ~= 32 or not pow2(w) or not pow2(ht) then
+        print(("FAIL icon must be an uncompressed 32-bit TGA with power-of-two sides (%dx%d)"):format(w, ht)); bad = bad + 1
+      else print(("ok   icon %s.tga %dx%d"):format(icon, w, ht)) end
+    end
+  end
+end
 if #files < 13 then print("FAIL only " .. #files .. " files listed in Tactara.toc"); bad = bad + 1 end
 for _, f in ipairs(files) do
   local fn, err = loadfile(root .. "/" .. f)

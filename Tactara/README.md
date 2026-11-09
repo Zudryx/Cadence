@@ -1,4 +1,4 @@
-# Tactara 0.7.1: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.8.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -77,6 +77,8 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
 The `/tac` commands still work, and both always show the same settings.
+
+Tactara is also in the **minimap's addon menu** (the button that lists your addons, if your minimap has it): left-click opens the rotation editor, right-click the settings page.
 
 ## Rotation helper (bar highlight)
 

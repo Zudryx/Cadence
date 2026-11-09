@@ -1,3 +1,5 @@
+<p align="center"><img src="media/logo.png" width="128" alt="Tactara logo"></p>
+
 # Tactara
 
 One-button rotations and a rotation helper for **World of Warcraft: Forever**.

@@ -2,6 +2,11 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.8.0
+- **Tactara has an icon.** It shows next to Tactara in WoW's addon list.
+- Tactara is also in the minimap's addon menu: left-click opens the rotation editor, right-click the settings page.
+- No gameplay changes.
+
 ## 0.7.1
 - The key buttons on the settings page now show the key each one is set to (or "Not set"), and update as soon as you set or remove a key, or change it in WoW's Keybindings menu.
 

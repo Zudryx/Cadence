@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.7.1"
+ns.VERSION = "0.8.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -502,6 +502,26 @@ local function HandleSlash(msg)
   else
     ns.Print("Unknown command. /tac help for the list.")
   end
+end
+
+-- Entry in the minimap's addon menu (shows Tactara's icon). Left-click opens the
+-- rotation editor, right-click the settings page.
+function Tactara_OnAddonCompartmentClick(_, button)
+  if button == "RightButton" then ns.Options.Open() else ns.Editor.Toggle() end
+end
+
+function Tactara_OnAddonCompartmentEnter(_, menuButton)
+  if not GameTooltip then return end
+  GameTooltip:SetOwner(menuButton or UIParent, "ANCHOR_LEFT")
+  GameTooltip:AddLine("Tactara " .. ns.VERSION)
+  GameTooltip:AddLine((ns.activeName or "No rotation yet"), 1, 1, 1)
+  GameTooltip:AddLine("Left-click: rotation editor", 0.6, 0.8, 1)
+  GameTooltip:AddLine("Right-click: settings", 0.6, 0.8, 1)
+  GameTooltip:Show()
+end
+
+function Tactara_OnAddonCompartmentLeave()
+  if GameTooltip then GameTooltip:Hide() end
 end
 
 SLASH_TACTARA1 = "/tactara"
