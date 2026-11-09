@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.6.0"
+ns.VERSION = "0.7.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -232,6 +232,8 @@ local function InitDB()
   if TactaraCharDB.interrupts == nil then TactaraCharDB.interrupts = true end
   if TactaraCharDB.defensives == nil then TactaraCharDB.defensives = true end
   TactaraCharDB.display = TactaraCharDB.display or {}
+  TactaraCharDB.displayScale = tonumber(TactaraCharDB.displayScale) or 1
+  TactaraCharDB.helperScale = tonumber(TactaraCharDB.helperScale) or 1
 end
 
 ---------------------------------------------------------------------------
@@ -329,6 +331,8 @@ events:SetScript("OnEvent", function(self, event, arg1, ...)
     C_Timer.After(2, ns.MigrateOldKeybinds)   -- bindings are fully loaded by then
     ns.CreateDisplay()
     ns.CreateHelperPopup()
+    ns.ApplyDisplayScales()
+    ns.Options.Register()
     ns.RequestRebuild("login", 1)
     ns.Print(("v%s loaded. Type |cffffd100/tac|r to open the editor, |cffffd100/tac help|r for commands."):format(ns.VERSION))
     return
@@ -353,7 +357,7 @@ end)
 ---------------------------------------------------------------------------
 
 local HELP = {
-  "|cffffd100/tac|r  open the rotation editor",
+  "|cffffd100/tac|r  open the rotation editor   |cffffd100/tac options|r  settings page (also Esc > Options > AddOns)",
   "|cffffd100/tac use <name>|r  use a rotation (e.g. /tac use prot), or |cffffd100/tac use auto|r",
   "|cffffd100/tac list|r  list rotations for your class",
   "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
@@ -382,8 +386,10 @@ local function HandleSlash(msg)
   local cmd, rest = msg:match("^(%S*)%s*(.-)$")
   cmd = (cmd or ""):lower()
 
-  if cmd == "" or cmd == "edit" or cmd == "config" or cmd == "options" then
+  if cmd == "" or cmd == "edit" or cmd == "config" then
     ns.Editor.Toggle()
+  elseif cmd == "options" or cmd == "settings" or cmd == "opt" then
+    ns.Options.Open()
   elseif cmd == "help" or cmd == "?" then
     for _, l in ipairs(HELP) do ns.Print(l) end
   elseif cmd == "use" then

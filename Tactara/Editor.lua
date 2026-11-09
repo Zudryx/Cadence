@@ -394,6 +394,20 @@ local function Build()
 
   local help = MakeButton(frame, "?", 24)
   help:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -14, -30)
+
+  buttons.settings = MakeButton(frame, "Settings", 80)
+  buttons.settings:SetPoint("RIGHT", help, "LEFT", -6, 0)
+  buttons.settings:SetScript("OnClick", function()
+    frame:Hide()
+    ns.Options.Open()
+  end)
+  buttons.settings:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    GameTooltip:AddLine("Settings")
+    GameTooltip:AddLine("Displays, sizes, the bar glow, suggestions and keys, all on one page (Esc > Options > AddOns > Tactara).", 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  buttons.settings:SetScript("OnLeave", function() GameTooltip:Hide() end)
   help:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     for i, l in ipairs(HELP_LINES) do
@@ -502,6 +516,11 @@ end
 function Editor.Toggle()
   if not frame then Build() end
   if frame:IsShown() then frame:Hide() else frame:Show() end
+end
+
+function Editor.Show()
+  if not frame then Build() end
+  frame:Show()
 end
 
 -- Called after every rebuild so the list shows the right active rotation.

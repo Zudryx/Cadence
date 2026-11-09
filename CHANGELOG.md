@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.7.0
+- **Settings page:** Esc > Options > AddOns > Tactara (or `/tac options`, or the new **Settings** button in the `/tac` window). Rotation choice, keys, both displays, the bar glow and suggestions are all on one page now; the `/tac` commands still work.
+- **Display size:** make the helper popup and the key bar anywhere from 50% to 200%. They stay where you put them when you resize.
+- **Reset positions** puts both displays back in the middle of the screen if you lose one.
+- No gameplay changes.
+
 ## 0.6.0
 - **Every class is here.** New rotations for Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock and Druid, one per spec (Druid gets both Cat and Bear), built from the WoW Forever guides and Forever's new spells: Holy Strike and Seal of Fury, Summon Hawk and Strider Kick, Shank, Mutilate and Venom, Shadow Word: Death and Penance, Lava Burst and Stormstrike, Arcane Blast, Ice Lance and Frostfire Bolt, Bane of Agony and Wrack, Lacerate and Primal Bite.
 - Auto-pick works for every class: it reads your talent trees, then your weapon, then picks a default. Druids with Feral points get Cat or Bear from the talents they took.

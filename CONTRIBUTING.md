@@ -32,6 +32,7 @@ Open a [rotation suggestion](https://github.com/Zudryx/Tactara/issues/new/choose
 | `Tactara/Parser.lua` | The rotation format in detail (comments at the top). |
 | `Tactara/Build.lua` | Talent tree names used to auto-pick a spec. |
 | `Tactara/Tracker.lua` | How long buffs and debuffs last, for the helper's timers. |
+| `Tactara/Options.lua` | The settings page in Esc > Options > AddOns. |
 | `tests/class_data.lua` | Which spells each class learns at which level, used by the tests. |
 | `MAINTAINING.md` | The checklist for rotation updates. |
 | `updater/` | The Windows updater. |

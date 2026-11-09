@@ -449,6 +449,119 @@ do
   GetBindingKey = realGBK
 end
 
+-- settings page (Esc > Options > AddOns > Tactara)
+do
+  local reg = { settings = {}, inits = {}, cats = {} }
+  local scales = {}
+  for _, f in ipairs({ ns.display, ns.helperPopup }) do
+    rawset(f, "SetScale", function(self, v) scales[self] = v end)
+    rawset(f, "GetScale", function(self) return scales[self] or 1 end)
+  end
+  Settings = {
+    VarType = { Boolean = "boolean", Number = "number", String = "string" },
+    RegisterVerticalLayoutCategory = function(name)
+      local cat = { name = name, GetID = function() return 42 end }
+      local layout = { AddInitializer = function(_, i) table.insert(reg.inits, i) end }
+      return cat, layout
+    end,
+    RegisterAddOnSetting = function(cat, variable, key, tbl, vtype, label, default)
+      assert(type(tbl) == "table", variable .. " has no table")
+      if tbl[key] == nil then tbl[key] = default end
+      assert(type(tbl[key]) == vtype, variable .. " is " .. type(tbl[key]) .. ", expected " .. vtype)
+      local st = { variable = variable }
+      function st:GetValue() return tbl[key] end
+      function st:SetValue(v) tbl[key] = v; if self.cb then self.cb(self, v) end end
+      function st:SetValueChangedCallback(cb) self.cb = cb end
+      reg.settings[variable] = st
+      return st
+    end,
+    RegisterProxySetting = function(cat, variable, vtype, label, default, get, set)
+      local st = { variable = variable }
+      function st:GetValue() return get() end
+      function st:SetValue(v) set(v) end
+      function st:SetValueChangedCallback(cb) self.cb = cb end
+      reg.settings[variable] = st
+      return st
+    end,
+    CreateCheckbox = function(cat, st) table.insert(reg.inits, { kind = "check", s = st }) end,
+    CreateDropdown = function(cat, st, opts) table.insert(reg.inits, { kind = "dropdown", s = st, opts = opts }) end,
+    CreateSlider = function(cat, st) table.insert(reg.inits, { kind = "slider", s = st }) end,
+    CreateSliderOptions = function() return { SetLabelFormatter = function() end } end,
+    CreateControlTextContainer = function()
+      local d = {}
+      return { Add = function(_, v, l) d[#d + 1] = { value = v, label = l } end, GetData = function() return d end }
+    end,
+    RegisterAddOnCategory = function(cat) reg.cats[#reg.cats + 1] = cat end,
+    OpenToCategory = function(id) reg.opened = id end,
+    RegisterCanvasLayoutCategory = function(frame, name) return { canvas = frame, name = name, GetID = function() return 7 end } end,
+  }
+  CreateSettingsListSectionHeaderInitializer = function(t) return { header = t } end
+  CreateSettingsButtonInitializer = function(label, text, fn) return { button = label, fn = fn } end
+
+  ns.Options.Register()
+  check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
+  for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
+      "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives" }) do
+    check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
+  end
+  local function S(v) return reg.settings["Tactara_" .. v] end
+  local function Btn(label) for _, i in ipairs(reg.inits) do if i.button == label then return i.fn end end end
+  local headers = 0
+  for _, i in ipairs(reg.inits) do if i.header then headers = headers + 1 end end
+  check(headers == 5, "five sections on the page (" .. headers .. ")")
+
+  S("showHelper"):SetValue(false)
+  check(TactaraCharDB.showHelper == false and not ns.helperPopup:IsShown(), "unticking the helper hides it")
+  S("showHelper"):SetValue(true)
+  check(TactaraCharDB.showHelper == true, "ticking the helper shows it")
+  S("helperScale"):SetValue(1.5)
+  check(ns.helperPopup:GetScale() == 1.5 and TactaraCharDB.helperScale == 1.5, "helper size slider")
+  check(TactaraCharDB.helperPos and math.abs(TactaraCharDB.helperPos.x - 10 / 1.5) < 0.01, "resizing keeps the popup in place")
+  Btn("Positions")()
+  check(TactaraCharDB.helperScale == 1 and ns.helperPopup:GetScale() == 1, "reset puts the size back")
+
+  local opts
+  for _, i in ipairs(reg.inits) do if i.kind == "dropdown" and i.s == S("active") then opts = i.opts() end end
+  check(opts and opts[1].value == "auto" and #opts >= 4, "rotation list: automatic + your class's rotations")
+  S("active"):SetValue("Warrior - Fury"); runTimers()
+  check(TactaraCharDB.active == "Warrior - Fury" and ns.activeName == "Warrior - Fury", "picking a rotation in settings")
+  S("active"):SetValue("auto"); runTimers()
+  check(TactaraCharDB.active == "auto", "back to automatic")
+
+  S("glowStyle"):SetValue("subtle")
+  check(TactaraDB.glowStyle == "subtle", "glow strength from settings")
+  S("glowStyle"):SetValue("strong")
+  S("keyDown"):SetValue(false)
+  check(TactaraCharDB.keyDown == false and ns.useKeyDown == false, "key-up from settings")
+  S("keyDown"):SetValue(true)
+  check(TactaraCharDB.keyDown == nil and ns.useKeyDown == true, "key-down back on")
+  S("interrupts"):SetValue(false)
+  check(TactaraCharDB.interrupts == false, "interrupt suggestions off")
+  S("interrupts"):SetValue(true)
+
+  ns.Options.Open()
+  check(reg.opened == 42, "Options.Open opens the page")
+  reg.opened = nil
+  SlashCmdList.TACTARA("options")
+  check(reg.opened == 42, "/tac options opens the page")
+  local realShow, shown = ns.Editor.Show, false
+  ns.Editor.Show = function() shown = true end
+  Btn("Rotation editor")()
+  ns.Editor.Show = realShow
+  check(shown, "editor button opens the editor")
+
+  -- a client missing part of the API gets the plain command list instead
+  local before = ns.Options
+  local fresh = assert(loadfile(root .. "/Options.lua"))
+  fresh("Tactara", ns)
+  Settings.CreateSlider = nil
+  reg.cats = {}
+  ns.Options.Register()
+  check(#reg.cats == 1 and reg.cats[1].canvas ~= nil, "fallback page when the settings API is incomplete")
+  ns.Options = before
+  Settings = nil
+end
+
 -- every class gets its own rotation picked and built without errors
 do
   local realClass = UnitClass
