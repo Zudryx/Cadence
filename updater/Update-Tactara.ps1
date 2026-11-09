@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Tactara updater for WoW Forever (Windows).
 # Double-click "Update Tactara.bat" next to this file.
 #

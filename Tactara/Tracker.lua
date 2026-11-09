@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: buff/debuff timers from your own casts.
 --
 -- WoW Forever often won't tell addons which buffs and debuffs are up

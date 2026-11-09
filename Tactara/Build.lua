@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: reading your build (talents + weapons) and nearby enemies.
 --
 -- WoW Forever uses the modern talent system (C_ClassTalents / C_Traits), even

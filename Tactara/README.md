@@ -1,4 +1,4 @@
-# Tactara 0.11.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.11.1: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -195,3 +195,7 @@ detect: Mortal Strike      # auto-pick this rotation once you know this spell
 - Spell names are in English, so non-English game clients need translated rotations.
 - Stance numbers assume 1 = Battle, 2 = Defensive, 3 = Berserker. If you skipped the Defensive Stance quest, Berserker becomes stance 2. Edit the `nostance:` numbers if that applies to you.
 - A step longer than 255 characters may get cut off. The editor warns you if that happens.
+
+## License
+
+Copyright (C) 2026 Zudryx. Tactara is free software under the GNU General Public License v3 only (see `LICENSE.txt`). The name "Tactara" and its logo aren't covered by the license: a changed version you share needs its own name and logo (see `NOTICE.md`). Source code: https://github.com/Zudryx/Tactara

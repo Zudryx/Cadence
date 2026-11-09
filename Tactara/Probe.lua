@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: /tac probe
 -- Reports which game information WoW Forever lets addons read, so the
 -- build-aware "best next skill" feature can use whatever is available.

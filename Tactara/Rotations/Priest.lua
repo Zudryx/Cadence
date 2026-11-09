@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: built-in Priest rotations for WoW Forever.
 --
 -- Based on the WoW Forever Priest guides on Warcraft Tavern, wowtbc.gg and

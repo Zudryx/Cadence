@@ -44,9 +44,12 @@ jobs:
             echo "v$VERSION is already released - nothing to do."
             exit 0
           fi
+          # the license and name/logo notice travel with every download
+          cp LICENSE Tactara/LICENSE.txt && cp NOTICE.md Tactara/NOTICE.md
           zip -r "Tactara-$VERSION.zip" Tactara -x "*.DS_Store"
           sed -i "s#__REPO__#${GITHUB_REPOSITORY}#" "updater/Update-Tactara.ps1"
-          (cd updater && zip -r ../TactaraUpdater.zip "Update Tactara.bat" "Update-Tactara.ps1")
+          cp LICENSE updater/LICENSE.txt
+          (cd updater && zip -r ../TactaraUpdater.zip "Update Tactara.bat" "Update-Tactara.ps1" LICENSE.txt)
           # release notes = this version's section of CHANGELOG.md
           awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
           [ -s notes.md ] || echo "Tactara $VERSION" > notes.md

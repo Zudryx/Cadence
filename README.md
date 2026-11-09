@@ -66,4 +66,8 @@ Bug reports, rotation suggestions and pull requests are welcome. See [CONTRIBUTI
 
 ## License
 
-Tactara is released under the [MIT License](LICENSE).
+Tactara is free and open source under the [GNU General Public License v3](LICENSE) (GPL-3.0 only). You can fork it, change it and share your version, as long as your version stays under the same license with its code available.
+
+**The name and logo aren't part of that.** A changed version you share needs its own name and logo, and can't present itself as the official Tactara. Saying it's "based on Tactara" with a link back is fine. See [NOTICE.md](NOTICE.md) for the exact terms.
+
+Versions up to 0.11.0 were released under the MIT License, and copies of those stay under it.

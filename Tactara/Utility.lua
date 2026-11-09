@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: interrupts and defensives for the rotation helper.
 --
 -- These only appear when the moment calls for it:

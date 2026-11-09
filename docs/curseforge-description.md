@@ -66,6 +66,8 @@ Use one key press per cast. Turbo keys, key repeaters and programs that press ke
 
 ## Feedback and source
 
-Tactara is free and open source under the MIT License. Report bugs, suggest rotation changes or read the code on GitHub: https://github.com/Zudryx/Tactara
+Tactara is free and open source under the GNU GPL v3. Report bugs, suggest rotation changes or read the code on GitHub: https://github.com/Zudryx/Tactara
+
+The license covers the code, not the name or logo: a changed version you share needs its own name and logo.
 
 Tactara is a fan-made project. It isn't made, endorsed or supported by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.

@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.11.1
+- **Tactara is now licensed under the GNU GPL v3** (it was MIT). You can still fork it and share changes, as long as your version stays open source under the same license.
+- **The name and logo stay with Tactara:** a changed version you share needs its own name and logo. See NOTICE.md.
+- The license and notice now come with every download.
+- No gameplay changes.
+
 ## 0.11.0
 - **See further ahead, or just one icon:** the key bar and the helper popup can each show 1 to 10 icons instead of always 3.
 - **Key bar: whole rotation** shows every step your key will cast until the rotation repeats.

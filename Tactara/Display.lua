@@ -1,7 +1,11 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: the key bar.
 -- Shows what your Tactara key will cast on its next presses (the one-button
--- sequence): 1 to 10 icons, or the whole rotation. The helper popup (HelperDisplay.lua) shows the best
--- skill to use instead. Both come from Tactara's own data.
+-- sequence): 1 to 10 icons, or the whole rotation. The helper popup
+-- (HelperDisplay.lua) shows the best skill to use instead. Both come from
+-- Tactara's own data.
 
 local ADDON, ns = ...
 

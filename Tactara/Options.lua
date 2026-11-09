@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: settings page in Esc > Options > AddOns > Tactara.
 --
 -- Everything here can also be done with /tac commands; this page just puts

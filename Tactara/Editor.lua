@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: in-game rotation editor (/tac)
 -- Left: rotations for your class. Right: the rotation text.
 -- Import = click New, paste, Save. Export = Select All, Ctrl+C.

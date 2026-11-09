@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: rotation text parser + compiler.
 -- Pure Lua (no WoW API calls) so it can be tested outside the game.
 --

@@ -1,3 +1,6 @@
+-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.
+-- SPDX-License-Identifier: GPL-3.0-only
+
 -- Tactara: pick a key for the rotation without touching your saved keybinds.
 --
 -- WoW no longer lets an action-bar macro /click a button that runs another

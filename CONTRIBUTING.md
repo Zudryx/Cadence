@@ -62,3 +62,7 @@ Copy the `Tactara` folder into `World of Warcraft\_forever_\Interface\AddOns`, t
 
 - If players should get your change as an update, raise the version in **both** `Tactara/Tactara.toc` and `Tactara/Core.lua` (the tests check they match) and add a short, plain-words entry at the top of `CHANGELOG.md`.
 - When a pull request with a new version is merged into `main`, the release and its download files are published automatically. Changes to docs alone don't make a release.
+
+### License of your contribution
+
+Tactara is licensed under the GNU GPL v3 only (see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md)). By sending a pull request, you agree that your contribution is released under the same license.
