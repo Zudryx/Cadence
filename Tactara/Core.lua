@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.8.0"
+ns.VERSION = "0.9.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -234,6 +234,8 @@ local function InitDB()
   TactaraCharDB.display = TactaraCharDB.display or {}
   TactaraCharDB.displayScale = tonumber(TactaraCharDB.displayScale) or 1
   TactaraCharDB.helperScale = tonumber(TactaraCharDB.helperScale) or 1
+  if TactaraCharDB.helperCooldowns == nil then TactaraCharDB.helperCooldowns = true end
+  if TactaraCharDB.helperTint == nil then TactaraCharDB.helperTint = true end
 end
 
 ---------------------------------------------------------------------------

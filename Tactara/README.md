@@ -1,4 +1,4 @@
-# Tactara 0.8.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.9.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -61,7 +61,7 @@ Every class has a rotation for each spec, built from the WoW Forever guides:
 - Out of combat, the first icon on the strip can be your **PULL** (a Warrior's Charge, a Rogue's Cheap Shot, a Druid's Faerie Fire): your first press uses it. Then the fight's **opener** plays (for a Warrior: Bloodrage, Battle Shout if it's missing, Rend). After that it repeats the **loop**. The sequence restarts when combat ends.
 - **Two displays** (drag to move, then `/tac lock`; change their size in `/tac options`):
   - **Key bar:** what your Tactara key will cast on its next 3 presses.
-  - **Helper popup:** the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars.
+  - **Helper popup:** the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars, and works like an action button: a **clock sweep** while it's on cooldown, **red** when the target is out of range, **blue** when you're short on mana, rage or energy, and **grey** when it can't be used right now. In boss fights and arenas, where WoW hides this from addons, the icons stay plain.
   - `/tac hide key` or `/tac hide helper` if you only want one.
 - **Which rotation:** Tactara reads your build and picks for you: first the talent tree you've spent the most points in, then your weapons (for a Warrior: two-hander = Arms, dual wield = Fury, shield = Protection), then a sensible default for your class. Druids with points in Feral get Cat or Bear depending on the talents they took. `/tac build` shows what it detected and why it picked what it did. To change it, use `/tac use` with part of the name (`/tac use prot`, `/tac use bear`, `/tac use fire`), or **Use This** in the editor. `/tac use auto` goes back to automatic.
 - When you learn new spells, the rotation updates on its own and prints *Added to your rotation: ...*. New spells are **bought from your class trainer** (a Warrior gets Rend and Charge at 4, Thunder Clap at 6, ...). Leveling up alone doesn't add them. `/tac spells` shows what's in use and what's still to learn.
@@ -72,7 +72,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 
 - **Rotation:** automatic (follows your talents) or a fixed one, plus a button to the rotation editor.
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
-- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%), lock them, or reset them to the middle of the screen.
+- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%), turn the helper's cooldown sweep and colors on or off, lock them, or reset them to the middle of the screen.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 

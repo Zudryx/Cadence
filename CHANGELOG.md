@@ -2,6 +2,11 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.9.0
+- **Helper icons tell you more**, like your action bars do: a clock sweep while a spell is on cooldown, red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used right now. In boss fights and arenas, where WoW hides this, the icons stay plain.
+- Both can be turned off on the settings page (Displays).
+- No gameplay changes.
+
 ## 0.8.0
 - **Tactara has an icon.** It shows next to Tactara in WoW's addon list.
 - Tactara is also in the minimap's addon menu: left-click opens the rotation editor, right-click the settings page.

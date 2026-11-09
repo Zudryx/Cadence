@@ -687,6 +687,62 @@ local p3 = table.concat(chat, "\n")
 check(p3:find("YOUR health / max: 40, 100") and p3:find("Tactara reads target cast as: none"), "probe health + cast lines")
 inCombat = false
 
+-- helper icons: cooldown sweep and tints (red range, blue power, grey unusable)
+do
+  local inRange = {}
+  C_Spell.IsSpellInRange = function(spell, unit)
+    local v = inRange[spell]
+    if v == "hidden" then error("secret value") end
+    return v
+  end
+  hasTarget = true
+  -- cooldowns
+  cooldowns["Mortal Strike"] = { isActive = true, isOnGCD = false, startTime = now - 2, duration = 6 }
+  local st, du = ns.IconCooldown("Mortal Strike")
+  check(st == now - 2 and du == 6, "cooldown sweep reads the cooldown")
+  cooldowns["Mortal Strike"] = { isActive = true, isOnGCD = true, startTime = now, duration = 1.5 }
+  st, du = ns.IconCooldown("Mortal Strike")
+  check(st == 0 and du == 0, "no sweep for the global cooldown")
+  cooldowns["Mortal Strike"] = "hidden"
+  check(ns.IconCooldown("Mortal Strike") == nil, "hidden cooldown -> no sweep")
+  cooldowns["Mortal Strike"] = nil
+  -- tints
+  check(ns.IconTint("Heroic Strike") == "none", "ready + in range -> plain")
+  usable["Heroic Strike"] = { false, true }
+  check(ns.IconTint("Heroic Strike") == "power", "short on rage -> blue")
+  usable["Heroic Strike"] = { false, false }
+  check(ns.IconTint("Heroic Strike") == "unusable", "can't be used -> grey")
+  usable["Heroic Strike"] = nil
+  inRange["Heroic Strike"] = false
+  check(ns.IconTint("Heroic Strike") == "range", "out of range -> red")
+  inRange["Heroic Strike"] = "hidden"
+  check(ns.IconTint("Heroic Strike") == "none", "hidden range -> plain")
+  usable["Heroic Strike"] = "hidden"
+  check(ns.IconTint("Heroic Strike") == "none", "hidden usable -> plain")
+  usable["Heroic Strike"] = nil
+  inRange["Heroic Strike"] = false
+  TactaraCharDB.helperTint = false
+  check(ns.IconTint("Heroic Strike") == "none", "tints can be turned off")
+  TactaraCharDB.helperTint = true
+  -- on the popup
+  local holder = { tex = CreateFrame("Frame"), key = CreateFrame("Frame"), cd = CreateFrame("Cooldown") }
+  local cdSet
+  holder.cd.SetCooldown = function(_, a, b) cdSet = { a, b } end
+  cooldowns["Heroic Strike"] = { isActive = true, isOnGCD = false, startTime = now - 1, duration = 4 }
+  ns.UpdateIconState(holder, "Heroic Strike")
+  check(holder.tint == "range" and cdSet and cdSet[2] == 4, "popup icon gets the tint and the sweep")
+  TactaraCharDB.helperCooldowns = false
+  cdSet = nil
+  ns.UpdateIconState(holder, "Heroic Strike")
+  check(holder.cdDur == 0, "sweep can be turned off")
+  TactaraCharDB.helperCooldowns = true
+  cooldowns["Heroic Strike"], inRange["Heroic Strike"] = nil, nil
+  C_Spell.IsSpellInRange = nil
+  hasTarget = false
+  local okR = pcall(ns.HelperRefresh)
+  check(okR, "helper refresh with the new icon states")
+end
+
 -- new live checks: @creature, @nopet, @combo
 do
   local creature = "Undead"

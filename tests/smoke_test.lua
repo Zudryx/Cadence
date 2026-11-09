@@ -509,7 +509,7 @@ do
   ns.Options.Register()
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
-      "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives" }) do
+      "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
