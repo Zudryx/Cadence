@@ -2,7 +2,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.10.0"
+ns.VERSION = "0.11.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -239,6 +239,10 @@ local function InitDB()
   local IDLE = { show = true, fade = true, hide = true }
   if not IDLE[TactaraCharDB.helperIdle] then TactaraCharDB.helperIdle = "fade" end
   if not IDLE[TactaraCharDB.keyIdle] then TactaraCharDB.keyIdle = "show" end
+  for _, k in ipairs({ "keyIcons", "helperIcons" }) do
+    local v = tonumber(TactaraCharDB[k])
+    TactaraCharDB[k] = (v and v >= 0 and v <= 10) and math.floor(v) or 3
+  end
   local fa = tonumber(TactaraCharDB.fadeAlpha)
   TactaraCharDB.fadeAlpha = (fa and fa >= 0.1 and fa <= 0.9) and fa or 0.45
 end
@@ -370,6 +374,7 @@ local HELP = {
   "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
   "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
   "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
+  "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
   "|cffffd100/tac helper auto / priority / sequence|r  what the glow follows (auto: priority list, or the key's sequence while you press it)",
@@ -439,6 +444,23 @@ local function HandleSlash(msg)
     if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then TactaraCharDB.showDisplay = on end
     if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then TactaraCharDB.showHelper = on end
     ns.HelperRefresh()
+  elseif cmd == "icons" then
+    local a, b = rest:lower():match("^(%S*)%s*(%S*)")
+    local function Count(v)
+      if v == "all" then return 0 end
+      local num = tonumber(v)
+      return num and num >= 1 and num <= 10 and math.floor(num) or nil
+    end
+    if (a == "helper" or a == "popup" or a == "key" or a == "bar") and Count(b) then
+      TactaraCharDB[(a == "key" or a == "bar") and "keyIcons" or "helperIcons"] = Count(b)
+    elseif Count(a) then
+      TactaraCharDB.keyIcons, TactaraCharDB.helperIcons = Count(a), Count(a)
+    else
+      ns.Print("/tac icons helper|key 1-10 or all (all = the whole rotation on the key bar, everything usable now on the helper).")
+    end
+    ns.HelperRefresh()
+    local function Say(v) return v == 0 and "all" or tostring(v) end
+    ns.Print(("Icons: helper %s, key bar %s."):format(Say(TactaraCharDB.helperIcons), Say(TactaraCharDB.keyIcons)))
   elseif cmd == "fade" then
     local a, b = rest:lower():match("^(%S*)%s*(%S*)")
     local pct = tonumber(a)

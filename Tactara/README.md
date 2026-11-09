@@ -1,4 +1,4 @@
-# Tactara 0.10.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.11.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -60,9 +60,10 @@ Every class has a rotation for each spec, built from the WoW Forever guides:
 - Press the button repeatedly in combat. **One press = one step.** It never presses anything by itself.
 - Out of combat, the first icon on the strip can be your **PULL** (a Warrior's Charge, a Rogue's Cheap Shot, a Druid's Faerie Fire): your first press uses it. Then the fight's **opener** plays (for a Warrior: Bloodrage, Battle Shout if it's missing, Rend). After that it repeats the **loop**. The sequence restarts when combat ends.
 - **Two displays** (drag to move, then `/tac lock`; change their size in `/tac options`):
-  - **Key bar:** what your Tactara key will cast on its next 3 presses.
-  - **Helper popup:** the best skill to use right now, plus what comes after. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars, and works like an action button: a **clock sweep** while it's on cooldown, **red** when the target is out of range, **blue** when you're short on mana, rage or energy, and **grey** when it can't be used right now. In boss fights and arenas, where WoW hides this from addons, the icons stay plain.
+  - **Key bar:** what your Tactara key will cast on its next presses: 3 by default, anywhere from 1 to 10, or the **whole rotation** (every step until it repeats).
+  - **Helper popup:** the best skill to use right now, plus what comes after: 3 by default, anywhere from 1 to 10, or **everything usable now**, best first. A red **INTERRUPT** slot and an orange **DEFENSIVE** slot appear only when needed. Each icon shows its keybind from your action bars, and works like an action button: a **clock sweep** while it's on cooldown, **red** when the target is out of range, **blue** when you're short on mana, rage or energy, and **grey** when it can't be used right now. In boss fights and arenas, where WoW hides this from addons, the icons stay plain.
   - `/tac hide key` or `/tac hide helper` if you only want one.
+  - **How many icons:** on the settings page, or `/tac icons key 6`, `/tac icons helper all`, `/tac icons 1` (both). Extra icons are added on the right, so the first icon stays where you put it.
   - **Between fights** (out of combat, no enemy targeted), the helper popup goes see-through and the key bar stays as it is. Each can show normally, go see-through or hide; target an enemy or get pulled and it's back at once. Set it on the settings page or with `/tac fade helper hide`, `/tac fade key fade`, `/tac fade show` (both), and `/tac fade 40` for how visible see-through is (10% to 90%).
 - **Which rotation:** Tactara reads your build and picks for you: first the talent tree you've spent the most points in, then your weapons (for a Warrior: two-hander = Arms, dual wield = Fury, shield = Protection), then a sensible default for your class. Druids with points in Feral get Cat or Bear depending on the talents they took. `/tac build` shows what it detected and why it picked what it did. To change it, use `/tac use` with part of the name (`/tac use prot`, `/tac use bear`, `/tac use fire`), or **Use This** in the editor. `/tac use auto` goes back to automatic.
 - When you learn new spells, the rotation updates on its own and prints *Added to your rotation: ...*. New spells are **bought from your class trainer** (a Warrior gets Rend and Charge at 4, Thunder Clap at 6, ...). Leveling up alone doesn't add them. `/tac spells` shows what's in use and what's still to learn.
@@ -73,7 +74,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 
 - **Rotation:** automatic (follows your talents) or a fixed one, plus a button to the rotation editor.
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
-- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
+- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
@@ -85,7 +86,7 @@ Tactara is also in the **minimap's addon menu** (the button that lists your addo
 
 - On by default. Toggle it with `/tac highlight` or the **Bar highlight** button in `/tac`.
 - **How loud:** `/tac glow strong` (default: thick border, halo and a tinted icon), `/tac glow normal` or `/tac glow subtle`. `/tac glow test` shows a 3-second preview of all three colors on your bars, even out of combat.
-- **Best skill next:** each rotation has a **priority list** built from the Forever guides. At any moment the glow shows the highest spell that's ready: Battle Shout if it's missing, AoE spells when 2-3+ enemies are nearby, Overpower when it procs, Rend when it's not on the target, and so on. The strip shows the top 3.
+- **Best skill next:** each rotation has a **priority list** built from the Forever guides. At any moment the glow shows the highest spell that's ready: Battle Shout if it's missing, AoE spells when 2-3+ enemies are nearby, Overpower when it procs, Rend when it's not on the target, and so on. The helper popup shows the top 3 (or as many as you set).
 - While you're pressing the Tactara key, the glow follows the key's sequence instead, so it matches what the key will cast. After a few seconds without a press it goes back to the priority list. `/tac helper priority` or `/tac helper sequence` locks it to one.
 - WoW Forever often won't tell addons which buffs and debuffs are up, so when you cast Battle Shout, Rend, Thunder Clap and similar spells, Tactara starts its own timer for them. If the game does report them, its answer wins.
 - WoW Forever hides your Rage and the target's health from addons, so the helper uses *"can this spell be cast right now?"* instead. That still covers Execute below 20%, Overpower procs, and spells you can't afford yet. AoE detection needs **enemy nameplates** turned on.
@@ -120,6 +121,7 @@ Tactara is also in the **minimap's addon menu** (the button that lists your addo
 | `/tac spells` | Rotation spells you've learned, and the ones still to come |
 | `/tac show` / `hide` [`key` / `helper`] | The key bar and/or the helper popup |
 | `/tac lock` / `unlock` | Lock or move both displays |
+| `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
 | `/tac reset` | Restart from the opener |

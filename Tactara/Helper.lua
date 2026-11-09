@@ -242,7 +242,7 @@ end
 
 -- What the helper suggests next: a list of up to n spells, plus whether the
 -- first one is the out-of-combat pull (Charge).
-function ns.HelperQueue(n, forDisplay, forceMode)
+function ns.HelperQueue(n, forDisplay, forceMode, all)
   local comp = ns.HelperComp()
   local q, pull = {}, false
   if not comp or (#comp.steps == 0 and #(comp.priority or {}) == 0) then return q, pull end
@@ -271,10 +271,14 @@ function ns.HelperQueue(n, forDisplay, forceMode)
   elseif #comp.steps > 0 then
     local i = ClampIdx(comp)
     q[#q + 1] = ns.PickForStep(comp, i)
-    while #q < n do
+    local seen = { [i] = true }
+    for _ = 1, n + #comp.steps do
+      if #q >= n then break end
       i = ns.NextStepIdx(comp, i)
-      q[#q + 1] = comp.steps[i] and comp.steps[i].icon or nil
-      if not comp.steps[i] then break end
+      local step = comp.steps[i]
+      if not step or (all and seen[i]) then break end
+      seen[i] = true
+      q[#q + 1] = step.icon or (step.spells and step.spells[1])
     end
   end
   return q, pull

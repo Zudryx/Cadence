@@ -1,6 +1,7 @@
 -- Tactara: the helper popup.
 -- Big icon = best skill to use right now (from the rotation's [priority]
--- list), two smaller icons = what comes after. To the right, an interrupt
+-- list), smaller icons = what comes after (1 to 10 icons, or everything
+-- usable now). To the right, an interrupt
 -- slot (red) and a defensive slot (orange) appear only when needed. Each
 -- icon shows the key it's bound to on your action bars.
 
@@ -150,6 +151,30 @@ local function SetIcon(holder, spell)
   end
 end
 
+-- Icons are made as they're needed: big first one, smaller ones after it.
+local function HelperIcon(f, i)
+  if f.icons[i] then return f.icons[i] end
+  local h = MakeIcon(f, i == 1 and BIG or SMALL)
+  if i == 1 then
+    h:SetPoint("LEFT", f, "LEFT", 0, 0)
+  else
+    h:SetPoint("BOTTOMLEFT", HelperIcon(f, i - 1), "BOTTOMRIGHT", 4, 0)
+    h:SetAlpha(0.8)
+  end
+  f.icons[i] = h
+  return h
+end
+
+-- Room for this many icons, with the interrupt and defensive slots after them.
+local function LayoutPopup(f, slots)
+  if f.slots == slots then return end
+  f.slots = slots
+  local w = BIG + (slots - 1) * (SMALL + 4)
+  f.interrupt:ClearAllPoints()
+  f.interrupt:SetPoint("LEFT", f, "LEFT", w + 10, -5)
+  ns.SetDisplayWidth(f, w + 2 * (UTIL + 8))
+end
+
 function ns.CreateHelperPopup()
   if popup then return popup end
   local f = CreateFrame("Frame", "TactaraHelperPopup", UIParent)
@@ -163,20 +188,13 @@ function ns.CreateHelperPopup()
   f.bg:SetColorTexture(0, 0, 0, 0.5)
 
   f.icons = {}
-  f.icons[1] = MakeIcon(f, BIG)
-  f.icons[1]:SetPoint("LEFT", f, "LEFT", 0, 0)
-  for i = 2, 3 do
-    f.icons[i] = MakeIcon(f, SMALL)
-    f.icons[i]:SetPoint("BOTTOMLEFT", f.icons[i - 1], "BOTTOMRIGHT", 4, 0)
-    f.icons[i]:SetAlpha(0.8)
-  end
+  for i = 1, 3 do HelperIcon(f, i) end
   f.pullTag = f.icons[1].over:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.pullTag:SetPoint("BOTTOM", 0, 2)
   f.pullTag:SetText("PULL")
   f.pullTag:Hide()
 
   f.interrupt = MakeIcon(f, UTIL, ns.GLOW_COLORS.interrupt)
-  f.interrupt:SetPoint("LEFT", f.icons[3], "RIGHT", 10, 4)
   f.interrupt.tag:SetText("INTERRUPT")
   f.defensive = MakeIcon(f, UTIL, ns.GLOW_COLORS.defensive)
   f.defensive:SetPoint("LEFT", f.interrupt, "RIGHT", 10, 0)
@@ -184,6 +202,7 @@ function ns.CreateHelperPopup()
 
   f.label = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.label:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 0, -2)
+  LayoutPopup(f, 3)
 
   popup = f
   ns.helperPopup = f
@@ -202,13 +221,17 @@ function ns.UpdateHelperPopup()
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
-  local shown, pull = ns.HelperQueue(3, true, "priority")
+  local n, all = ns.IconCount("helperIcons")
+  local shown, pull = ns.HelperQueue(n, true, "priority", all)
   local util = ns.lastUtility or {}
+  local slots = all and math.max(#shown, 1) or n
+  LayoutPopup(f, slots)
+  for i = slots + 1, #f.icons do SetIcon(f.icons[i], nil) end
 
   if #shown == 0 then
     if locked then f:Hide() return end
     f:Show()
-    SetIcon(f.icons[1], nil); SetIcon(f.icons[2], nil); SetIcon(f.icons[3], nil)
+    for i = 1, slots do SetIcon(HelperIcon(f, i), nil) end
     SetIcon(f.interrupt, nil); SetIcon(f.defensive, nil)
     f.label:SetText("Tactara helper: no rotation yet (drag to move, /tac lock)")
     return
@@ -217,7 +240,7 @@ function ns.UpdateHelperPopup()
   f:Show()
   -- not fighting: normal, see-through or hidden (settings page)
   if not ns.ApplyIdleLook(f, TactaraCharDB.helperIdle) then return end
-  for i = 1, 3 do SetIcon(f.icons[i], shown[i]) end
+  for i = 1, slots do SetIcon(HelperIcon(f, i), shown[i]) end
   if pull then f.pullTag:Show() else f.pullTag:Hide() end
   SetIcon(f.interrupt, util.interrupt)
   SetIcon(f.defensive, util.defensive)

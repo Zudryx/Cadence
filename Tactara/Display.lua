@@ -1,13 +1,38 @@
 -- Tactara: the key bar.
--- Shows what your Tactara key will cast on its next 3 presses (the
--- one-button sequence). The helper popup (HelperDisplay.lua) shows the best
+-- Shows what your Tactara key will cast on its next presses (the one-button
+-- sequence): 1 to 10 icons, or the whole rotation. The helper popup (HelperDisplay.lua) shows the best
 -- skill to use instead. Both come from Tactara's own data.
 
 local ADDON, ns = ...
 
 local BIG, SMALL = 40, 26
 local QUESTION_MARK = 134400
+local MAX_ICONS = 20
+ns.MAX_ICONS = MAX_ICONS
 local display
+
+-- How many icons a display shows. TactaraCharDB[key] is 1-10, or 0 for
+-- "as many as there are" (the whole rotation / everything usable now).
+-- Returns the count and whether it's "all".
+function ns.IconCount(key)
+  local v = math.floor(tonumber(TactaraCharDB[key]) or 3)
+  if v <= 0 then return MAX_ICONS, true end
+  return math.min(v, MAX_ICONS), false
+end
+
+-- Resize a display without moving its left edge, so icons come and go on
+-- the right instead of the whole row sliding around.
+function ns.SetDisplayWidth(f, w)
+  local old = f:GetWidth()
+  if old and math.abs(old - w) < 0.5 then return end
+  local left, bottom = f:GetLeft(), f:GetBottom()
+  f:SetWidth(w)
+  if left and bottom and f.posKey then
+    f:ClearAllPoints()
+    f:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, bottom)
+    TactaraCharDB[f.posKey] = { point = "BOTTOMLEFT", relPoint = "BOTTOMLEFT", x = left, y = bottom }
+  end
+end
 
 local function SpellIcon(name)
   if not name then return QUESTION_MARK end
@@ -25,6 +50,7 @@ ns.SpellIcon = SpellIcon
 
 -- Shared by both displays: drag to move while unlocked, position saved per character.
 function ns.MakeMovable(f, key, defaultX, defaultY)
+  f.posKey = key
   local pos = TactaraCharDB[key] or {}
   f:SetPoint(pos.point or "CENTER", UIParent, pos.relPoint or "CENTER", pos.x or defaultX, pos.y or defaultY)
   f:SetClampedToScreen(true)
@@ -52,19 +78,7 @@ function ns.CreateDisplay()
   f.bg:SetColorTexture(0, 0, 0, 0.5)
 
   f.icons = {}
-  for i = 1, 3 do
-    local size = (i == 1) and BIG or SMALL
-    local t = f:CreateTexture(nil, "ARTWORK")
-    t:SetSize(size, size)
-    t:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    if i == 1 then
-      t:SetPoint("LEFT", f, "LEFT", 0, 0)
-    else
-      t:SetPoint("BOTTOMLEFT", f.icons[i - 1], "BOTTOMRIGHT", 4, 0)
-      t:SetAlpha(0.75)
-    end
-    f.icons[i] = t
-  end
+  for i = 1, 3 do ns.KeyIcon(f, i) end
 
   f.label = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.label:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 0, -2)
@@ -81,9 +95,27 @@ function ns.CreateDisplay()
   return f
 end
 
+-- Icons are made as they're needed: big first one, smaller ones after it.
+function ns.KeyIcon(f, i)
+  if f.icons[i] then return f.icons[i] end
+  local size = (i == 1) and BIG or SMALL
+  local t = f:CreateTexture(nil, "ARTWORK")
+  t:SetSize(size, size)
+  t:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  if i == 1 then
+    t:SetPoint("LEFT", f, "LEFT", 0, 0)
+  else
+    t:SetPoint("BOTTOMLEFT", ns.KeyIcon(f, i - 1), "BOTTOMRIGHT", 4, 0)
+    t:SetAlpha(0.75)
+  end
+  f.icons[i] = t
+  return t
+end
+
 -- Next presses of the Tactara key: current step's ready fallback, then the
--- following steps. Out of combat the pull (Charge) comes first.
-function ns.KeyQueue(n)
+-- following steps. Out of combat the pull (Charge) comes first. With all,
+-- it stops when the rotation comes back around (the whole rotation once).
+function ns.KeyQueue(n, all)
   local btn = ns.lastClicked or ns.mainButton
   local comp = ns.CompiledFor(btn)
   local q, pull = {}, false
@@ -96,9 +128,14 @@ function ns.KeyQueue(n)
   local idx = btn:GetAttribute("idx") or 1
   if idx < 1 or idx > #comp.steps then idx = 1 end
   q[#q + 1] = ns.PickForStep(comp, idx)
-  while #q < n do
+  local seen = { [idx] = true }
+  for _ = 1, n + #comp.steps do
+    if #q >= n then break end
     idx = ns.NextStepIdx(comp, idx)
-    q[#q + 1] = comp.steps[idx] and comp.steps[idx].icon
+    local step = comp.steps[idx]
+    if not step or (all and seen[idx]) then break end
+    seen[idx] = true
+    q[#q + 1] = step.icon or (step.spells and step.spells[1])
   end
   return q, pull
 end
@@ -144,12 +181,20 @@ function ns.UpdateDisplay()
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
-  local shown, pull = ns.KeyQueue(3)
+  local n, all = ns.IconCount("keyIcons")
+  local shown, pull = ns.KeyQueue(n, all)
+  local slots = all and math.max(#shown, 1) or n
+  ns.SetDisplayWidth(f, BIG + (slots - 1) * (SMALL + 4))
+  for i = slots + 1, #f.icons do f.icons[i]:Hide() end
+
   if #shown == 0 then
     f.pullTag:Hide()
     if locked then f:Hide() return end
     f:Show()
-    for i = 1, 3 do f.icons[i]:SetTexture(QUESTION_MARK) end
+    for i = 1, slots do
+      ns.KeyIcon(f, i):SetTexture(QUESTION_MARK)
+      f.icons[i]:Show()
+    end
     f.label:SetText("Tactara key: no steps yet (drag to move, /tac lock)")
     return
   end
@@ -157,12 +202,13 @@ function ns.UpdateDisplay()
   f:Show()
   if not ns.ApplyIdleLook(f, TactaraCharDB.keyIdle) then return end
   if pull then f.pullTag:Show() else f.pullTag:Hide() end
-  for n = 1, 3 do
-    if shown[n] then
-      f.icons[n]:SetTexture(SpellIcon(shown[n]))
-      f.icons[n]:Show()
+  for i = 1, slots do
+    local icon = ns.KeyIcon(f, i)
+    if shown[i] then
+      icon:SetTexture(SpellIcon(shown[i]))
+      icon:Show()
     else
-      f.icons[n]:Hide()
+      icon:Hide()
     end
   end
 

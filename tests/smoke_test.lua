@@ -510,7 +510,7 @@ do
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
       "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
-      "helperIdle", "keyIdle", "fadeAlpha" }) do
+      "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
@@ -557,6 +557,12 @@ do
   S("fadeAlpha"):SetValue(0.6)
   check(TactaraCharDB.fadeAlpha == 0.6, "see-through slider")
   S("keyIdle"):SetValue("show"); S("fadeAlpha"):SetValue(0.45)
+  local iconOpts
+  for _, i in ipairs(reg.inits) do if i.kind == "dropdown" and i.s == S("keyIcons") then iconOpts = i.opts() end end
+  check(iconOpts and #iconOpts == 11 and iconOpts[1].value == 1 and iconOpts[11].value == 0, "icon count choices: 1-10 and all")
+  S("keyIcons"):SetValue(0)
+  check(TactaraCharDB.keyIcons == 0, "key bar icons dropdown")
+  S("keyIcons"):SetValue(3)
 
   local opts
   for _, i in ipairs(reg.inits) do if i.kind == "dropdown" and i.s == S("active") then opts = i.opts() end end

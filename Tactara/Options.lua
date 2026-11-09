@@ -133,9 +133,9 @@ local function BuildVertical()
     end
   end
 
-  local function Dropdown(tbl, key, label, tooltip, default, list, fn)
+  local function Dropdown(tbl, key, label, tooltip, default, list, fn, kind)
     local variable = "Tactara_" .. key
-    local s = Settings.RegisterAddOnSetting(cat, variable, key, tbl, VarType("string"), label, default)
+    local s = Settings.RegisterAddOnSetting(cat, variable, key, tbl, VarType(kind or "string"), label, default)
     CreateDropdown(cat, s, Choices(list), tooltip)
     OnChange(s, variable, fn)
     return s
@@ -224,10 +224,22 @@ local function BuildVertical()
   Header("Displays")
   Check(TactaraCharDB, "showHelper", "Show the helper popup", "The best spell to use right now, plus interrupt and defensive suggestions.", true, Refresh)
   SizeSlider("helperScale", "Helper popup size", "Makes the helper popup bigger or smaller.")
+  local function CountChoices(allLabel, allTip)
+    local list = {}
+    for i = 1, 10 do
+      list[#list + 1] = { i, i == 1 and "1 (just the next one)" or i == 3 and "3 (default)" or tostring(i) }
+    end
+    list[#list + 1] = { 0, allLabel, allTip }
+    return list
+  end
+  Dropdown(TactaraCharDB, "helperIcons", "Helper popup icons", "How many spells the helper popup shows: the best one now, then the next best.", 3,
+    CountChoices("Everything usable now", "Every spell in the rotation you can use right now, best first."), Refresh, "number")
   Check(TactaraCharDB, "helperCooldowns", "Cooldowns on helper icons", "A clock sweep over helper icons that are on cooldown, so you can see when they'll be ready.", true, Refresh)
   Check(TactaraCharDB, "helperTint", "Color helper icons", "Red when the target is out of range, blue when you're short on mana, rage or energy, grey when the spell can't be used right now.", true, Refresh)
   Check(TactaraCharDB, "showDisplay", "Show the key bar", "What your Tactara key will cast on its next presses.", true, Refresh)
   SizeSlider("displayScale", "Key bar size", "Makes the key bar bigger or smaller.")
+  Dropdown(TactaraCharDB, "keyIcons", "Key bar icons", "How many of your key's next presses the key bar shows.", 3,
+    CountChoices("Whole rotation", "Every step until the rotation repeats."), Refresh, "number")
   local IDLE_CHOICES = {
     { "show", "Show normally" },
     { "fade", "See-through" },
@@ -270,6 +282,7 @@ local COMMANDS = {
   "/tac bind  - pick your one-button key",
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
+  "/tac icons helper|key 1-10 | all  - how many icons",
   "/tac fade helper|key show|fade|hide  - between fights",
   "/tac fade 40  - how visible see-through is",
   "/tac highlight  - bar glow on/off",

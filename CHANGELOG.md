@@ -2,6 +2,14 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.11.0
+- **See further ahead, or just one icon:** the key bar and the helper popup can each show 1 to 10 icons instead of always 3.
+- **Key bar: whole rotation** shows every step your key will cast until the rotation repeats.
+- **Helper popup: everything usable now** shows every spell in your rotation you can use right now, best first.
+- Extra icons are added on the right, so the first icon stays where you put it.
+- On the settings page (Displays), or `/tac icons helper|key 1-10|all` and `/tac icons 3` for both.
+- No gameplay changes.
+
 ## 0.10.0
 - **Between fights, your choice:** the helper popup and the key bar can each show normally, go see-through or hide when you're out of combat with no enemy targeted. They come back the moment you target an enemy or combat starts.
 - A slider sets how visible see-through is (10% to 90%).

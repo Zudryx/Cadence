@@ -718,6 +718,58 @@ do
   ns.HelperRefresh()
 end
 
+-- how many icons each display shows: 1-10 or all
+do
+  local function ShownKey()
+    local c = 0
+    for i, t in ipairs(ns.display.icons) do if t:IsShown() then c = i end end
+    return c
+  end
+  local function ShownHelper()
+    local c = 0
+    for i, h in ipairs(ns.helperPopup.icons) do if h:IsShown() then c = i end end
+    return c
+  end
+  check(TactaraCharDB.keyIcons == 3 and TactaraCharDB.helperIcons == 3, "default: 3 icons each")
+  ns.HelperRefresh()
+  check(ShownKey() == 3, "key bar shows 3 (" .. ShownKey() .. ")")
+  SlashCmdList.TACTARA("icons key 1")
+  check(TactaraCharDB.keyIcons == 1 and ShownKey() == 1 and not ns.display.icons[2]:IsShown(), "key bar down to 1 icon")
+  SlashCmdList.TACTARA("icons key 7")
+  local q7 = ns.KeyQueue(7)
+  check(#q7 == 7 and ShownKey() == 7, "key bar shows 7 (" .. ShownKey() .. ")")
+  local same = true
+  for i = 1, 7 do if ns.display.icons[i]._texture ~= "icon:" .. q7[i] then same = false end end
+  check(same, "the 7 icons are the key's next 7 presses")
+  SlashCmdList.TACTARA("icons key all")
+  local comp = ns.CompiledFor(ns.mainButton)
+  local whole = ns.KeyQueue(ns.MAX_ICONS, true)
+  local pullN = (comp.pull and not inCombat) and 1 or 0
+  local loopLen = #comp.steps - (comp.loopStart or 1) + 1
+  check(TactaraCharDB.keyIcons == 0 and #whole >= loopLen and #whole <= #comp.steps + pullN,
+    ("whole rotation: %d icons for %d steps (loop %d)"):format(#whole, #comp.steps, loopLen))
+  check(ShownKey() == #whole, "key bar shows the whole rotation (" .. ShownKey() .. ")")
+  check(#ns.KeyQueue(5) == 5, "a number still repeats the loop when it's short")
+  SlashCmdList.TACTARA("icons helper 5")
+  local hq = ns.HelperQueue(5, true, "priority")
+  check(TactaraCharDB.helperIcons == 5 and ShownHelper() == #hq and #hq <= 5, "helper shows up to 5 (" .. ShownHelper() .. ")")
+  check(ns.helperPopup.slots == 5, "helper keeps room for 5")
+  SlashCmdList.TACTARA("icons helper all")
+  local every = ns.HelperQueue(ns.MAX_ICONS, true, "priority", true)
+  check(ShownHelper() == #every and ns.helperPopup.slots == math.max(#every, 1), "helper shows everything usable (" .. #every .. ")")
+  SlashCmdList.TACTARA("icons helper 11")
+  check(TactaraCharDB.helperIcons == 0, "11 isn't allowed")
+  SlashCmdList.TACTARA("icons 3")
+  check(TactaraCharDB.keyIcons == 3 and TactaraCharDB.helperIcons == 3 and ShownKey() == 3 and ns.helperPopup.slots == 3, "/tac icons 3 sets both back")
+  -- a one-step loop with all doesn't run forever
+  local fake = { steps = { { icon = "Heroic Strike", spells = { "Heroic Strike" } } }, loopStart = 1 }
+  local realComp = ns.CompiledFor
+  ns.CompiledFor = function() return fake end
+  check(#ns.KeyQueue(ns.MAX_ICONS, true) == 1 + ((not inCombat and fake.pull) and 1 or 0), "one-step rotation, all = 1 icon")
+  check(#ns.KeyQueue(4) == 4, "one-step rotation, 4 = the same step 4 times")
+  ns.CompiledFor = realComp
+end
+
 -- probe has the new lines
 chat = {}
 SlashCmdList.TACTARA("probe")
