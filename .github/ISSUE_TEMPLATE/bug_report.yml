@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in Tactara doesn't work the way it should.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The more of this you fill in, the faster it gets fixed.
+        Wrong spell choices are welcome here too, but if you have a guide that says what it *should* do, the rotation suggestion form is a better fit.
+  - type: input
+    id: version
+    attributes:
+      label: Tactara version
+      description: Shown in the addon list and by `/tac test`.
+      placeholder: "0.6.0"
+    validations:
+      required: true
+  - type: input
+    id: character
+    attributes:
+      label: Class, spec and level
+      placeholder: "Warrior, Arms, level 24"
+    validations:
+      required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options:
+        - The one-button key
+        - The helper (popup or bar glow)
+        - Interrupt or defensive suggestions
+        - The rotation editor (/tac)
+        - The Windows updater
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: What you pressed, what Tactara did, and what it should have done.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Lua error (if any)
+      description: Type `/console scriptErrors 1` in game so WoW shows errors, then paste the whole text.
+      render: text
+  - type: textarea
+    id: probe
+    attributes:
+      label: /tac probe or /tac test output
+      description: Paste the text or attach screenshots. For helper problems, run `/tac probe` once out of combat and once in combat.
+  - type: input
+    id: bars
+    attributes:
+      label: Action bar addon (if any)
+      description: Only needed for glow problems.
+      placeholder: "Blizzard bars"

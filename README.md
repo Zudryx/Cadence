@@ -47,7 +47,7 @@ The tests run outside the game against a simulated WoW API:
 
 ```
 lua5.4 tests/syntax.lua Tactara        # syntax + version consistency
-lua5.4 tests/compile_test.lua Tactara  # rotation parser/compiler, all rotations at levels 3-60
+lua5.4 tests/compile_test.lua Tactara  # rotation parser/compiler, every rotation at levels 1-60
 lua5.4 tests/smoke_test.lua Tactara    # whole addon: events, secure buttons, editor, key binding
 lua5.4 tests/helper_test.lua Tactara   # helper, timers, interrupts, defensives, build detection
 ```
@@ -56,3 +56,11 @@ lua5.4 tests/helper_test.lua Tactara   # helper, timers, interrupts, defensives,
 
 GitHub Actions runs them on every pull request and before every release.
 
+
+## Contributing
+
+Bug reports, rotation suggestions and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems: please follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+Tactara is released under the [MIT License](LICENSE).

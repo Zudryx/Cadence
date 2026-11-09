@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/Zudryx/Tactara/security/advisories/new
+    about: Please report security problems privately, not as a public issue.
+  - name: Player guide
+    url: https://github.com/Zudryx/Tactara/blob/main/Tactara/README.md
+    about: Setup, keybinds, the helper and every /tac command.

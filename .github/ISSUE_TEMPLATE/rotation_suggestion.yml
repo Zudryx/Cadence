@@ -1,0 +1,62 @@
+name: Rotation suggestion
+description: A rotation, priority or spell choice that should change.
+title: "[Rotation] "
+labels: ["rotation"]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Class and spec
+      placeholder: "Mage, Frost"
+    validations:
+      required: true
+  - type: input
+    id: levels
+    attributes:
+      label: Levels it affects
+      placeholder: "20-40, or 60 only"
+    validations:
+      required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      multiple: true
+      options:
+        - One-button key (opener / loop)
+        - AoE key
+        - Helper priority
+        - Interrupts or defensives
+        - Auto-picking the spec
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: What Tactara does now
+      description: "`/tac steps` shows what the key does at your level."
+    validations:
+      required: true
+  - type: textarea
+    id: should
+    attributes:
+      label: What it should do instead, and why
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Link to the guide, patch notes or log you're going by.
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before you send
+      options:
+        - label: I described it in my own words (no pasted guide text).
+          required: true
+        - label: It still needs a key press for every cast (no automation).
+          required: true
