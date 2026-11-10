@@ -53,3 +53,7 @@ Merging the pull request publishes the release automatically (see `.github/workf
 ## When WoW Forever patches
 
 If the game's interface version changes, update `## Interface:` in `Tactara/Tactara.toc`. The number comes from `/dump select(4, GetBuildInfo())` in game, or from patch notes and other Forever addons. Then bump the version, as in step 4.
+
+## CurseForge uploads
+
+Each new release is also uploaded to CurseForge (project 1795307, set by `## X-Curse-Project-ID` in `Tactara/Tactara.toc`) by `.github/scripts/curseforge_upload.py`, tagged with the WoW Forever game version that matches `## Interface` (16001 = 1.60.1) and with that version's CHANGELOG section. It needs the `CF_API_KEY` repository secret; without it the upload is skipped with a notice. If an upload fails, fix the cause and run the Release workflow by hand with **Upload to CurseForge** ticked.

@@ -1,14 +1,22 @@
 name: Release
 
 # Every push to main: run the tests, and if the version in Tactara.toc
-# hasn't been released yet, publish GitHub release vX.Y.Z with the addon zip.
+# hasn't been released yet, publish GitHub release vX.Y.Z with the addon zip
+# and upload the same zip to CurseForge (when the CF_API_KEY secret is set).
 # Merging a pull request that bumps the version = a new release.
 # The Windows updater installs the latest release.
+# Run it by hand with "Upload to CurseForge" ticked to send the current
+# version to CurseForge again (e.g. after a failed upload).
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      curseforge:
+        description: Upload the current version to CurseForge (even if it's already released on GitHub)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,6 +44,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Publish release if this version is new
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.v.outputs.version }}
@@ -54,3 +63,21 @@ jobs:
           awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
           [ -s notes.md ] || echo "Tactara $VERSION" > notes.md
           gh release create "v$VERSION" "Tactara-$VERSION.zip" TactaraUpdater.zip --title "Tactara $VERSION" --notes-file notes.md
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to CurseForge
+        if: steps.publish.outputs.created == 'true' || inputs.curseforge
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          if [ -z "$CF_API_KEY" ]; then
+            echo "::notice::No CF_API_KEY secret, so nothing was sent to CurseForge."
+            exit 0
+          fi
+          # same zip as the GitHub release
+          [ -f "Tactara-$VERSION.zip" ] || gh release download "v$VERSION" -p "Tactara-$VERSION.zip"
+          awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > cf_notes.md
+          python3 .github/scripts/curseforge_upload.py --toc Tactara/Tactara.toc \
+            --file "Tactara-$VERSION.zip" --version "$VERSION" --changelog cf_notes.md
