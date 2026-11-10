@@ -17,7 +17,7 @@ local frames = {}
 local wrapSnippets = {}
 
 local METHOD_PREFIXES = { "Set", "Get", "Is", "Create", "Register", "Enable", "Show", "Hide", "Clear",
-  "Highlight", "Start", "Stop", "Add", "Hook", "Unregister", "Click", "Disable", "Toggle", "Raise", "Lower", "Has", "Insert" }
+  "Highlight", "Start", "Stop", "Add", "Hook", "Unregister", "Click", "Disable", "Toggle", "Raise", "Lower", "Has", "Insert", "Lock", "Unlock" }
 
 local function isMethod(k)
   if type(k) ~= "string" then return false end
@@ -64,6 +64,13 @@ function CreateFrame(kind, name, parent, template)
   return f
 end
 UIParent = newObj("Frame", "UIParent")
+Minimap = newObj("Frame", "Minimap")
+Minimap.GetCenter = function() return 500, 500 end
+Minimap.GetEffectiveScale = function() return 1 end
+local cursorX, cursorY = 500, 500
+function GetCursorPosition() return cursorX, cursorY end
+local minimapShape = "ROUND"
+function GetMinimapShape() return minimapShape end
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) table.insert(chat, m) end }
 C_Timer = { After = function(d, f) table.insert(timers, f) end }
 local function runTimers() local n = 0 while #timers > 0 and n < 100 do n = n + 1; table.remove(timers, 1)() end end
@@ -510,7 +517,7 @@ do
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
       "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
-      "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons" }) do
+      "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "minimapButton" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
@@ -617,6 +624,65 @@ do
   Tactara_OnAddonCompartmentClick(nil, "RightButton")
   ns.Options.Open = realOpen
   check(okE and okL and opened, "addon menu: tooltip and right-click opens settings")
+end
+
+-- minimap button
+do
+  local b = frames.TactaraMinimapButton
+  check(b ~= nil and b:IsShown(), "minimap button made at login and shown")
+  check(TactaraCharDB.minimapButton == true and TactaraCharDB.minimapAngle == 225, "minimap defaults: on, lower left")
+  local function near(a, b2) return math.abs(a - b2) < 0.01 end
+  -- Minimap is 100 wide in the stubs: round radius 55
+  local x, y = ns.MinimapButtonOffset(0, "ROUND", 100, 100)
+  check(near(x, 55) and near(y, 0), "round minimap, angle 0: right edge")
+  x, y = ns.MinimapButtonOffset(90, "ROUND", 100, 100)
+  check(near(x, 0) and near(y, 55), "round minimap, angle 90: top")
+  x, y = ns.MinimapButtonOffset(45, "SQUARE", 100, 100)
+  local d = (math.sqrt(2 * 55 * 55) - 10) * math.cos(math.rad(45))
+  check(near(x, d) and near(y, d) and x > 55 * math.cos(math.rad(45)), "square minimap pushes the button toward the corner")
+  x, y = ns.MinimapButtonOffset(0, "SQUARE", 100, 100)
+  check(near(x, 55) and near(y, 0), "square minimap, angle 0: still on the edge")
+  x, y = ns.MinimapButtonOffset(135, "CORNER-TOPLEFT", 100, 100)
+  check(near(x, -55 * math.cos(math.rad(45))), "corner shape: its round quarter stays round")
+  x, y = ns.MinimapButtonOffset(315, "CORNER-TOPLEFT", 100, 100)
+  check(x > 55 * math.cos(math.rad(45)) + 0.01, "corner shape: the square quarters are pushed out")
+  x, y = ns.MinimapButtonOffset(135, "NOT-A-SHAPE", 100, 100)
+  check(near(x, -55 * math.cos(math.rad(45))), "unknown shape counts as round")
+  -- clicks
+  local edited, opened = false, false
+  local realToggle, realOpen = ns.Editor.Toggle, ns.Options.Open
+  ns.Editor.Toggle = function() edited = true end
+  ns.Options.Open = function() opened = true end
+  b:GetScript("OnClick")(b, "LeftButton")
+  b:GetScript("OnClick")(b, "RightButton")
+  ns.Editor.Toggle, ns.Options.Open = realToggle, realOpen
+  check(edited and opened, "minimap button: left-click editor, right-click settings")
+  check(pcall(b:GetScript("OnEnter"), b) and pcall(b:GetScript("OnLeave"), b), "minimap button tooltip")
+  -- drag: cursor straight above the minimap's center = 90 degrees
+  b:GetScript("OnDragStart")(b)
+  check(b.dragging and b:GetScript("OnUpdate") ~= nil, "drag starts following the cursor")
+  cursorX, cursorY = 500, 600
+  b:GetScript("OnUpdate")(b)
+  check(TactaraCharDB.minimapAngle == 90, "dragging above the minimap: angle 90 (" .. tostring(TactaraCharDB.minimapAngle) .. ")")
+  cursorX, cursorY = 400, 500
+  b:GetScript("OnUpdate")(b)
+  check(TactaraCharDB.minimapAngle == 180, "dragging left: angle 180")
+  b:GetScript("OnDragStop")(b)
+  check(not b.dragging and b:GetScript("OnUpdate") == nil, "drag stops")
+  -- show / hide / reset
+  SlashCmdList.TACTARA("minimap")
+  check(TactaraCharDB.minimapButton == false and not b:IsShown(), "/tac minimap hides it")
+  SlashCmdList.TACTARA("minimap")
+  check(TactaraCharDB.minimapButton == true and b:IsShown(), "/tac minimap shows it again")
+  SlashCmdList.TACTARA("minimap reset")
+  check(TactaraCharDB.minimapAngle == 225 and b:IsShown(), "/tac minimap reset")
+  -- the addon menu entry uses the same tooltip
+  local lines = {}
+  local realAdd = GameTooltip.AddLine
+  GameTooltip.AddLine = function(_, t) lines[#lines + 1] = t end
+  Tactara_OnAddonCompartmentEnter(nil, UIParent)
+  GameTooltip.AddLine = realAdd
+  check(lines[1] == "Tactara " .. ns.VERSION and #lines == 4, "addon menu tooltip (no drag line)")
 end
 
 -- every class gets its own rotation picked and built without errors

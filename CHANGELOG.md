@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.12.0
+- **Minimap button:** left-click opens the rotation editor, right-click the settings page. Drag it to move it around the minimap. Works with round and square minimaps.
+- Show or hide it on the settings page (Displays) or with `/tac minimap`; `/tac minimap reset` puts it back where it started.
+- The minimap's addon menu still has Tactara too, with the same clicks.
+- No gameplay changes.
+
 ## 0.11.1
 - **Tactara is now licensed under the GNU GPL v3** (it was MIT). You can still fork it and share changes, as long as your version stays open source under the same license.
 - **The name and logo stay with Tactara:** a changed version you share needs its own name and logo. See NOTICE.md.

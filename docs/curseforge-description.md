@@ -31,6 +31,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 ## Make it yours
 
 - **Rotation editor:** `/tac` opens an in-game editor. Change any rotation, write your own, and share it as plain text.
+- **Minimap button:** left-click opens the editor and right-click opens the settings page. Drag it anywhere around the minimap, or hide it.
 - **Settings page:** Esc > Options > AddOns > Tactara, or `/tac options`.
   - Your keys: one-button, AoE and interrupt.
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.

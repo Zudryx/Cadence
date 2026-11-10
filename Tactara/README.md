@@ -1,4 +1,4 @@
-# Tactara 0.11.1: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.12.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -74,13 +74,13 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 
 - **Rotation:** automatic (follows your talents) or a fixed one, plus a button to the rotation editor.
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
-- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
+- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
 The `/tac` commands still work, and both always show the same settings.
 
-Tactara is also in the **minimap's addon menu** (the button that lists your addons, if your minimap has it): left-click opens the rotation editor, right-click the settings page.
+**Minimap button:** left-click opens the rotation editor, right-click the settings page. Drag it to move it around the edge of the minimap. `/tac minimap` hides or shows it, and `/tac minimap reset` puts it back where it started. Tactara is also in the **minimap's addon menu** (the button that lists your addons, if your minimap has it), which works the same way.
 
 ## Rotation helper (bar highlight)
 
@@ -121,6 +121,7 @@ Tactara is also in the **minimap's addon menu** (the button that lists your addo
 | `/tac spells` | Rotation spells you've learned, and the ones still to come |
 | `/tac show` / `hide` [`key` / `helper`] | The key bar and/or the helper popup |
 | `/tac lock` / `unlock` | Lock or move both displays |
+| `/tac minimap` | Show or hide the minimap button (`/tac minimap reset` puts it back) |
 | `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |

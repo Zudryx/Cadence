@@ -252,6 +252,8 @@ local function BuildVertical()
   Dropdown(TactaraCharDB, "helperIdle", "Helper popup when not fighting", "How the helper popup looks between fights." .. IDLE_TIP, "fade", IDLE_CHOICES, Refresh)
   Dropdown(TactaraCharDB, "keyIdle", "Key bar when not fighting", "How the key bar looks between fights." .. IDLE_TIP, "show", IDLE_CHOICES, Refresh)
   PercentSlider("fadeAlpha", "See-through amount", "How visible a see-through display is: lower is fainter.", 0.45, 0.1, 0.9, Refresh)
+  Check(TactaraCharDB, "minimapButton", "Minimap button", "A Tactara button on the edge of the minimap: left-click for the rotation editor, right-click for this page. Drag it to move it around the minimap. The minimap's addon menu has Tactara either way.", true,
+    function() ns.UpdateMinimapButton() end)
   Check(TactaraCharDB, "locked", "Lock positions", "Turn off to drag the displays where you want them.", false, Refresh)
   Button("Positions", "Reset", "Moves both displays back to the middle of the screen at normal size.", ns.ResetDisplayPositions)
 
@@ -285,6 +287,7 @@ local COMMANDS = {
   "/tac bind  - pick your one-button key",
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
+  "/tac minimap  - show or hide the minimap button",
   "/tac icons helper|key 1-10 | all  - how many icons",
   "/tac fade helper|key show|fade|hide  - between fights",
   "/tac fade 40  - how visible see-through is",

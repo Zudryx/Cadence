@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.11.1"
+ns.VERSION = "0.12.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -242,6 +242,9 @@ local function InitDB()
   local IDLE = { show = true, fade = true, hide = true }
   if not IDLE[TactaraCharDB.helperIdle] then TactaraCharDB.helperIdle = "fade" end
   if not IDLE[TactaraCharDB.keyIdle] then TactaraCharDB.keyIdle = "show" end
+  if TactaraCharDB.minimapButton == nil then TactaraCharDB.minimapButton = true end
+  local ang = tonumber(TactaraCharDB.minimapAngle)
+  TactaraCharDB.minimapAngle = ang and (ang % 360) or 225
   for _, k in ipairs({ "keyIcons", "helperIcons" }) do
     local v = tonumber(TactaraCharDB[k])
     TactaraCharDB[k] = (v and v >= 0 and v <= 10) and math.floor(v) or 3
@@ -347,6 +350,7 @@ events:SetScript("OnEvent", function(self, event, arg1, ...)
     ns.CreateHelperPopup()
     ns.ApplyDisplayScales()
     ns.Options.Register()
+    ns.UpdateMinimapButton()
     ns.RequestRebuild("login", 1)
     ns.Print(("v%s loaded. Type |cffffd100/tac|r to open the editor, |cffffd100/tac help|r for commands."):format(ns.VERSION))
     return
@@ -377,6 +381,7 @@ local HELP = {
   "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
   "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
   "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
+  "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
@@ -447,6 +452,15 @@ local function HandleSlash(msg)
     if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then TactaraCharDB.showDisplay = on end
     if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then TactaraCharDB.showHelper = on end
     ns.HelperRefresh()
+  elseif cmd == "minimap" then
+    if rest:lower():match("^reset") then
+      ns.ResetMinimapButton()
+      ns.Print("Minimap button moved back to its starting spot.")
+    else
+      TactaraCharDB.minimapButton = not TactaraCharDB.minimapButton
+      ns.UpdateMinimapButton()
+      ns.Print("Minimap button " .. (TactaraCharDB.minimapButton and "on" or "off (the minimap's addon menu still has Tactara)"))
+    end
   elseif cmd == "icons" then
     local a, b = rest:lower():match("^(%S*)%s*(%S*)")
     local function Count(v)
@@ -555,18 +569,13 @@ end
 
 -- Entry in the minimap's addon menu (shows Tactara's icon). Left-click opens the
 -- rotation editor, right-click the settings page.
+-- (the minimap button in Minimap.lua does the same)
 function Tactara_OnAddonCompartmentClick(_, button)
-  if button == "RightButton" then ns.Options.Open() else ns.Editor.Toggle() end
+  ns.LauncherClick(button)
 end
 
 function Tactara_OnAddonCompartmentEnter(_, menuButton)
-  if not GameTooltip then return end
-  GameTooltip:SetOwner(menuButton or UIParent, "ANCHOR_LEFT")
-  GameTooltip:AddLine("Tactara " .. ns.VERSION)
-  GameTooltip:AddLine((ns.activeName or "No rotation yet"), 1, 1, 1)
-  GameTooltip:AddLine("Left-click: rotation editor", 0.6, 0.8, 1)
-  GameTooltip:AddLine("Right-click: settings", 0.6, 0.8, 1)
-  GameTooltip:Show()
+  ns.LauncherTooltip(menuButton, "ANCHOR_LEFT")
 end
 
 function Tactara_OnAddonCompartmentLeave()
