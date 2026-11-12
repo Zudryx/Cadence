@@ -1,4 +1,4 @@
-# Tactara 0.12.1: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.13.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -76,11 +76,26 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
 - **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
+- **Talents:** open the talent planner, learn talents when you level up (off by default), the glow on the next talent, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
 The `/tac` commands still work, and both always show the same settings.
 
 **Minimap button:** left-click opens the rotation editor, right-click the settings page. Drag it to move it around the edge of the minimap. `/tac minimap` hides or shows it, and `/tac minimap reset` puts it back where it started. Tactara is also in the **minimap's addon menu** (the button that lists your addons, if your minimap has it), which works the same way.
+
+## Talent planner
+
+`/tac talents` (or the **Talents** button in `/tac`, or shift-click the minimap button) opens your three talent trees, read straight from the game, with a build on them point by point from level 10 to 60.
+
+- **Tactara's builds:** Warrior has Arms, Fury and Protection leveling builds from current Forever guides, each checked against the game's trees. Other classes are coming; until then you can make your own.
+- **Your own builds:** click **New**, or **Copy** one of Tactara's. Click a talent to add a point to the end of the build, right-click to take its last point back, **Undo** takes back the last point. If you change one of Tactara's builds, you get your own copy and the original stays as it was. Rename yours in the box at the top. The planner won't let you add a point the game wouldn't take: 5 points per row in a tree, an arrow needs the talent before it maxed, 51 points in all.
+- **Share:** **Share** gives your build as text; **Import** takes one pasted from someone else.
+- **Use this build** picks the build Tactara follows for this character. Then:
+  - **Learn next** and **Learn all** learn the next points of the build when you have points to spend. Never in combat.
+  - **Learn automatically when I level up** (off by default) does the same by itself after each level, once you're out of combat.
+  - Otherwise Tactara reminds you in chat, and the next talent glows in your talent window for you to click.
+  - If WoW ever stops addons from learning talents, Tactara says so once and keeps the glow.
+- The level-by-level list shows what you've learned (green) and what's next (blue). Talents you have that the build doesn't use show their points in red on the trees.
 
 ## Rotation helper (bar highlight)
 
@@ -121,6 +136,9 @@ The `/tac` commands still work, and both always show the same settings.
 | `/tac spells` | Rotation spells you've learned, and the ones still to come |
 | `/tac show` / `hide` [`key` / `helper`] | The key bar and/or the helper popup |
 | `/tac lock` / `unlock` | Lock or move both displays |
+| `/tac talents` | Talent planner |
+| `/tac talents learn` / `learn all` | Learn the next point (or all your spare points) of the build you're using |
+| `/tac talents auto` | Learn talents by itself when you level up (on/off) |
 | `/tac minimap` | Show or hide the minimap button (`/tac minimap reset` puts it back) |
 | `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |

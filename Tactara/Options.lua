@@ -273,6 +273,17 @@ local function BuildVertical()
   }, Refresh)
 
   -- Suggestions ------------------------------------------------------------
+  Header("Talents")
+  Button("Talent planner", "Open", "Your talent trees with Tactara's builds and your own, level 10 to 60. Also /tac talents.",
+    function() ns.TalentPlanner.Show() end)
+  Check(TactaraCharDB, "talentAutoLearn", "Learn talents when I level up",
+    "When you level up, learn the next points of the build you're using. Never in combat. Off: Tactara reminds you instead.", false,
+    function() end)
+  Check(TactaraCharDB, "talentGlow", "Glow the next talent", "In your talent window, the next talent of your build glows.", true,
+    function() ns.Talents.Refresh() end)
+  Check(TactaraCharDB, "talentReminders", "Remind me about talent points", "A chat line when you have talent points to spend, with the next one in your build.", true,
+    function() end)
+
   Header("Suggestions")
   Check(TactaraCharDB, "interrupts", "Suggest interrupts", "A red slot when your target is casting something you can stop.", true, Refresh)
   Check(TactaraCharDB, "defensives", "Suggest defensives", "An orange slot when you're low on health and a defensive or self-heal is ready.", true, Refresh)
@@ -288,6 +299,7 @@ local COMMANDS = {
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
   "/tac minimap  - show or hide the minimap button",
+  "/tac talents  - talent planner (learn | learn all | auto)",
   "/tac icons helper|key 1-10 | all  - how many icons",
   "/tac fade helper|key show|fade|hide  - between fights",
   "/tac fade 40  - how visible see-through is",

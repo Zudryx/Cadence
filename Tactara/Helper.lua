@@ -524,6 +524,10 @@ local function HideGlow(btn)
   g:Hide()
 end
 
+-- The same glow on other buttons (the talent planner uses it in the talent window).
+ns.ShowButtonGlow = ShowGlow
+ns.HideButtonGlow = HideGlow
+
 ns.lastHighlight = nil
 
 function ns.UpdateHighlight()

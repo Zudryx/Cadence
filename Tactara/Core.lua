@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.12.1"
+ns.VERSION = "0.13.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -381,6 +381,7 @@ local HELP = {
   "|cffffd100/tac bind|r  press a key for the rotation (any key, even one on your bar; your keybinds stay as they are)",
   "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
   "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
+  "|cffffd100/tac talents|r  talent planner (|cffffd100/tac talents learn|r, |cffffd100learn all|r, |cffffd100auto|r)",
   "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
@@ -453,6 +454,17 @@ local function HandleSlash(msg)
     if what == "" or what == "key" or what == "bar" or what == "all" or what == "both" then TactaraCharDB.showDisplay = on end
     if what == "" or what == "helper" or what == "popup" or what == "all" or what == "both" then TactaraCharDB.showHelper = on end
     ns.HelperRefresh()
+  elseif cmd == "talents" or cmd == "talent" then
+    local sub = rest:lower()
+    if sub:match("^learn") then
+      local learned, why = ns.Talents.Learn(sub:match("all") and "all" or 1)
+      if not learned then ns.Print("Couldn't learn: " .. tostring(why)) end
+    elseif sub:match("^auto") then
+      TactaraCharDB.talentAutoLearn = not TactaraCharDB.talentAutoLearn
+      ns.Print("Learning talents when you level up: " .. (TactaraCharDB.talentAutoLearn and "on" or "off (you'll get a reminder instead)"))
+    else
+      ns.TalentPlanner.Toggle()
+    end
   elseif cmd == "minimap" then
     if rest:lower():match("^reset") then
       ns.ResetMinimapButton()

@@ -18,7 +18,13 @@ local button
 ---------------------------------------------------------------------------
 
 function ns.LauncherClick(mouseButton)
-  if mouseButton == "RightButton" then ns.Options.Open() else ns.Editor.Toggle() end
+  if IsShiftKeyDown and IsShiftKeyDown() then
+    ns.TalentPlanner.Toggle()
+  elseif mouseButton == "RightButton" then
+    ns.Options.Open()
+  else
+    ns.Editor.Toggle()
+  end
 end
 
 function ns.LauncherTooltip(owner, anchor)
@@ -29,6 +35,7 @@ function ns.LauncherTooltip(owner, anchor)
   tip:AddLine(ns.activeName or "No rotation yet", 1, 1, 1)
   tip:AddLine("Left-click: rotation editor", 0.6, 0.8, 1)
   tip:AddLine("Right-click: settings", 0.6, 0.8, 1)
+  tip:AddLine("Shift-click: talent planner", 0.6, 0.8, 1)
   if owner and owner == button then
     tip:AddLine("Drag: move it around the minimap", 0.6, 0.8, 1)
   end

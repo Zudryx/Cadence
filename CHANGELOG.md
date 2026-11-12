@@ -2,6 +2,14 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.13.0
+- **Talent planner (`/tac talents`):** your three talent trees, read from the game, with a build point by point from level 10 to 60.
+- **Tactara's builds:** Arms, Fury and Protection leveling builds for Warrior, from current Forever guides and checked against the game's trees. More classes are coming.
+- **Your own builds:** start new or copy one of Tactara's, then click talents in the order you want them. The planner only lets you add points the game would take. Share builds as text and import other people's.
+- **Learn next / Learn all:** learn the next points of the build you're using with one click. **Learn automatically when I level up** is there too, off by default. Never in combat.
+- The next talent glows in your talent window, and a chat line reminds you when you have points to spend. Both can be turned off on the settings page (Talents).
+- Shift-click the minimap button, or the new **Talents** button in `/tac`, to open the planner.
+
 ## 0.12.1
 - **`/tac probe talents`:** a read-only report on how your talents and the talent window look to Tactara, shown in a window you can copy from. It's groundwork for a talent planner and changes nothing.
 - No gameplay changes.

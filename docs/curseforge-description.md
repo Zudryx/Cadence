@@ -31,7 +31,8 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 ## Make it yours
 
 - **Rotation editor:** `/tac` opens an in-game editor. Change any rotation, write your own, and share it as plain text.
-- **Minimap button:** left-click opens the editor and right-click opens the settings page. Drag it anywhere around the minimap, or hide it.
+- **Talent planner:** `/tac talents` shows your talent trees with a build point by point, level 10 to 60. Follow Tactara's build (Warrior for now, more classes coming) or make your own, share it as text, and learn the next point with one click, or let Tactara learn it when you level up. The next talent also glows in your talent window.
+- **Minimap button:** left-click opens the editor, right-click opens the settings page and shift-click the talent planner. Drag it anywhere around the minimap, or hide it.
 - **Settings page:** Esc > Options > AddOns > Tactara, or `/tac options`.
   - Your keys: one-button, AoE and interrupt.
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.

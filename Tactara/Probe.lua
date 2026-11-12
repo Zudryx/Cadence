@@ -177,7 +177,10 @@ end
 
 local copyFrame
 
-function ns.ShowCopyText(title, text)
+-- opts (optional): { editable = true, button = "Import", hint = "...",
+-- onAccept = function(text) return true to close end }
+function ns.ShowCopyText(title, text, opts)
+  opts = opts or {}
   if not copyFrame then
     local ok, f = pcall(CreateFrame, "Frame", "TactaraCopyFrame", UIParent, "BasicFrameTemplateWithInset")
     if not ok or not f then f = CreateFrame("Frame", "TactaraCopyFrame", UIParent) end
@@ -196,7 +199,6 @@ function ns.ShowCopyText(title, text)
     f.title:SetPoint("TOP", f, "TOP", 0, -6)
     f.hint = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     f.hint:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 14, 12)
-    f.hint:SetText("It's all selected: press Ctrl+C to copy it, then paste it anywhere.")
     local okS, scroll = pcall(CreateFrame, "ScrollFrame", "TactaraCopyScroll", f, "UIPanelScrollFrameTemplate")
     if not okS or not scroll then scroll = CreateFrame("ScrollFrame", "TactaraCopyScroll", f) end
     scroll:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -30)
@@ -208,21 +210,30 @@ function ns.ShowCopyText(title, text)
     eb:SetWidth(580)
     eb:SetMaxLetters(0)
     eb:SetScript("OnEscapePressed", function() f:Hide() end)
-    -- read only: typing puts the report back
+    -- read only unless it's for pasting: typing puts the text back
     eb:SetScript("OnTextChanged", function(self, userInput)
-      if userInput then self:SetText(f.text or ""); self:HighlightText() end
+      if userInput and not f.editable then self:SetText(f.text or ""); self:HighlightText() end
     end)
     scroll:SetScrollChild(eb)
     f.edit = eb
+    f.accept = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    f.accept:SetSize(100, 22)
+    f.accept:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -12, 8)
+    f.accept:SetScript("OnClick", function()
+      if f.onAccept and f.onAccept(f.edit:GetText()) ~= false then f:Hide() end
+    end)
     copyFrame = f
   end
-  copyFrame.text = text
-  copyFrame.title:SetText(title)
-  copyFrame.edit:SetText(text)
-  copyFrame:Show()
-  copyFrame.edit:SetFocus()
-  copyFrame.edit:HighlightText()
-  return copyFrame
+  local f = copyFrame
+  f.text, f.editable, f.onAccept = text, opts.editable, opts.onAccept
+  f.title:SetText(title)
+  f.hint:SetText(opts.hint or "It's all selected: press Ctrl+C to copy it, then paste it anywhere.")
+  if opts.button then f.accept:SetText(opts.button); f.accept:Show() else f.accept:Hide() end
+  f.edit:SetText(text)
+  f:Show()
+  f.edit:SetFocus()
+  if not opts.editable then f.edit:HighlightText() end
+  return f
 end
 
 ---------------------------------------------------------------------------

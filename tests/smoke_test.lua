@@ -517,7 +517,8 @@ do
   check(#reg.cats == 1 and reg.cats[1].name == "Tactara", "settings category registered")
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
       "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
-      "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "minimapButton" }) do
+      "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "minimapButton",
+      "talentAutoLearn", "talentGlow", "talentReminders" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
@@ -548,7 +549,7 @@ do
 
   local headers = 0
   for _, i in ipairs(reg.inits) do if i.header then headers = headers + 1 end end
-  check(headers == 5, "five sections on the page (" .. headers .. ")")
+  check(headers == 6, "six sections on the page (" .. headers .. ")")
 
   S("showHelper"):SetValue(false)
   check(TactaraCharDB.showHelper == false and not ns.helperPopup:IsShown(), "unticking the helper hides it")
@@ -682,7 +683,7 @@ do
   GameTooltip.AddLine = function(_, t) lines[#lines + 1] = t end
   Tactara_OnAddonCompartmentEnter(nil, UIParent)
   GameTooltip.AddLine = realAdd
-  check(lines[1] == "Tactara " .. ns.VERSION and #lines == 4, "addon menu tooltip (no drag line)")
+  check(lines[1] == "Tactara " .. ns.VERSION and #lines == 5 and lines[5] == "Shift-click: talent planner", "addon menu tooltip (no drag line)")
 end
 
 -- every class gets its own rotation picked and built without errors

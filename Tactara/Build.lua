@@ -157,6 +157,18 @@ local function NodeName(configID, node)
   return spellID and SpellName(spellID) or nil
 end
 
+-- Which tree (Arms, Fury...) a set of talents belongs to: the name whose
+-- signature list matches the most of them. `nodes` is { [talent name] = anything }.
+function ns.NameTalentTree(classToken, nodes)
+  local bestName, bestHits = nil, 0
+  for treeName, list in pairs(TREE_SIGNATURES[classToken or ""] or {}) do
+    local hits = 0
+    for _, t in ipairs(list) do if nodes[t] ~= nil then hits = hits + 1 end end
+    if hits > bestHits then bestName, bestHits = treeName, hits end
+  end
+  return bestName
+end
+
 -- Returns { ok, trees = { {name, points, nodes = {name=rank}} }, top, talents = {name=rank}, info }
 function ns.ReadTalents(classToken)
   local result = { ok = false, trees = {}, talents = {}, info = "" }
@@ -218,16 +230,9 @@ function ns.ReadTalents(classToken)
     end
 
     -- Name the groups by signature talents.
-    local sigs = TREE_SIGNATURES[classToken or ""] or {}
     for i, key in ipairs(order) do
       local g = groups[key]
-      local bestName, bestHits = nil, 0
-      for treeName, list in pairs(sigs) do
-        local hits = 0
-        for _, t in ipairs(list) do if g.nodes[t] ~= nil then hits = hits + 1 end end
-        if hits > bestHits then bestName, bestHits = treeName, hits end
-      end
-      result.trees[#result.trees + 1] = { name = bestName or ("Tree " .. i), points = g.points, nodes = g.nodes }
+      result.trees[#result.trees + 1] = { name = ns.NameTalentTree(classToken, g.nodes) or ("Tree " .. i), points = g.points, nodes = g.nodes }
     end
     local top
     for _, t in ipairs(result.trees) do

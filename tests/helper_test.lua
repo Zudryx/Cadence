@@ -914,5 +914,295 @@ do
   ns.ListRotations, ns.ReadBuild, TactaraCharDB.active = realList, realBuild, saved
 end
 
+
+---------------------------------------------------------------------------
+-- Talent builds and learning, on the real Warrior tree from the probe
+---------------------------------------------------------------------------
+do
+  local T = ns.Talents
+  local FIX = dofile(root .. "/../tests/talent_fixture.lua")
+  local byId, order = {}, {}
+  local function reset()
+    byId, order = {}, {}
+    for _, n in ipairs(FIX) do
+      byId[n.id] = { id = n.id, x = n.x, y = n.y, rank = n.rank, max = n.max, name = n.name, spell = n.spell, to = n.to, staged = 0 }
+      order[#order + 1] = n.id
+    end
+  end
+  reset()
+  local earned, canAdd, forceStaged, refuse = 3, true, false, {}
+  local commits, rollbacks, onPurchase = 0, 0, nil
+  local function anyStaged()
+    for _, n in pairs(byId) do if n.staged > 0 then return true end end
+    return false
+  end
+  local realCT, realTraits = C_ClassTalents, C_Traits
+  C_ClassTalents = {
+    GetActiveConfigID = function() return 5914191 end,
+    CanChangeTalents = function() return true, canAdd, (not canAdd) and "TEST: not now" or nil end,
+    CommitConfig = function()
+      commits = commits + 1
+      for _, n in pairs(byId) do n.rank = n.rank + n.staged; n.staged = 0 end
+      return true
+    end,
+  }
+  C_Traits = {
+    GetConfigInfo = function() return { treeIDs = { 1117 } } end,
+    GetTreeNodes = function() return order end,
+    GetNodeInfo = function(_, id)
+      local n = byId[id]
+      local edges = {}
+      for _, t in ipairs(n.to) do edges[#edges + 1] = { targetNode = t } end
+      return { ID = id, posX = n.x, posY = n.y, maxRanks = n.max, ranksPurchased = n.rank + n.staged,
+        entryIDs = { id }, visibleEdges = edges, subTreeID = 0 }
+    end,
+    GetEntryInfo = function(_, id) return { definitionID = id, maxRanks = byId[id].max } end,
+    GetDefinitionInfo = function(id) return { spellID = byId[id].spell, overrideName = byId[id].name } end,
+    GetTreeCurrencyInfo = function() return { { maxQuantity = earned } } end,
+    CanPurchaseRank = function(_, id) return not refuse[id] end,
+    PurchaseRank = function(_, id)
+      if onPurchase then return onPurchase(id) end
+      byId[id].staged = byId[id].staged + 1
+      return true
+    end,
+    ConfigHasStagedChanges = function() return forceStaged or anyStaged() end,
+    RollbackConfig = function() rollbacks = rollbacks + 1; for _, n in pairs(byId) do n.staged = 0 end end,
+  }
+
+  -- reading the tree
+  local tree, why = T.ReadTree()
+  check(tree ~= nil, "talent tree read: " .. tostring(why))
+  tree = tree or { list = {}, trees = {}, byName = {}, nodes = {} }
+  check(#tree.list == 53 and #tree.trees == 3, ("53 talents in 3 trees (%d, %d)"):format(#tree.list, #tree.trees))
+  check(tree.trees[1] and tree.trees[1].name == "Arms" and tree.trees[2].name == "Fury" and tree.trees[3].name == "Protection",
+    "trees named Arms / Fury / Protection: " .. tostring(tree.trees[1] and tree.trees[1].name) .. ", "
+      .. tostring(tree.trees[2] and tree.trees[2].name) .. ", " .. tostring(tree.trees[3] and tree.trees[3].name))
+  local function N(name) return tree.byName[name:lower()] end
+  check(N("Mortal Strike").row == 7 and N("Anger Management").row == 3 and N("Deflection").row == 1, "rows from the game's layout")
+  check(N("Improved Heroic Strike").col == 1 and N("Improved Overpower").col == 4 and N("Bastion").tree == 3, "columns and trees")
+  check(#N("Deep Wounds").from == 1 and N("Deep Wounds").from[1] == N("Improved Rend").id, "arrow: Improved Rend into Deep Wounds")
+  check(tree.earned == 3 and tree.spent == 3 and tree.unspent == 0, "points: 3 earned, 3 spent")
+
+  -- the built-in builds are legal, 51 points each
+  local builds = T.BuildsForClass("WARRIOR")
+  check(#builds == 3, "three Warrior builds")
+  local want = { ["Warrior - Arms"] = "34/15/2", ["Warrior - Fury"] = "19/32/0", ["Warrior - Protection"] = "10/10/31" }
+  for _, b in ipairs(builds) do
+    local split, sim = T.Split(b, tree)
+    check(sim.ok and sim.total == 51, b.name .. " is legal with 51 points: "
+      .. (sim.firstError and ("level " .. sim.firstError.level .. " " .. sim.firstError.err) or tostring(sim.total)))
+    check(split == want[b.name], b.name .. " splits " .. want[b.name] .. " (" .. split .. ")")
+    local again = T.Parse(T.Export(b))
+    check(table.concat(again.picks, ",") == table.concat(b.picks, ","), b.name .. " survives export and import")
+  end
+
+  -- the rules
+  local function firstErr(picks)
+    local sim = T.Simulate(picks, tree)
+    return sim.firstError and sim.firstError.err or "ok", sim.firstError and sim.firstError.index
+  end
+  check(firstErr({ "Mortal Strike" }):find("needs 30 points in Arms"), "row rule: Mortal Strike needs 30 in Arms")
+  local p = { "Deflection", "Deflection", "Deflection", "Deflection", "Deflection",
+    "Improved Heroic Strike", "Improved Heroic Strike", "Improved Heroic Strike",
+    "Improved Overpower", "Improved Overpower", "Improved Rend", "Deep Wounds" }
+  local e, at = firstErr(p)
+  check(e:find("needs Improved Rend 3/3") and at == 12, "arrow rule: Deep Wounds needs Improved Rend maxed (" .. e .. ")")
+  check(firstErr({ "Improved Rend", "Improved Rend", "Improved Rend", "Improved Rend" }):find("already 3/3"), "max rank rule")
+  check(firstErr({ "Bladestorm" }):find("no talent called Bladestorm"), "unknown talents are flagged")
+  local many = {}
+  for _, b in ipairs(builds) do if b.name == "Warrior - Arms" then for _, x in ipairs(b.picks) do many[#many + 1] = x end end end
+  many[#many + 1] = "Improved Heroic Strike"
+  local e52, at52 = firstErr(many)
+  check(e52:find("more than 51") and at52 == 52, "52nd point is one too many")
+
+  -- where you are in a build (you have Improved Heroic Strike 1, Improved Rend 1, Improved Bloodrage 1)
+  local arms = T.GetBuild("Warrior - Arms")
+  local prog = T.Progress(arms, tree)
+  check(prog.next and prog.next.node.name == "Improved Rend" and prog.next.rank == 2, "next in Arms: Improved Rend 2/3")
+  check(#prog.offPlan == 1 and prog.offPlan[1] == "Improved Heroic Strike", "Improved Heroic Strike isn't in the Arms build")
+
+  -- your own builds
+  local mine = T.SaveCustom({ name = "Warrior - Arms", class = "WARRIOR", picks = { "Deflection", "Deflection" } })
+  check(mine.name == "Warrior - Arms 2" and T.GetBuild("Warrior - Arms 2") and #T.GetBuild("Warrior - Arms 2").picks == 2,
+    "copying a built-in build gets its own name")
+  check(T.RenameCustom("Warrior - Arms 2", "Tank leveling") and T.GetBuild("Tank leveling") and not T.GetBuild("Warrior - Arms 2"), "rename")
+  check(not T.RenameCustom("Tank leveling", "Warrior - Fury"), "can't take a built-in build's name")
+  check(#T.BuildsForClass("WARRIOR") == 4, "your build is listed after the built-in ones")
+  T.DeleteCustom("Tank leveling")
+  check(#T.BuildsForClass("WARRIOR") == 3, "delete")
+
+  -- learning
+  chat = {}
+  local learned, reason = T.Learn(1)
+  check(not learned and reason:find("pick a build"), "learning needs a build: " .. tostring(reason))
+  T.SetActive("Warrior - Arms")
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("no talent points"), "learning needs a spare point")
+  earned = 6   -- level 15: three points to spend
+  inCombat = true
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("combat"), "never in combat")
+  inCombat = false
+  canAdd = false
+  learned, reason = T.Learn(1)
+  check(not learned and reason == "TEST: not now", "the game says no: " .. tostring(reason))
+  canAdd = true
+  forceStaged = true
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("aren't applied yet"), "unapplied changes in the talent window come first")
+  forceStaged = false
+  chat = {}
+  learned, reason = T.Learn(1)
+  runTimers()
+  check(learned and #learned == 1 and byId[N("Improved Rend").id].rank == 2 and commits == 1, "Learn next: Improved Rend 2/3")
+  check(table.concat(chat, "\n"):find("Learned: Improved Rend 2/3"), "says what it learned: " .. table.concat(chat, " | "))
+  chat = {}
+  learned = T.Learn("all")
+  runTimers()
+  check(learned and #learned == 2 and byId[N("Improved Rend").id].rank == 3 and byId[N("Deflection").id].rank == 1,
+    "Learn all: Improved Rend 3/3 and Deflection 1/5")
+  -- the game won't take the next one
+  earned = 7
+  refuse[N("Deflection").id] = true
+  local before = commits
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("won't take Deflection") and commits == before and rollbacks > 0, "game refuses: nothing committed")
+  refuse = {}
+
+  -- talent window glow
+  local glowOn, glowOff = {}, {}
+  local realShow, realHide = ns.ShowButtonGlow, ns.HideButtonGlow
+  ns.ShowButtonGlow = function(btn, kind) glowOn[#glowOn + 1] = { btn = btn, kind = kind } end
+  ns.HideButtonGlow = function(btn) glowOff[#glowOff + 1] = btn end
+  local buttons = {}
+  PlayerSpellsFrame = { TalentsFrame = {
+    IsVisible = function() return true end,
+    GetTalentButtonByNodeID = function(_, id) buttons[id] = buttons[id] or { id = id }; return buttons[id] end,
+  } }
+  T.UpdateTalentWindowGlow()
+  check(#glowOn == 1 and glowOn[1].btn.id == N("Deflection").id and glowOn[1].kind == "next", "talent window: the next talent glows")
+  TactaraCharDB.talentGlow = false
+  T.UpdateTalentWindowGlow()
+  check(#glowOff == 1 and #glowOn == 1, "glow can be turned off")
+  TactaraCharDB.talentGlow = nil
+
+  -- blocked by the game: remember it and fall back to the glow
+  onPurchase = function() T.HandleEvent("ADDON_ACTION_FORBIDDEN", "Tactara", "PurchaseRank()") end
+  chat = {}
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("doesn't let addons") and TactaraDB.talentLearnBlocked == "70000", "blocked learning is remembered")
+  check(table.concat(chat, "\n"):find("glow the next talent"), "and explained")
+  onPurchase = nil
+  learned, reason = T.Learn(1)
+  check(not learned and reason:find("doesn't let addons"), "no second try on the same game build")
+  T.blocked, TactaraDB.talentLearnBlocked = false, nil
+
+  -- level up: reminder, or learning by itself when that's on
+  chat = {}
+  T.HandleEvent("PLAYER_LEVEL_UP", 16)
+  runTimers()
+  check(table.concat(chat, "\n"):find("1 talent point to spend. Next in Warrior %- Arms: Deflection 2/5"), "level up reminder: " .. table.concat(chat, " | "))
+  TactaraCharDB.talentAutoLearn = true
+  inCombat = true
+  T.HandleEvent("PLAYER_LEVEL_UP", 16)
+  runTimers()
+  check(byId[N("Deflection").id].rank == 1, "auto-learn waits for the fight to end")
+  inCombat = false
+  chat = {}
+  T.HandleEvent("PLAYER_REGEN_ENABLED")
+  runTimers()
+  check(byId[N("Deflection").id].rank == 2 and table.concat(chat, "\n"):find("Learned: Deflection 2/5"), "auto-learn after combat")
+  TactaraCharDB.talentAutoLearn = nil
+  ns.ShowButtonGlow, ns.HideButtonGlow = realShow, realHide
+  PlayerSpellsFrame = nil
+  ns.TalentTest = { byId = byId, reset = reset, setEarned = function(v) earned = v end }
+end
+
+
+-- the talent planner window (still on the real Warrior tree)
+do
+  local T, P = ns.Talents, ns.TalentPlanner
+  ns.TalentTest.setEarned(7)
+  local okShow, eShow = pcall(P.Show)
+  check(okShow, "planner opens: " .. tostring(eShow))
+  check(P.Selected() and P.Selected().name == "Warrior - Arms", "opens on the build you're using")
+  local shown = 0
+  for _, b in ipairs(P.debug.buttons) do if b:IsShown() and b.node then shown = shown + 1 end end
+  check(shown == 53, "all 53 talents drawn (" .. shown .. ")")
+  local function Btn(name)
+    for _, b in ipairs(P.debug.buttons) do if b.node and b.node.name == name then return b end end
+  end
+  local order = P.debug.ui.orderText:GetText() or ""
+  check(order:find("10  Improved Rend 1/3") and order:find("50  Lingering Rage 5/5"), "level by level list")
+  -- a full built-in build: adding one more is refused, and no copy is made
+  local before = #T.BuildsForClass("WARRIOR")
+  Btn("Mortal Strike"):GetScript("OnClick")(Btn("Mortal Strike"), "LeftButton")
+  check(#T.BuildsForClass("WARRIOR") == before and (P.debug.status() or ""):find("more than 51"), "can't go past 51 points")
+  -- a new build of your own
+  P.debug.ui.new:GetScript("OnClick")(P.debug.ui.new)
+  check(P.Selected() and P.Selected().name == "My build" and #P.Selected().picks == 0, "New makes an empty build")
+  local rend = Btn("Improved Rend")
+  for _ = 1, 3 do rend:GetScript("OnClick")(rend, "LeftButton") end
+  check(#P.Selected().picks == 3, "three clicks, three points")
+  local dw = Btn("Deep Wounds")
+  dw:GetScript("OnClick")(dw, "LeftButton")
+  check(#P.Selected().picks == 3 and (P.debug.status() or ""):find("needs 10 points in Arms"), "Deep Wounds refused: " .. tostring(P.debug.status()))
+  rend:GetScript("OnClick")(rend, "RightButton")
+  check(#P.Selected().picks == 2, "right-click takes one back")
+  -- changing a built-in build makes your own copy
+  P.Select("Warrior - Fury")
+  local hs = Btn("Improved Heroic Strike")
+  P.debug.ui.undo:GetScript("OnClick")(P.debug.ui.undo)
+  check(P.Selected().name == "My Fury build" and #P.Selected().picks == 50 and #T.GetBuild("Warrior - Fury").picks == 51,
+    "Undo on Tactara's build edits your copy: " .. tostring(P.Selected().name))
+  hs:GetScript("OnClick")(hs, "LeftButton")
+  check(#P.Selected().picks == 51 and P.Selected().picks[51] == "Improved Heroic Strike", "and you can finish it your way")
+  -- share and import
+  local copied, copyOpts
+  local realCopy = ns.ShowCopyText
+  ns.ShowCopyText = function(_, text, opts) copied, copyOpts = text, opts end
+  P.debug.ui.share:GetScript("OnClick")(P.debug.ui.share)
+  check(copied and copied:find("name: My Fury build") and copied:find("order:") and copied:find("Dual Wield Specialization 5"), "Share gives the build as text")
+  P.debug.ui.import:GetScript("OnClick")(P.debug.ui.import)
+  check(copyOpts and copyOpts.editable and copyOpts.onAccept, "Import opens a box to paste into")
+  local okI = copyOpts and copyOpts.onAccept(T.Export(T.GetBuild("Warrior - Protection")))
+  check(okI and P.Selected().name == "Warrior - Protection 2" and #P.Selected().picks == 51, "imported build saved: " .. tostring(P.Selected().name))
+  check(copyOpts.onAccept("hello") == false, "junk isn't imported")
+  ns.ShowCopyText = realCopy
+  -- use it, then learn from the window
+  P.debug.ui.use:GetScript("OnClick")(P.debug.ui.use)
+  check(T.ActiveBuild().name == "Warrior - Protection 2", "Use this build")
+  local learnCalls = {}
+  local realLearn = T.Learn
+  T.Learn = function(n) learnCalls[#learnCalls + 1] = n; return {}, nil end
+  P.debug.ui.learn:GetScript("OnClick")(P.debug.ui.learn)
+  P.debug.ui.learnAll:GetScript("OnClick")(P.debug.ui.learnAll)
+  T.Learn = realLearn
+  check(learnCalls[1] == 1 and learnCalls[2] == "all", "Learn next / Learn all buttons")
+  -- rename and delete your build
+  P.debug.ui.name:SetText("Prot (mine)")
+  P.debug.ui.name:GetScript("OnEnterPressed")(P.debug.ui.name)
+  check(P.Selected().name == "Prot (mine)" and TactaraCharDB.talentBuild == "Prot (mine)", "rename keeps it in use")
+  local del = P.debug.ui.delete
+  del:GetScript("OnClick")(del)
+  del:GetScript("OnClick")(del)
+  check(not T.GetBuild("Prot (mine)") and TactaraCharDB.talentBuild == nil, "delete asks once, then deletes")
+  -- slash commands and the minimap shortcut
+  local toggled = 0
+  local realToggle = P.Toggle
+  P.Toggle = function() toggled = toggled + 1 end
+  SlashCmdList.TACTARA("talents")
+  IsShiftKeyDown = function() return true end
+  ns.LauncherClick("LeftButton")
+  IsShiftKeyDown = nil
+  P.Toggle = realToggle
+  check(toggled == 2, "/tac talents and shift-click open the planner")
+  chat = {}
+  SlashCmdList.TACTARA("talents auto")
+  check(TactaraCharDB.talentAutoLearn == true and table.concat(chat, " "):find("on"), "/tac talents auto")
+  SlashCmdList.TACTARA("talents auto")
+  check(not TactaraCharDB.talentAutoLearn, "/tac talents auto again: off")
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

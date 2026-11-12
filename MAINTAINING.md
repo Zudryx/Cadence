@@ -7,6 +7,8 @@ These are the steps the scheduled rotation review follows. A person can follow t
 - **Tactara stays an assistant.** Never add anything that casts without the player's own key press, repeats presses, changes what the key casts mid-fight on its own, or controls the game from outside (the updater only downloads files). If a guide's advice could only be followed by automating play, leave it out and say so in the pull request.
 - **Don't name other rotation or one-button addons** in the addon, its guide, the changelog or pull requests, and never suggest Tactara is one of them or works with them. (Listing the action-bar addons the glow works with is fine.)
 - **License headers.** Tactara is GPL-3.0 only. New Lua files start with the same two license lines as the others (`-- Copyright (C) 2026 Zudryx. ...` and `-- SPDX-License-Identifier: GPL-3.0-only`). Don't change `LICENSE`, which must stay the unmodified GPL text; the name and logo terms live in `NOTICE.md`.
+- **The owner tests before anything is published.** Work goes on the `testing` branch (pushing there publishes nothing) and the owner gets a test zip. Merge to `main` only after the owner says it's good, because merging to `main` publishes to GitHub and CurseForge.
+- **Talents are learned only by the player's choice:** a Learn click, or level-up learning the player turned on. Never in combat, only the build the player picked.
 - **Keep the CurseForge page in step.** `docs/curseforge-description.md` is the text on the CurseForge project page. When a release changes what Tactara does (a new class feature, setting or limit), update it too, with the same rules as the README.
 
 ## 1. Check the guides
@@ -57,3 +59,8 @@ If the game's interface version changes, update `## Interface:` in `Tactara/Tact
 ## CurseForge uploads
 
 Each new release is also uploaded to CurseForge (project 1795307, set by `## X-Curse-Project-ID` in `Tactara/Tactara.toc`) by `.github/scripts/curseforge_upload.py`, tagged with the WoW Forever game version that matches `## Interface` (16001 = 1.60.1) and with that version's CHANGELOG section. It needs the `CF_API_KEY` repository secret; without it the upload is skipped with a notice. To test the token without uploading, run the Release workflow by hand (Actions > Release > Run workflow) with **CurseForge: check**. If an upload fails, fix the cause and run it with **upload**.
+
+## Talent builds
+
+Tactara's recommended talent builds live in `Tactara/TalentBuilds/<Class>.lua`, one `ns.RegisterTalentBuild` per spec, as a point-by-point order from level 10. Check them with the Forever guides when you check rotations. Every build must be legal on the game's trees: the tests check the Warrior builds against the real Warrior tree in `tests/talent_fixture.lua` (from `/tac probe talents`). For another class, get a probe from that class first and add its fixture and checks the same way.
+
