@@ -76,7 +76,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
 - **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
-- **Talents:** open the talent planner, learn talents when you level up (off by default), the glow on the next talent, and the chat reminder.
+- **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
 The `/tac` commands still work, and both always show the same settings.
@@ -85,10 +85,10 @@ The `/tac` commands still work, and both always show the same settings.
 
 ## Talent planner
 
-`/tac talents` (or the **Talents** button in `/tac`, or shift-click the minimap button) opens your three talent trees, read straight from the game, with a build on them point by point from level 10 to 60.
+`/tac talents` (or the **Tactara planner** button at the bottom of the game's talent window, the **Talents** button in `/tac`, or shift-click the minimap button) opens your three talent trees, read straight from the game, with a build on them point by point from level 10 to 60.
 
 - **Tactara's builds:** Warrior has Arms, Fury and Protection leveling builds from current Forever guides, each checked against the game's trees. Other classes are coming; until then you can make your own.
-- **Your own builds:** click **New**, or **Copy** one of Tactara's. Click a talent to add a point to the end of the build, right-click to take its last point back, **Undo** takes back the last point. If you change one of Tactara's builds, you get your own copy and the original stays as it was. Rename yours in the box at the top. The planner won't let you add a point the game wouldn't take: 5 points per row in a tree, an arrow needs the talent before it maxed, 51 points in all.
+- **Your own builds:** click **New**, **Copy** one of Tactara's, or **Start from my talents** to begin with the points you already have (no respec needed) and plan the rest. Click a talent to add a point to the end of the build, right-click to take its last point back, **Undo** takes back the last point. If you change one of Tactara's builds, you get your own copy and the original stays as it was. Rename yours in the box at the top. The planner won't let you add a point the game wouldn't take: 5 points per row in a tree, an arrow needs the talent before it maxed, 51 points in all.
 - **Share:** **Share** gives your build as text; **Import** takes one pasted from someone else.
 - **Use this build** picks the build Tactara follows for this character. Then:
   - **Learn next** and **Learn all** learn the next points of the build when you have points to spend. Never in combat.

@@ -377,6 +377,23 @@ function T.Progress(build, tree)
   return { sim = sim, pending = pending, offPlan = offPlan, next = pending[1] }
 end
 
+-- A build made from the talents you have now, in an order the game would
+-- take (top rows first), so you can keep your points and plan the rest.
+function T.FromCurrent(tree)
+  local nodes = {}
+  for _, node in ipairs(tree.list) do if node.rank > 0 then nodes[#nodes + 1] = node end end
+  table.sort(nodes, function(a, b)
+    if a.row ~= b.row then return a.row < b.row end
+    if a.tree ~= b.tree then return a.tree < b.tree end
+    return a.col < b.col
+  end)
+  local picks = {}
+  for _, node in ipairs(nodes) do
+    for _ = 1, node.rank do picks[#picks + 1] = node.name end
+  end
+  return picks
+end
+
 -- Points per tree for a build, like "34/15/2".
 function T.Split(build, tree)
   local sim = T.Simulate(build.picks, tree)
@@ -552,13 +569,63 @@ end
 
 function T.OnChange(fn) watchers[#watchers + 1] = fn end
 
+-- A "Tactara planner" button in the bottom bar of the game's talent window,
+-- left of Apply Changes. It's Tactara's own button; Blizzard's window is
+-- left exactly as it is.
+local windowButton
+
+local function PlaceWindowButton(f)
+  local b = windowButton
+  if not b then return end
+  if TactaraCharDB.talentButton == false then b:Hide() return end
+  b:ClearAllPoints()
+  local ab = f.ApplyButton
+  local ok, y = pcall(function()
+    if ab and ab:GetBottom() and f:GetBottom() then return ab:GetBottom() - f:GetBottom() end
+  end)
+  b:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 16, (ok and y) or 8)
+  b:Show()
+end
+
+local function MakeWindowButton(f)
+  local b = CreateFrame("Button", "TactaraTalentWindowButton", f, "UIPanelButtonTemplate")
+  b:SetSize(140, 22)
+  b:SetText("Tactara planner")
+  b:SetFrameLevel((f:GetFrameLevel() or 1) + 20)
+  b:SetScript("OnClick", function() ns.TalentPlanner.Toggle() end)
+  b:SetScript("OnEnter", function(self)
+    if not GameTooltip then return end
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Tactara talent planner")
+    local build = T.ActiveBuild()
+    local tree = build and T.ReadTree()
+    if build then
+      GameTooltip:AddLine("Following: " .. build.name, 1, 1, 1)
+      if tree then GameTooltip:AddLine("Next: " .. T.NextText(build, tree), 0.3, 0.75, 1) end
+    else
+      GameTooltip:AddLine("Pick a build to follow, or plan your own.", 1, 1, 1, true)
+    end
+    GameTooltip:Show()
+  end)
+  b:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+  return b
+end
+
+function T.UpdateWindowButton()
+  local f = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
+  if f and windowButton then PlaceWindowButton(f) end
+end
+
 local hooked = false
 local function HookTalentWindow()
   local f = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
   if hooked or not (f and f.HookScript) then return end
   hooked = true
-  f:HookScript("OnShow", function() T.UpdateTalentWindowGlow() end)
+  local okB, b = pcall(MakeWindowButton, f)
+  if okB then windowButton = b; T.windowButton = b end
+  f:HookScript("OnShow", function() PlaceWindowButton(f); T.UpdateTalentWindowGlow() end)
   f:HookScript("OnHide", function() T.UpdateTalentWindowGlow() end)
+  if f.IsShown and f:IsShown() then PlaceWindowButton(f) end
 end
 
 local ev = CreateFrame("Frame")

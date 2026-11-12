@@ -1204,5 +1204,42 @@ do
   check(not TactaraCharDB.talentAutoLearn, "/tac talents auto again: off")
 end
 
+
+-- start a build from the talents you have, and the button in the game's talent window
+do
+  local T, P = ns.Talents, ns.TalentPlanner
+  local tree = T.ReadTree()
+  local b = P.FromMyTalents()
+  local sim = b and T.Simulate(b.picks, tree)
+  check(b and b.name == "My talents" and #b.picks == tree.spent and sim.ok,
+    ("Start from my talents: %s points, legal %s"):format(tostring(b and #b.picks), tostring(sim and sim.ok)))
+  check(P.Selected() and P.Selected().name == "My talents", "and it's selected to keep planning")
+  local mixed = { ["Improved Heroic Strike"] = true, ["Improved Bloodrage"] = true }
+  local found = 0
+  for _, p in ipairs(b and b.picks or {}) do if mixed[p] then found = found + 1 end end
+  check(found >= 2, "it keeps points that aren't in any Tactara build")
+
+  local tf = CreateFrame("Frame", "StubTalentsFrame")
+  tf.GetTalentButtonByNodeID = function() return nil end
+  PlayerSpellsFrame = { TalentsFrame = tf }
+  T.HandleEvent("ADDON_LOADED", "Blizzard_PlayerSpells")
+  local wb = frames.TactaraTalentWindowButton
+  check(wb and wb:IsShown() and wb._text == "Tactara planner", "planner button in the talent window")
+  local toggled = 0
+  local realToggle = P.Toggle
+  P.Toggle = function() toggled = toggled + 1 end
+  if wb then wb:GetScript("OnClick")(wb) end
+  P.Toggle = realToggle
+  check(toggled == 1, "the button opens the planner")
+  check(wb and pcall(wb:GetScript("OnEnter"), wb), "button tooltip")
+  TactaraCharDB.talentButton = false
+  T.UpdateWindowButton()
+  check(wb and not wb:IsShown(), "the button can be turned off")
+  TactaraCharDB.talentButton = nil
+  T.UpdateWindowButton()
+  check(wb and wb:IsShown(), "and back on")
+  PlayerSpellsFrame = nil
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

@@ -429,6 +429,8 @@ local function Build()
   ui.import:SetPoint("TOPLEFT", ui.new, "BOTTOMLEFT", 0, -4)
   ui.delete = Button(frame, "Delete", 84)
   ui.delete:SetPoint("LEFT", ui.import, "RIGHT", 4, 0)
+  ui.fromMine = Button(frame, "Start from my talents", 172)
+  ui.fromMine:SetPoint("TOPLEFT", ui.import, "BOTTOMLEFT", 0, -4)
 
   -- build name and info
   ui.name = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
@@ -524,6 +526,7 @@ local function Build()
     Status("New build. Click talents in the order you want them, starting at level 10.")
     P.Select(b.name)
   end)
+  ui.fromMine:SetScript("OnClick", function() P.FromMyTalents() end)
   ui.copy:SetScript("OnClick", function()
     if not selected then return end
     local copy = { name = T.UniqueName(selected.name), class = selected.class or ns.GetClassToken(),
@@ -606,6 +609,19 @@ local function Build()
     TactaraCharDB.talentGlow = self:GetChecked() and true or false
     T.Refresh()
   end)
+end
+
+-- A new build of your own that starts with the talents you have now.
+function P.FromMyTalents()
+  local tree = T.ReadTree()
+  if not tree then Status("Tactara can't read your talents right now.", true) return end
+  local picks = T.FromCurrent(tree)
+  if #picks == 0 then Status("You haven't learned any talents yet. Click New to plan from scratch.", true) return end
+  local b = T.SaveCustom({ name = T.UniqueName("My talents"), class = ns.GetClassToken(),
+    notes = "Started from the talents I had at level " .. tostring(UnitLevel and UnitLevel("player") or "?") .. ".", picks = picks })
+  P.Select(b.name)
+  Status(("Your %d point%s are in. Click talents to plan the rest, then Use this build."):format(#picks, #picks == 1 and "" or "s"))
+  return b
 end
 
 function P.Show()

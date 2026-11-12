@@ -518,7 +518,7 @@ do
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
       "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
       "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "minimapButton",
-      "talentAutoLearn", "talentGlow", "talentReminders" }) do
+      "talentAutoLearn", "talentGlow", "talentReminders", "talentButton" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end

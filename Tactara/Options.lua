@@ -279,6 +279,9 @@ local function BuildVertical()
   Check(TactaraCharDB, "talentAutoLearn", "Learn talents when I level up",
     "When you level up, learn the next points of the build you're using. Never in combat. Off: Tactara reminds you instead.", false,
     function() end)
+  Check(TactaraCharDB, "talentButton", "Planner button in the talent window",
+    "A \"Tactara planner\" button at the bottom of the game's talent window that opens the planner.", true,
+    function() ns.Talents.UpdateWindowButton() end)
   Check(TactaraCharDB, "talentGlow", "Glow the next talent", "In your talent window, the next talent of your build glows.", true,
     function() ns.Talents.Refresh() end)
   Check(TactaraCharDB, "talentReminders", "Remind me about talent points", "A chat line when you have talent points to spend, with the next one in your build.", true,
