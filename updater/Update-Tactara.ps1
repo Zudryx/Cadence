@@ -7,7 +7,9 @@
 # What it does:
 #   1. Finds your World of Warcraft\_forever_\Interface\AddOns folder
 #      (remembers it after the first run; asks you if it can't find it).
-#   2. Checks GitHub for the newest Tactara release.
+#   2. Checks GitHub for the newest Tactara release. "Update Tactara
+#      (testing).bat" takes the newest test build instead (pre-releases
+#      that haven't gone to CurseForge yet), for trying changes early.
 #   3. If it's newer than what you have, backs up your current copy
 #      (next to this script, in "backup") and installs the new one.
 # Your own rotation edits are stored by WoW in WTF\...\SavedVariables,
@@ -18,7 +20,8 @@
 # Tactara) and copies its saved settings over to Tactara's, once.
 
 param(
-  [switch]$Force   # reinstall even if you're up to date
+  [switch]$Force,    # reinstall even if you're up to date
+  [switch]$Testing   # newest build including test builds (pre-releases)
 )
 
 $ErrorActionPreference = 'Stop'
@@ -153,7 +156,9 @@ try {
   Write-Host '  ---------------'
 
   $addons = Find-AddOnsFolder
-  @{ AddOns = $addons } | ConvertTo-Json | Set-Content -Path $ConfigPath -Encoding UTF8
+  $lastTag = $null
+  try { if (Test-Path $ConfigPath) { $lastTag = (Get-Content $ConfigPath -Raw | ConvertFrom-Json).InstalledTag } } catch {}
+  @{ AddOns = $addons; InstalledTag = $lastTag } | ConvertTo-Json | Set-Content -Path $ConfigPath -Encoding UTF8
   Write-Host "  AddOns folder: $addons"
 
   $installed = Get-InstalledVersion $addons
@@ -165,12 +170,21 @@ try {
     $copied = Copy-OldSettings $addons
     if ($copied -gt 0) { Write-Host "  Carried your settings over to Tactara ($copied file(s))." -ForegroundColor Green }
   }
-  $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers $Headers
+  if ($Testing) {
+    # newest release of any kind: test builds are pre-releases
+    $all = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases?per_page=20" -Headers $Headers
+    $release = $all | Where-Object { -not $_.draft } | Select-Object -First 1
+    if (-not $release) { throw 'No Tactara releases found.' }
+  } else {
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers $Headers
+  }
   $latest = $release.tag_name.TrimStart('v')
   $shown = if ($installed) { $installed } else { 'not installed' }
-  Write-Host "  Installed: $shown    Latest: $latest"
+  $label = if ($Testing) { 'Newest (test builds included)' } else { 'Latest' }
+  Write-Host "  Installed: $shown    ${label}: $latest"
 
-  if (-not $Force -and -not (Test-Newer $latest $installed)) {
+  $upToDate = if ($Testing) { $lastTag -eq $release.tag_name } else { -not (Test-Newer $latest $installed) }
+  if (-not $Force -and $upToDate) {
     Write-Host ''
     Write-Host '  You already have the latest Tactara.' -ForegroundColor Green
     if ($hasOld) { Write-Host "  Moved the old Cadence folder out of AddOns: $(Move-OldInstall $addons)" }
@@ -216,8 +230,13 @@ try {
   # only now that Tactara is in place, so a failed download never leaves you with neither
   if ($hasOld) { Write-Host "  Moved the old Cadence folder out of AddOns: $(Move-OldInstall $addons)" }
 
+  @{ AddOns = $addons; InstalledTag = $release.tag_name } | ConvertTo-Json | Set-Content -Path $ConfigPath -Encoding UTF8
+
   Write-Host ''
   Write-Host "  Tactara $latest installed." -ForegroundColor Green
+  if ($release.prerelease) {
+    Write-Host '  This is a test build. "Update Tactara.bat" goes back to the normal releases.' -ForegroundColor Yellow
+  }
   Write-Host '  If WoW is running, type /reload in game.'
   if ($release.body) {
     Write-Host ''

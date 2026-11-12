@@ -43,8 +43,9 @@ Then in game: `/tac bind` to pick your rotation key, and `/tac help` for everyth
 
 1. Rotations live in `Tactara/Rotations/<Class>.lua` as plain text priority lists and sequences.
 2. A scheduled review checks the Forever class guides (Icy Veins, Warcraft Tavern, Wowhead) and opens a **pull request** when rotations should change, explaining what changed and why. See [MAINTAINING.md](MAINTAINING.md).
-3. Merging a pull request that bumps the version in `Tactara/Tactara.toc` publishes a new **release** automatically, on GitHub and on [CurseForge](https://www.curseforge.com/projects/1795307). The tests have to pass first.
-4. The updater installs the newest release. Your own rotation edits are stored in WoW's SavedVariables and are never overwritten.
+3. Changes go to the `testing` branch first. Each push there publishes a **test build** as a GitHub pre-release: not on CurseForge, and the normal updater skips it. To try one, run **Update Tactara (testing).bat** from `TactaraUpdater.zip`, or download its zip.
+4. Once a test build is approved, `testing` is merged into `main`, which publishes the **release** on GitHub and on [CurseForge](https://www.curseforge.com/projects/1795307). The tests have to pass first.
+5. The updater installs the newest release. Your own rotation edits are stored in WoW's SavedVariables and are never overwritten.
 
 ## Development
 

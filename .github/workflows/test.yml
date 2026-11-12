@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
   push:
-    branches-ignore: [main]   # main is tested by the release workflow
+    branches-ignore: [main, testing]   # main and testing are tested by the release workflow
   workflow_dispatch:
 
 jobs:

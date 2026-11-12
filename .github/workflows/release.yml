@@ -1,16 +1,21 @@
 name: Release
 
-# Every push to main: run the tests, and if the version in Tactara.toc
-# hasn't been released yet, publish GitHub release vX.Y.Z with the addon zip
-# and upload the same zip to CurseForge (when the CF_API_KEY secret is set).
-# Merging a pull request that bumps the version = a new release.
+# Push to "testing": run the tests and publish a GitHub pre-release
+# vX.Y.Z-test.N (a test build). It is NOT sent to CurseForge, and the normal
+# updater ignores it ("Update Tactara (testing).bat" installs it). Only the
+# newest test build is kept.
+#
+# Push to "main" (merging testing once the owner has tested it): run the
+# tests, and if the version in Tactara.toc hasn't been released yet, publish
+# GitHub release vX.Y.Z, upload the same zip to CurseForge (when the
+# CF_API_KEY secret is set) and remove that version's test builds.
 # The Windows updater installs the latest release.
 # Run it by hand to check the CurseForge token (nothing is uploaded) or to
 # send the current version to CurseForge again after a failed upload.
 
 on:
   push:
-    branches: [main]
+    branches: [main, testing]
   workflow_dispatch:
     inputs:
       curseforge:
@@ -44,8 +49,42 @@ jobs:
           VERSION=$(grep -m1 '^## Version:' Tactara/Tactara.toc | sed 's/## Version:[[:space:]]*//' | tr -d '\r[:space:]')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Package
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          # the license and name/logo notice travel with every download
+          cp LICENSE Tactara/LICENSE.txt && cp NOTICE.md Tactara/NOTICE.md
+          zip -r "Tactara-$VERSION.zip" Tactara -x "*.DS_Store"
+          sed -i "s#__REPO__#${GITHUB_REPOSITORY}#" "updater/Update-Tactara.ps1"
+          cp LICENSE updater/LICENSE.txt
+          (cd updater && zip -r ../TactaraUpdater.zip "Update Tactara.bat" "Update Tactara (testing).bat" "Update-Tactara.ps1" LICENSE.txt)
+          # release notes = this version's section of CHANGELOG.md
+          awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
+          [ -s notes.md ] || echo "Tactara $VERSION" > notes.md
+
+      - name: Test build (testing branch)
+        if: github.ref_name == 'testing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+          N: ${{ github.run_number }}
+        run: |
+          TAG="v$VERSION-test.$N"
+          { echo "**Test build $N of Tactara $VERSION.** Not on CurseForge yet, and the normal updater won't install it."
+            echo "To try it: download the Tactara zip below, or run \"Update Tactara (testing).bat\" from TactaraUpdater.zip."
+            echo
+            cat notes.md; } > test-notes.md
+          # keep only the newest test build
+          for t in $(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" -q '.[] | select(.prerelease) | .tag_name' | grep -- '-test\.' || true); do
+            gh release delete "$t" --cleanup-tag -y
+          done
+          gh release create "$TAG" "Tactara-$VERSION.zip" TactaraUpdater.zip --prerelease --target "$GITHUB_SHA" \
+            --title "Tactara $VERSION (test $N)" --notes-file test-notes.md
+
       - name: Publish release if this version is new
         id: publish
+        if: github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.v.outputs.version }}
@@ -54,20 +93,16 @@ jobs:
             echo "v$VERSION is already released - nothing to do."
             exit 0
           fi
-          # the license and name/logo notice travel with every download
-          cp LICENSE Tactara/LICENSE.txt && cp NOTICE.md Tactara/NOTICE.md
-          zip -r "Tactara-$VERSION.zip" Tactara -x "*.DS_Store"
-          sed -i "s#__REPO__#${GITHUB_REPOSITORY}#" "updater/Update-Tactara.ps1"
-          cp LICENSE updater/LICENSE.txt
-          (cd updater && zip -r ../TactaraUpdater.zip "Update Tactara.bat" "Update-Tactara.ps1" LICENSE.txt)
-          # release notes = this version's section of CHANGELOG.md
-          awk -v v="$VERSION" '/^## /{p = ($2 == v)} p' CHANGELOG.md | tail -n +2 > notes.md
-          [ -s notes.md ] || echo "Tactara $VERSION" > notes.md
           gh release create "v$VERSION" "Tactara-$VERSION.zip" TactaraUpdater.zip --title "Tactara $VERSION" --notes-file notes.md
           echo "created=true" >> "$GITHUB_OUTPUT"
+          # this version's test builds have done their job
+          for t in $(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" -q '.[] | select(.prerelease) | .tag_name' | grep -- "^v$VERSION-test\." || true); do
+            gh release delete "$t" --cleanup-tag -y
+          done
 
       - name: CurseForge
-        if: steps.publish.outputs.created == 'true' || inputs.curseforge == 'upload' || inputs.curseforge == 'check'
+        # CurseForge only ever gets main (tested and approved), never a test build
+        if: github.ref_name == 'main' && (steps.publish.outputs.created == 'true' || inputs.curseforge == 'upload' || inputs.curseforge == 'check')
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GH_TOKEN: ${{ github.token }}
