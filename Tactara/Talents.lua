@@ -96,7 +96,11 @@ function ns.RegisterTalentBuild(text)
   b.builtin = true
   local class = b.class or "?"
   builtin[class] = builtin[class] or {}
-  table.insert(builtin[class], b)
+  local list, replaced = builtin[class], false
+  for i, old in ipairs(list) do
+    if old.name == b.name then list[i] = b; replaced = true end
+  end
+  if not replaced then table.insert(list, b) end
   builtinByName[b.name] = b
   return b
 end
@@ -167,15 +171,105 @@ function T.RenameCustom(old, new)
   return true
 end
 
+local function PicksKey(b) return table.concat(b.picks, "|") end
+
+-- The build you're following. For one of Tactara's builds this is the
+-- version you picked: if an update changes Tactara's build, you keep
+-- following yours (marked outdated, with the new one in .newer) until you
+-- choose to switch or keep it.
+local snapshotText, snapshotBuild
 function T.ActiveBuild()
-  local b = T.GetBuild(TactaraCharDB.talentBuild)
-  if b and b.class and b.class ~= ns.GetClassToken() then return nil end
-  return b
+  local name = TactaraCharDB.talentBuild
+  local b = T.GetBuild(name)
+  if not b then return nil end
+  if b.class and b.class ~= ns.GetClassToken() then return nil end
+  if not b.builtin then return b end
+  local saved = TactaraCharDB.talentBuildText
+  if not saved then
+    TactaraCharDB.talentBuildText = T.Export(b)   -- picked before versions were kept
+    return b
+  end
+  if saved ~= snapshotText then snapshotText, snapshotBuild = saved, T.Parse(saved) end
+  if PicksKey(snapshotBuild) == PicksKey(b) then return b end
+  local old = {}
+  for k, v in pairs(snapshotBuild) do old[k] = v end
+  old.name, old.class, old.builtin, old.outdated, old.newer = b.name, old.class or b.class, true, true, b
+  return old
 end
 
 function T.SetActive(name)
   TactaraCharDB.talentBuild = name
+  local b = T.GetBuild(name)
+  TactaraCharDB.talentBuildText = (b and b.builtin) and T.Export(b) or nil
   T.Refresh()
+end
+
+---------------------------------------------------------------------------
+-- When Tactara updates a build you're following: ask, never switch for you
+---------------------------------------------------------------------------
+
+-- What changed, in a line or two, and whether the new version fits your talents.
+function T.UpdateSummary(old, new, tree)
+  local lines = {}
+  for i = 1, math.max(#old.picks, #new.picks) do
+    if old.picks[i] ~= new.picks[i] then
+      lines[#lines + 1] = ("From level %d it takes %s (yours: %s)."):format(T.FIRST_LEVEL + i - 1,
+        new.picks[i] or "nothing", old.picks[i] or "nothing")
+      break
+    end
+  end
+  if tree then
+    local off = T.Progress(new, tree).offPlan
+    if #off > 0 then
+      lines[#lines + 1] = "Your points in " .. table.concat(off, ", ") .. " aren't in the new version, so following it fully would need a respec."
+    else
+      lines[#lines + 1] = "It fits the talents you have now, so you can switch without a respec."
+    end
+  end
+  return table.concat(lines, "\n")
+end
+
+function T.AcceptUpdate()
+  local b = T.GetBuild(TactaraCharDB.talentBuild)
+  if not (b and b.builtin) then return end
+  TactaraCharDB.talentBuildText = T.Export(b)
+  ns.Print(("Now following the updated %s."):format(b.name))
+  T.Refresh()
+end
+
+-- Keep the version you picked as a build of your own (it never changes).
+function T.KeepMine()
+  local old = T.ActiveBuild()
+  if not (old and old.outdated) then return end
+  local copy = { name = T.UniqueName(old.name .. " (kept)"), class = old.class, tree = old.tree, notes = old.notes,
+    source = "Tactara's " .. old.name .. " as it was when you picked it", picks = {} }
+  for i, p in ipairs(old.picks) do copy.picks[i] = p end
+  T.SaveCustom(copy)
+  TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = copy.name, nil
+  ns.Print(("Kept your version as \"%s\" (with your builds in /tac talents). You won't be asked about this update again."):format(copy.name))
+  T.Refresh()
+  return copy.name
+end
+
+local promptWaiting = false
+function T.PromptUpdate()
+  local old = T.ActiveBuild()
+  if not (old and old.outdated) then return end
+  if InCombatLockdown() then promptWaiting = true return end
+  promptWaiting = false
+  local tree = T.ReadTree()
+  local text = ("Tactara's |cffffd100%s|r talent build has been updated.\n\n%s\n\nSwitch to the new version, or keep following the one you picked? Until you choose, Tactara keeps following yours.")
+    :format(old.name, T.UpdateSummary(old, old.newer, tree))
+  ns.Print(("Tactara's %s talent build has been updated. You're still following your version: choose in the popup or in /tac talents."):format(old.name))
+  if StaticPopupDialogs and StaticPopup_Show then
+    StaticPopupDialogs.TACTARA_BUILD_UPDATE = StaticPopupDialogs.TACTARA_BUILD_UPDATE or {
+      text = "%s", button1 = "Switch", button2 = "Later", button3 = "Keep mine",
+      OnAccept = function() T.AcceptUpdate() end,
+      OnAlt = function() T.KeepMine() end,
+      timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+    }
+    StaticPopup_Show("TACTARA_BUILD_UPDATE", text)
+  end
 end
 
 ---------------------------------------------------------------------------
@@ -690,12 +784,16 @@ function T.HandleEvent(event, arg1)
     if arg1 == "Blizzard_PlayerSpells" then HookTalentWindow() end
   elseif event == "PLAYER_LOGIN" then
     HookTalentWindow()
-    if C_Timer and C_Timer.After then C_Timer.After(8, T.Remind) end
+    if C_Timer and C_Timer.After then
+      C_Timer.After(8, T.Remind)
+      C_Timer.After(10, T.PromptUpdate)
+    end
   elseif event == "PLAYER_LEVEL_UP" then
     -- the new point shows up a moment after the level
     if C_Timer and C_Timer.After then C_Timer.After(1.5, T.TryAutoLearn) else T.TryAutoLearn() end
   elseif event == "PLAYER_REGEN_ENABLED" then
     if autoWaiting then T.TryAutoLearn() end
+    if promptWaiting then T.PromptUpdate() end
   else
     if event == "TRAIT_CONFIG_UPDATED" and T.pendingReport then T.pendingReport() end
     if not T.learning then T.Refresh() end

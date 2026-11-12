@@ -33,6 +33,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 - **Talent planner:** `/tac talents`, or the **Tactara planner** button at the bottom of your talent window, shows your three talent trees with a build laid out point by point from level 10 to 60.
 - **Follow Tactara's build or make your own.** Warrior has recommended Arms, Fury and Protection builds from current Forever guides, and more classes are coming. Start a build from scratch, copy one of Tactara's, or start from the talents you already have so there's no need to respec. The planner only lets you add points the game would take.
 - **Learn with one click.** **Learn next** and **Learn all** spend your points on the build you picked. You can also have Tactara learn them when you level up (off by default, never in combat). Otherwise you get a reminder, and the next talent glows in your talent window.
+- **Your build never changes under you.** When Tactara updates a build you're following, it asks whether to switch or keep your version.
 - **Share builds** as text and import other people's.
 
 ## Make it yours

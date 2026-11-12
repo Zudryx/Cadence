@@ -1308,5 +1308,77 @@ do
   C_ClassTalents, C_Traits, UnitClass = realCT, realTraits, realClass
 end
 
+
+-- when Tactara updates a build you're following: you're asked, never switched
+do
+  local T, P = ns.Talents, ns.TalentPlanner
+  local function Reg(order, notes)
+    return ns.RegisterTalentBuild("name: Warrior - Update Test\nclass: WARRIOR\ntree: Arms\n"
+      .. (notes and ("notes: " .. notes .. "\n") or "") .. "order:\n" .. order)
+  end
+  local function Count()
+    local n = 0
+    for _, b in ipairs(T.BuildsForClass("WARRIOR")) do if b.name == "Warrior - Update Test" then n = n + 1 end end
+    return n
+  end
+  Reg("Improved Rend 3\nDeflection 5\nImproved Overpower 2")
+  T.SetActive("Warrior - Update Test")
+  check(TactaraCharDB.talentBuildText and not T.ActiveBuild().outdated, "picking a build remembers its version")
+  TactaraCharDB.talentBuildText = nil
+  check(not T.ActiveBuild().outdated and TactaraCharDB.talentBuildText, "picked before 0.14: remembered quietly, no question")
+  Reg("Improved Rend 3\nDeflection 5\nImproved Overpower 2", "reworded")
+  check(not T.ActiveBuild().outdated and Count() == 1, "a wording change isn't an update, and the build isn't listed twice")
+  Reg("Improved Rend 3\nDeflection 4\nImproved Tactical Mastery 3")
+  local a = T.ActiveBuild()
+  check(a.outdated and a.picks[8] == "Deflection" and a.newer.picks[8] == "Improved Tactical Mastery" and Count() == 1,
+    "after an update you keep following the version you picked")
+
+  -- the question
+  local shown
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(which, text) shown = { which = which, text = text } end
+  inCombat = true
+  T.PromptUpdate()
+  check(shown == nil, "not asked in combat")
+  inCombat = false
+  chat = {}
+  T.HandleEvent("PLAYER_REGEN_ENABLED")
+  check(shown and shown.which == "TACTARA_BUILD_UPDATE", "asked once the fight is over")
+  local text = shown and shown.text or ""
+  check(text:find("From level 17 it takes Improved Tactical Mastery %(yours: Deflection%)"), "says where it changed: " .. text)
+  check(text:find("would need a respec"), "and whether it fits your talents")
+  check(table.concat(chat, " "):find("still following your version"), "and a line in chat")
+  local dlg = StaticPopupDialogs.TACTARA_BUILD_UPDATE
+  check(dlg and dlg.button1 == "Switch" and dlg.button2 == "Later" and dlg.button3 == "Keep mine" and not dlg.OnCancel,
+    "Switch / Later / Keep mine, and Later (or Escape) changes nothing")
+
+  -- the planner shows your version with the choice
+  P.Select("Warrior - Update Test")
+  check(P.Selected().outdated and P.debug.ui.use._text == "Switch to update" and P.debug.ui.keep:IsShown(),
+    "planner: your version, with Switch to update and Keep mine")
+
+  -- Switch
+  dlg.OnAccept()
+  a = T.ActiveBuild()
+  check(not a.outdated and a.picks[8] == "Improved Tactical Mastery", "Switch follows the new version")
+
+  -- Keep mine (after the next update)
+  Reg("Improved Rend 3\nDeflection 3\nImproved Overpower 2")
+  shown = nil
+  T.PromptUpdate()
+  check(shown ~= nil, "asked about the next update too")
+  P.Select("Warrior - Update Test")
+  P.debug.ui.keep:GetScript("OnClick")(P.debug.ui.keep)
+  a = T.ActiveBuild()
+  check(a and not a.builtin and a.name == "Warrior - Update Test (kept)" and a.picks[8] == "Improved Tactical Mastery",
+    "Keep mine saves your version as your own build: " .. tostring(a and a.name))
+  check(P.Selected().name == "Warrior - Update Test (kept)", "and the planner shows it")
+  shown = nil
+  T.PromptUpdate()
+  check(shown == nil, "no more questions about that build")
+  StaticPopupDialogs, StaticPopup_Show = nil, nil
+  T.DeleteCustom("Warrior - Update Test (kept)")
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

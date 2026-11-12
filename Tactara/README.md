@@ -1,4 +1,4 @@
-# Tactara 0.13.1: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.14.0: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -95,6 +95,7 @@ The `/tac` commands still work, and both always show the same settings.
   - **Learn automatically when I level up** (off by default) does the same by itself after each level, once you're out of combat.
   - Otherwise Tactara reminds you in chat, and the next talent glows in your talent window for you to click.
   - If WoW ever stops addons from learning talents, Tactara says so once and keeps the glow.
+- **When Tactara updates a build you're following,** nothing changes under you: you keep following the version you picked, and Tactara asks once whether to **Switch**, decide **Later**, or **Keep mine** (saved as your own build, which never changes). It says where the build changed and whether the new version needs a respec. The planner shows the same choice.
 - The level-by-level list shows what you've learned (green) and what's next (blue). Talents you have that the build doesn't use show their points in red on the trees.
 
 ## Rotation helper (bar highlight)

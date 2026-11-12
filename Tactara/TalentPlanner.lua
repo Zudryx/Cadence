@@ -39,6 +39,14 @@ local function Button(parent, text, width)
   return b
 end
 
+-- The build to show for a name: the version you're following if it's the
+-- build you use (it can be older than Tactara's updated one), else the build.
+local function Resolve(name)
+  local active = T.ActiveBuild()
+  if active and active.name == name then return active end
+  return T.GetBuild(name)
+end
+
 local function Status(msg, bad)
   if statusText then statusText:SetText((bad and "|cffff7070" or "") .. (msg or "") .. (bad and "|r" or "")) end
 end
@@ -334,6 +342,9 @@ local function DrawHeader()
   ui.name:SetTextColor(selected.builtin and 0.7 or 1, selected.builtin and 0.7 or 1, selected.builtin and 0.7 or 1)
   local split = P.tree and T.Split(selected, P.tree) or "?"
   local parts = { ("%s points (%s)"):format(#selected.picks, split) }
+  if selected.outdated then
+    table.insert(parts, 1, "|cffffd100Tactara has updated this build. You're still following the version you picked.|r")
+  end
   if selected.source then parts[#parts + 1] = selected.source end
   if selected.notes then parts[#parts + 1] = selected.notes end
   ui.info:SetText(table.concat(parts, "  |cff888888|||r  "))
@@ -342,8 +353,15 @@ end
 local function DrawButtons()
   local active = T.ActiveBuild()
   local isActive = selected and active and active.name == selected.name
-  ui.use:SetText(isActive and "Using this build" or "Use this build")
-  ui.use:SetEnabled(selected ~= nil and not isActive)
+  if selected and selected.outdated then
+    ui.use:SetText("Switch to update")
+    ui.use:SetEnabled(true)
+    ui.keep:Show()
+  else
+    ui.use:SetText(isActive and "Using this build" or "Use this build")
+    ui.use:SetEnabled(selected ~= nil and not isActive)
+    ui.keep:Hide()
+  end
   local unspent = P.tree and P.tree.unspent or 0
   local canLearn = isActive and unspent > 0 and not T.blocked
   ui.learn:SetEnabled(canLearn)
@@ -369,7 +387,7 @@ end
 function P.Refresh()
   if not frame or not frame:IsShown() then return end
   P.tree, P.treeError = T.ReadTree()
-  if selected then selected = T.GetBuild(selected.name) end
+  if selected then selected = Resolve(selected.name) end
   DrawList()
   DrawHeader()
   DrawTrees()
@@ -378,7 +396,7 @@ function P.Refresh()
 end
 
 function P.Select(name)
-  selected = T.GetBuild(name)
+  selected = Resolve(name)
   clearArmed, deleteArmed = false, false
   if ui.clear then ui.clear:SetText("Clear") end
   if ui.delete then ui.delete:SetText("Delete") end
@@ -491,6 +509,9 @@ local function Build()
   ui.points:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 210, 76)
   ui.use = Button(frame, "Use this build", 130)
   ui.use:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 210, 44)
+  ui.keep = Button(frame, "Keep mine", 90)
+  ui.keep:SetPoint("BOTTOMLEFT", ui.use, "TOPLEFT", 0, 4)
+  ui.keep:Hide()
   ui.learn = Button(frame, "Learn next", 100)
   ui.learn:SetPoint("LEFT", ui.use, "RIGHT", 6, 0)
   ui.learnAll = Button(frame, "Learn all", 110)
@@ -566,8 +587,19 @@ local function Build()
   ui.share:SetScript("OnClick", function()
     if selected then ns.ShowCopyText("Share \"" .. selected.name .. "\"", T.Export(selected)) end
   end)
+  ui.keep:SetScript("OnClick", function()
+    local name = T.KeepMine()
+    if name then P.Select(name); Status(("Saved as \"%s\". It's yours now and won't change."):format(name)) end
+  end)
   ui.use:SetScript("OnClick", function()
     if not selected then return end
+    if selected.outdated then
+      local name = selected.name
+      T.AcceptUpdate()
+      P.Select(name)
+      Status("Now following Tactara's updated build.")
+      return
+    end
     T.SetActive(selected.name)
     Status(("Using \"%s\". Learn next, Learn all, the reminders and the glow follow it."):format(selected.name))
     P.Refresh()
@@ -634,7 +666,7 @@ function P.Show()
       local list = T.BuildsForClass(ns.GetClassToken())
       pick = list[1] and list[1].name
     end
-    selected = pick and T.GetBuild(pick)
+    selected = pick and Resolve(pick)
   end
   frame:Show()
   P.Refresh()
