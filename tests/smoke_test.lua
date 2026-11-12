@@ -549,7 +549,7 @@ do
 
   local headers = 0
   for _, i in ipairs(reg.inits) do if i.header then headers = headers + 1 end end
-  check(headers == 6, "six sections on the page (" .. headers .. ")")
+  check(headers == 7, "seven sections on the page (" .. headers .. ")")
 
   S("showHelper"):SetValue(false)
   check(TactaraCharDB.showHelper == false and not ns.helperPopup:IsShown(), "unticking the helper hides it")

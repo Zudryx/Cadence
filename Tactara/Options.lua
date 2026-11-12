@@ -273,6 +273,12 @@ local function BuildVertical()
   }, Refresh)
 
   -- Suggestions ------------------------------------------------------------
+  Header("Your characters")
+  Button("Copy settings from...", "Choose", "Copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters. Rotation and talent builds stay this character's own.",
+    function() ns.Profiles.ShowCopy() end)
+  Button("Default for new characters", "Use these", "New characters you play with Tactara start with this character's settings (keys, displays, glow, suggestions, minimap, talent options). /tac defaults clear goes back to Tactara's normal settings.",
+    function() ns.Profiles.SaveDefault() end)
+
   Header("Talents")
   Button("Talent planner", "Open", "Your talent trees with Tactara's builds and your own, level 10 to 60. Also /tac talents.",
     function() ns.TalentPlanner.Show() end)
@@ -309,6 +315,8 @@ local COMMANDS = {
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
   "/tac minimap  - show or hide the minimap button",
+  "/tac copy [name]  - copy settings from another character",
+  "/tac defaults  - new characters start with these settings",
   "/tac talents  - talent planner (learn | learn all | auto)",
   "/tac icons helper|key 1-10 | all  - how many icons",
   "/tac fade helper|key show|fade|hide  - between fights",

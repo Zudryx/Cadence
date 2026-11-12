@@ -53,10 +53,16 @@ end
 ns.SpellIcon = SpellIcon
 
 -- Shared by both displays: drag to move while unlocked, position saved per character.
+-- Put a display where its saved position says (or its default spot).
+function ns.RestorePosition(f)
+  local pos = TactaraCharDB[f.posKey] or {}
+  f:ClearAllPoints()
+  f:SetPoint(pos.point or "CENTER", UIParent, pos.relPoint or "CENTER", pos.x or f.posDefaultX, pos.y or f.posDefaultY)
+end
+
 function ns.MakeMovable(f, key, defaultX, defaultY)
-  f.posKey = key
-  local pos = TactaraCharDB[key] or {}
-  f:SetPoint(pos.point or "CENTER", UIParent, pos.relPoint or "CENTER", pos.x or defaultX, pos.y or defaultY)
+  f.posKey, f.posDefaultX, f.posDefaultY = key, defaultX, defaultY
+  ns.RestorePosition(f)
   f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:SetScript("OnMouseDown", function(self, button)

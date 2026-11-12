@@ -225,7 +225,10 @@ local function InitDB()
   TactaraDB.version = ns.VERSION
   if TactaraDB.hideErrors == nil then TactaraDB.hideErrors = true end
   TactaraDB.glowStyle = TactaraDB.glowStyle or "strong"
+  local fresh = TactaraCharDB == nil
   TactaraCharDB = TactaraCharDB or {}
+  -- a character Tactara hasn't seen starts from your saved default settings
+  ns.startedFromDefault = fresh and ns.Profiles and ns.Profiles.StartFromDefault() or false
   TactaraCharDB.active = TactaraCharDB.active or "auto"
   if TactaraCharDB.showDisplay == nil then TactaraCharDB.showDisplay = true end
   if TactaraCharDB.locked == nil then TactaraCharDB.locked = false end
@@ -382,6 +385,8 @@ local HELP = {
   "|cffffd100/tac bind aoe|r / |cffffd100bind interrupt|r  same for AoE / the interrupt key   |cffffd100/tac unbind|r [aoe / interrupt / all]",
   "|cffffd100/tac highlight|r  glow on the next spell on your action bars (on/off)",
   "|cffffd100/tac talents|r  talent planner (|cffffd100/tac talents learn|r, |cffffd100learn all|r, |cffffd100auto|r)",
+  "|cffffd100/tac copy|r [name]  copy keys and display settings from another character",
+  "|cffffd100/tac defaults|r  new characters start with this character's settings (|cffffd100/tac defaults clear|r)",
   "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
@@ -474,6 +479,19 @@ local function HandleSlash(msg)
       ns.UpdateMinimapButton()
       ns.Print("Minimap button " .. (TactaraCharDB.minimapButton and "on" or "off (the minimap's addon menu still has Tactara)"))
     end
+  elseif cmd == "copy" then
+    local who = rest
+    if who == "" then
+      ns.Profiles.ShowCopy()
+    else
+      local found
+      for _, o in ipairs(ns.Profiles.Others()) do
+        if o.key:lower():find(who:lower(), 1, true) then found = o.key break end
+      end
+      if found then ns.Profiles.CopyFrom(found) else ns.Print("No character called \"" .. who .. "\" has Tactara settings yet. |cffffd100/tac copy|r lists them.") end
+    end
+  elseif cmd == "defaults" then
+    if rest:lower():match("^clear") then ns.Profiles.ClearDefault() else ns.Profiles.SaveDefault() end
   elseif cmd == "icons" then
     local a, b = rest:lower():match("^(%S*)%s*(%S*)")
     local function Count(v)

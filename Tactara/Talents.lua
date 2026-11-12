@@ -205,6 +205,50 @@ function T.SetActive(name)
 end
 
 ---------------------------------------------------------------------------
+-- Dual spec: each spec keeps its own talent build and rotation choice
+---------------------------------------------------------------------------
+
+function T.SpecGroup()
+  local g
+  if C_SpecializationInfo and C_SpecializationInfo.GetActiveSpecGroup then
+    local ok, v = pcall(C_SpecializationInfo.GetActiveSpecGroup)
+    if ok then g = v end
+  end
+  if not g and GetActiveTalentGroup then
+    local ok, v = pcall(GetActiveTalentGroup)
+    if ok then g = v end
+  end
+  g = tonumber(g)
+  return (g and g >= 1) and math.floor(g) or 1
+end
+
+-- When you switch specs, put this spec's choices away and bring the other
+-- spec's back. The first time, it just notes which spec you're in, so the
+-- build you already follow stays with that spec.
+function T.SyncSpec(quiet)
+  local g = T.SpecGroup()
+  local cur = TactaraCharDB.specGroup
+  if cur == g then return false end
+  TactaraCharDB.specs = TactaraCharDB.specs or {}
+  TactaraCharDB.specGroup = g
+  if not cur then return false end
+  TactaraCharDB.specs[cur] = { build = TactaraCharDB.talentBuild, text = TactaraCharDB.talentBuildText, rotation = TactaraCharDB.active }
+  local s = TactaraCharDB.specs[g] or {}
+  TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = s.build, s.text
+  TactaraCharDB.active = s.rotation or "auto"
+  if not quiet then
+    local b = T.ActiveBuild()
+    ns.Print(("Switched to your %s spec. Talents: %s. Rotation: %s."):format(
+      g == 2 and "secondary" or "primary",
+      b and ("following " .. b.name) or "no build picked for this spec yet (|cffffd100/tac talents|r)",
+      TactaraCharDB.active == "auto" and "picked from your talents" or TactaraCharDB.active))
+  end
+  if ns.RequestRebuild then ns.RequestRebuild("spec switch", 0.2) end
+  T.Refresh()
+  return true
+end
+
+---------------------------------------------------------------------------
 -- When Tactara updates a build you're following: ask, never switch for you
 ---------------------------------------------------------------------------
 
@@ -713,6 +757,11 @@ function T.UpdateTalentWindowGlow()
   local f = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
   if not (f and f.IsVisible and f:IsVisible() and f.GetTalentButtonByNodeID) then return end
   if TactaraCharDB.talentGlow == false then return end
+  -- looking at your other spec's tab: nothing to glow there
+  if f.GetConfigID and C_ClassTalents and C_ClassTalents.GetActiveConfigID then
+    local ok, shownID = pcall(f.GetConfigID, f)
+    if ok and shownID and shownID ~= C_ClassTalents.GetActiveConfigID() then return end
+  end
   local build = T.ActiveBuild()
   if not build then return end
   local tree = T.ReadTree()
@@ -826,6 +875,7 @@ end
 
 local ev = CreateFrame("Frame")
 for _, e in ipairs({ "PLAYER_LOGIN", "ADDON_LOADED", "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED",
+  "ACTIVE_TALENT_GROUP_CHANGED", "PLAYER_SPECIALIZATION_CHANGED", "ACTIVE_PLAYER_SPECIALIZATION_CHANGED",
   "TRAIT_CONFIG_UPDATED", "TRAIT_NODE_CHANGED", "TRAIT_TREE_CURRENCY_INFO_UPDATED",
   "ADDON_ACTION_FORBIDDEN", "ADDON_ACTION_BLOCKED" }) do
   pcall(ev.RegisterEvent, ev, e)
@@ -835,7 +885,11 @@ function T.HandleEvent(event, arg1)
     OnBlocked(arg1)
   elseif event == "ADDON_LOADED" then
     if arg1 == "Blizzard_PlayerSpells" then HookTalentWindow() end
+  elseif event == "ACTIVE_TALENT_GROUP_CHANGED" or event == "PLAYER_SPECIALIZATION_CHANGED"
+      or event == "ACTIVE_PLAYER_SPECIALIZATION_CHANGED" then
+    if not T.SyncSpec() then T.Refresh() end
   elseif event == "PLAYER_LOGIN" then
+    T.SyncSpec(true)
     HookTalentWindow()
     if C_Timer and C_Timer.After then
       C_Timer.After(8, T.Remind)
@@ -852,6 +906,7 @@ function T.HandleEvent(event, arg1)
     if welcomeWaiting then T.Welcome() end
   else
     if event == "TRAIT_CONFIG_UPDATED" and T.pendingReport then T.pendingReport() end
+    if event == "TRAIT_CONFIG_UPDATED" and T.SyncSpec() then return end
     if not T.learning then T.Refresh() end
   end
 end

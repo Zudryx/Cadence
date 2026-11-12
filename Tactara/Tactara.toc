@@ -34,6 +34,7 @@ HelperDisplay.lua
 Editor.lua
 Options.lua
 Minimap.lua
+Profiles.lua
 Talents.lua
 TalentBuilds\Warrior.lua
 TalentPlanner.lua

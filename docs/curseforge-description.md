@@ -33,6 +33,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 - **Talent planner:** `/tac talents`, or the **Tactara planner** button at the bottom of your talent window, shows your three talent trees with a build laid out point by point from level 10 to 60.
 - **Follow Tactara's build or make your own.** Warrior has recommended Arms, Fury and Protection builds from current Forever guides, and more classes are coming. Start a build from scratch, copy one of Tactara's, or start from the talents you already have so there's no need to respec. The planner only lets you add points the game would take.
 - **Learn with one click.** **Learn next** and **Learn all** spend your points on the build you picked. You can also have Tactara learn them when you level up (off by default, never in combat). Otherwise you get a reminder, and the next talent glows in your talent window.
+- **Dual spec:** each spec keeps its own build and rotation choice, and Tactara switches with you.
 - **Your build never changes under you.** When Tactara updates a build you're following, it asks whether to switch or keep your version.
 - **Share builds** as text and import other people's.
 
@@ -45,6 +46,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off.
+  - Your characters: copy settings from another character, or make them the default for new ones.
   - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Helper icons work like action buttons:** each shows its keybind and a cooldown sweep. It turns red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used.
 - **Works with your bars:** the glow works on Blizzard's action bars and the popular action bar addons, and with spells inside your own macros. It only draws on top of your buttons and never changes them.

@@ -378,7 +378,10 @@ local function DrawButtons()
   if T.blocked then
     ui.points:SetText(("%d to spend. WoW doesn't let addons learn talents: click the glowing talent in your talent window."):format(unspent))
   elseif P.tree then
-    ui.points:SetText(("Talent points: %d to spend, %d of %d earned."):format(unspent, P.tree.earned, T.MAX_POINTS))
+    local spec = TactaraCharDB.specs and TactaraCharDB.specs[2] ~= nil or (TactaraCharDB.specGroup or 1) == 2
+    ui.points:SetText(("%sTalent points: %d to spend, %d of %d earned."):format(
+      spec and (((TactaraCharDB.specGroup or 1) == 2 and "Secondary" or "Primary") .. " spec.  ") or "",
+      unspent, P.tree.earned, T.MAX_POINTS))
   else
     ui.points:SetText("")
   end

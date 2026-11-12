@@ -1441,5 +1441,105 @@ do
   StaticPopupDialogs, StaticPopup_Show = nil, nil
 end
 
+
+-- dual spec: each spec keeps its own build and rotation choice
+do
+  local T = ns.Talents
+  local group = 1
+  C_SpecializationInfo = { GetActiveSpecGroup = function() return group end }
+  TactaraCharDB.specGroup, TactaraCharDB.specs = nil, nil
+  T.SetActive("Warrior - Arms")
+  TactaraCharDB.active = "Warrior - Arms"
+  T.HandleEvent("PLAYER_LOGIN")
+  check(TactaraCharDB.specGroup == 1 and TactaraCharDB.talentBuild == "Warrior - Arms", "first time: your build stays with the spec you're in")
+  group = 2
+  chat = {}
+  T.HandleEvent("ACTIVE_TALENT_GROUP_CHANGED")
+  check(TactaraCharDB.talentBuild == nil and TactaraCharDB.active == "auto", "secondary spec starts with no build and auto rotation")
+  check(table.concat(chat, " "):find("Switched to your secondary spec"), "and says so: " .. table.concat(chat, " | "))
+  T.SetActive("Warrior - Protection")
+  TactaraCharDB.active = "Warrior - Protection"
+  group = 1
+  T.HandleEvent("ACTIVE_TALENT_GROUP_CHANGED")
+  check(TactaraCharDB.talentBuild == "Warrior - Arms" and TactaraCharDB.active == "Warrior - Arms", "back to primary: its build and rotation come back")
+  group = 2
+  T.HandleEvent("PLAYER_SPECIALIZATION_CHANGED")
+  check(TactaraCharDB.talentBuild == "Warrior - Protection" and TactaraCharDB.active == "Warrior - Protection", "secondary remembered too")
+  T.HandleEvent("TRAIT_CONFIG_UPDATED")
+  check(TactaraCharDB.talentBuild == "Warrior - Protection", "nothing moves without a real switch")
+  -- the glow only shows on your active spec's tab
+  ns.TalentTest.setEarned(20)
+  local glowed = 0
+  local realShow, realHide = ns.ShowButtonGlow, ns.HideButtonGlow
+  ns.ShowButtonGlow = function() glowed = glowed + 1 end
+  ns.HideButtonGlow = function() end
+  local shownConfig = 999
+  PlayerSpellsFrame = { TalentsFrame = {
+    IsVisible = function() return true end,
+    GetConfigID = function() return shownConfig end,
+    GetTalentButtonByNodeID = function(_, id) return { id = id } end,
+  } }
+  T.UpdateTalentWindowGlow()
+  check(glowed == 0, "no glow while looking at your other spec's tab")
+  shownConfig = 5914191
+  T.UpdateTalentWindowGlow()
+  check(glowed == 1, "glow on your active spec's tab")
+  ns.ShowButtonGlow, ns.HideButtonGlow = realShow, realHide
+  PlayerSpellsFrame = nil
+  group = 1
+  T.HandleEvent("ACTIVE_TALENT_GROUP_CHANGED")
+  C_SpecializationInfo = nil
+end
+
+-- the same settings on all your characters
+do
+  local Pr = ns.Profiles
+  UnitName = function() return "Zud" end
+  GetRealmName = function() return "Forever" end
+  TactaraCharDB.binds = { main = "1" }
+  Pr.Save()
+  local me = TactaraDB.characters["Zud - Forever"]
+  check(me and me.class == "WARRIOR" and me.settings.binds.main == "1", "this character's settings are kept for your others")
+  check(me.settings.talentBuild == nil and me.settings.active == nil and me.settings.specs == nil, "rotation and talent builds aren't part of them")
+  TactaraDB.characters["Alt - Forever"] = { class = "MAGE", level = 30, saved = 999999, settings = {
+    binds = { main = "F", aoe = "G" }, helperScale = 1.5, keyIcons = 0, minimapButton = false,
+    helperPos = { point = "TOP", relPoint = "TOP", x = 10, y = -50 }, talentAutoLearn = true } }
+  local keepBuild, keepActive = TactaraCharDB.talentBuild, TactaraCharDB.active
+  local others = Pr.Others()
+  check(#others == 1 and others[1].key == "Alt - Forever", "lists your other characters, not this one")
+  local w = Pr.ShowCopy()
+  check(w and w:IsShown() and w.buttons[1] and w.buttons[1]._text:find("Alt %- Forever") and w.buttons[1]._text:find("Mage"),
+    "copy window: " .. tostring(w and w.buttons[1] and w.buttons[1]._text))
+  chat = {}
+  w.buttons[1]:GetScript("OnClick")(w.buttons[1])
+  check(TactaraCharDB.binds.main == "F" and TactaraCharDB.binds.aoe == "G" and TactaraCharDB.helperScale == 1.5
+    and TactaraCharDB.keyIcons == 0 and TactaraCharDB.minimapButton == false and TactaraCharDB.talentAutoLearn == true
+    and TactaraCharDB.helperPos.point == "TOP", "settings copied")
+  check(TactaraCharDB.talentBuild == keepBuild and TactaraCharDB.active == keepActive, "rotation and talent build untouched")
+  check(table.concat(chat, " "):find("Copied Tactara settings from Alt %- Forever") and not w:IsShown(), "says so and closes")
+  TactaraDB.characters["Alt - Forever"].settings.binds.main = "Z"
+  check(TactaraCharDB.binds.main == "F", "a real copy, not linked to the other character")
+  TactaraCharDB.keyIcons = 3
+  SlashCmdList.TACTARA("copy alt")
+  check(TactaraCharDB.keyIcons == 0, "/tac copy alt")
+  chat = {}
+  SlashCmdList.TACTARA("copy nobody")
+  check(table.concat(chat, " "):find("No character called"), "/tac copy with an unknown name")
+  -- default for new characters
+  SlashCmdList.TACTARA("defaults")
+  check(TactaraDB.defaultSettings and TactaraDB.defaultSettings.binds.main == "Z", "/tac defaults saves this character's settings")
+  local saved = TactaraCharDB
+  TactaraCharDB = nil
+  fire("ADDON_LOADED", "Tactara")
+  check(ns.startedFromDefault and TactaraCharDB.binds.main == "Z" and TactaraCharDB.keyIcons == 0 and TactaraCharDB.active == "auto"
+    and TactaraCharDB.talentBuild == nil, "a new character starts from your defaults")
+  TactaraCharDB = saved
+  fire("ADDON_LOADED", "Tactara")
+  check(ns.startedFromDefault == false, "an existing character isn't touched")
+  SlashCmdList.TACTARA("defaults clear")
+  check(TactaraDB.defaultSettings == nil, "/tac defaults clear")
+  UnitName, GetRealmName = nil, nil
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)
