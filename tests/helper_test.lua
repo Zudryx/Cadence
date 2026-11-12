@@ -572,6 +572,30 @@ local p2 = table.concat(chat, "\n")
 
 check(okP2 and p2:find("talents %(Tactara reader%): 3 trees, 12 talents, Arms 10 %/ Fury 0 %/ Protection 13") and p2:find("talent layout: config 4545363, 1 trees, 12 nodes"), "probe with talents: " .. p2)
 check(p2:find("weapon %(Tactara reader%): dual") and p2:find("main hand / off hand: INVTYPE_WEAPON, INVTYPE_WEAPON"), "probe gear")
+-- talent probe: read only, report in a copy window
+do
+  local shownTitle, shownText
+  local realShow = ns.ShowCopyText
+  ns.ShowCopyText = function(title, text) shownTitle, shownText = title, text end
+  local bought = false
+  C_Traits.PurchaseRank = function() bought = true end
+  C_Traits.CommitConfig = function() bought = true end
+  C_Traits.CanPurchaseRank = function() return true end
+  local okT, report = pcall(SlashCmdList.TACTARA, "probe talents")
+  ns.ShowCopyText = realShow
+  check(okT and shownTitle == "Tactara talent probe" and shownText, "talent probe opens a copy window")
+  shownText = shownText or ""
+  check(shownText:find("12 talents") and shownText:find("Shield Slam") and shownText:find("config 4545363"),
+    "talent probe lists the talents: " .. shownText:sub(1, 200))
+  check(shownText:find("functions there: [^\n]*C_Traits.PurchaseRank") and shownText:find("functions missing: [^\n]*C_Traits.GetConditionInfo"),
+    "talent probe lists which talent functions exist")
+  check(not bought, "talent probe never learns or commits anything")
+  check(shownText:find("PlayerSpellsFrame: not there"), "talent probe reports the talent window")
+  C_Traits.PurchaseRank, C_Traits.CommitConfig, C_Traits.CanPurchaseRank = nil, nil, nil
+  -- the copy window itself builds with the frame stand-ins
+  local okW, w = pcall(realShow, "title", "line 1\nline 2")
+  check(okW and w and w:IsShown(), "copy window: " .. tostring(w))
+end
 -- talent API missing -> falls back cleanly
 C_ClassTalents = nil
 SlashCmdList.TACTARA("use auto"); runTimers()

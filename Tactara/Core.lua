@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.12.0"
+ns.VERSION = "0.12.1"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -396,6 +396,7 @@ local HELP = {
   "|cffffd100/tac errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
   "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
   "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
+  "|cffffd100/tac probe talents|r  report how your talents look to Tactara, in a window you can copy from (changes nothing)",
   "|cffffd100/tac debug|r  print every press, cast and game error to chat",
   "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
   "Key bindings: Esc > Options > Keybindings > AddOns > Tactara",
@@ -521,7 +522,7 @@ local function HandleSlash(msg)
   elseif cmd == "test" or cmd == "diag" then
     ns.Diagnose()
   elseif cmd == "probe" then
-    ns.Probe()
+    if rest:lower():match("^talent") then ns.ProbeTalents() else ns.Probe() end
   elseif cmd == "spells" then
     ns.ReportSpells()
   elseif cmd == "glow" and rest ~= "" and rest:lower() ~= "on" and rest:lower() ~= "off" then

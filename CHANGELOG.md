@@ -2,6 +2,10 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.12.1
+- **`/tac probe talents`:** a read-only report on how your talents and the talent window look to Tactara, shown in a window you can copy from. It's groundwork for a talent planner and changes nothing.
+- No gameplay changes.
+
 ## 0.12.0
 - **Minimap button:** left-click opens the rotation editor, right-click the settings page. Drag it to move it around the minimap. Works with round and square minimaps.
 - Show or hide it on the settings page (Displays) or with `/tac minimap`; `/tac minimap reset` puts it back where it started.

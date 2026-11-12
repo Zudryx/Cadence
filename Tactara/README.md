@@ -1,4 +1,4 @@
-# Tactara 0.12.0: one-button rotations and a rotation helper for WoW Forever
+# Tactara 0.12.1: one-button rotations and a rotation helper for WoW Forever
 
 Rotations that grow with your level, played two ways:
 
@@ -129,6 +129,7 @@ The `/tac` commands still work, and both always show the same settings.
 | `/tac errors` | Show/hide red "not ready" errors while pressing (hidden by default) |
 | `/tac test` | Diagnostics: your keys and settings |
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
+| `/tac probe talents` | A read-only report on your talents and the talent window, in a window you can copy from. Changes nothing. |
 | `/tac debug` | Prints every press, every cast sent and every game error to chat |
 | `/tac keydown auto` / `off` | Troubleshooting only: cast on key down (default) or key up |
 
