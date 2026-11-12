@@ -1,7 +1,8 @@
 -- The real Warrior talent tree from WoW Forever (game build 70888), as read by
--- /tac probe talents on a level 12 Warrior with 3 points spent. Used by the
--- talent tests. id, x, y, rank, max, name, spell id, arrows to.
+-- /tac probe talents on a level 12 Warrior. Made by tests/make_talent_fixture.py.
+-- id, x, y, rank, max, name, spell id, arrows to.
 return {
+  class = "WARRIOR",
   { id = 105958, x = 1020, y = 2130, rank = 1, max = 3, name = "Improved Heroic Strike", spell = 12282, to = {  } },
   { id = 105957, x = 1620, y = 2130, rank = 0, max = 5, name = "Deflection", spell = 16462, to = {  } },
   { id = 105956, x = 2220, y = 2130, rank = 1, max = 3, name = "Improved Rend", spell = 12286, to = { 105950 } },

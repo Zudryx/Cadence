@@ -62,5 +62,5 @@ Each new release is also uploaded to CurseForge (project 1795307, set by `## X-C
 
 ## Talent builds
 
-Tactara's recommended talent builds live in `Tactara/TalentBuilds/<Class>.lua`, one `ns.RegisterTalentBuild` per spec, as a point-by-point order from level 10. Check them with the Forever guides when you check rotations. Every build must be legal on the game's trees: the tests check the Warrior builds against the real Warrior tree in `tests/talent_fixture.lua` (from `/tac probe talents`). For another class, get a probe from that class first and add its fixture and checks the same way.
+Tactara's recommended talent builds live in `Tactara/TalentBuilds/<Class>.lua`, one `ns.RegisterTalentBuild` per spec, as a point-by-point order from level 10. Check them with the Forever guides when you check rotations. Every build must be legal on the game's trees. The tests read the real trees in `tests/talent_fixtures/<class>.lua`, made from a `/tac probe talents` report (any level, even 1) with `python3 tests/make_talent_fixture.py report.txt`. When Blizzard changes a class's talents, get a new probe and remake its fixture.
 

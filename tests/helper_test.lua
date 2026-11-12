@@ -920,7 +920,7 @@ end
 ---------------------------------------------------------------------------
 do
   local T = ns.Talents
-  local FIX = dofile(root .. "/../tests/talent_fixture.lua")
+  local FIX = dofile(root .. "/../tests/talent_fixtures/warrior.lua")
   local byId, order = {}, {}
   local function reset()
     byId, order = {}, {}
@@ -1239,6 +1239,73 @@ do
   T.UpdateWindowButton()
   check(wb and wb:IsShown(), "and back on")
   PlayerSpellsFrame = nil
+end
+
+
+-- the other classes' real trees: odd positions and stray talents in the game data
+do
+  local T = ns.Talents
+  local realCT, realTraits, realClass = C_ClassTalents, C_Traits, UnitClass
+  local function Install(fix)
+    local byId, order = {}, {}
+    for _, n in ipairs(fix) do byId[n.id] = n; order[#order + 1] = n.id end
+    UnitClass = function() return fix.class, fix.class, 1 end
+    C_ClassTalents = { GetActiveConfigID = function() return 1 end, CanChangeTalents = function() return true, true end }
+    C_Traits = {
+      GetConfigInfo = function() return { treeIDs = { 1 } } end,
+      GetTreeNodes = function() return order end,
+      GetNodeInfo = function(_, id)
+        local n = byId[id]
+        local edges = {}
+        for _, t in ipairs(n.to) do edges[#edges + 1] = { targetNode = t } end
+        return { ID = id, posX = n.x, posY = n.y, maxRanks = n.max, ranksPurchased = n.rank, entryIDs = { id }, visibleEdges = edges, subTreeID = 0 }
+      end,
+      GetEntryInfo = function(_, id) return { definitionID = id, maxRanks = byId[id].max } end,
+      GetDefinitionInfo = function(id) return { spellID = byId[id].spell, overrideName = byId[id].name } end,
+      GetTreeCurrencyInfo = function() return { { maxQuantity = 0 } } end,
+    }
+  end
+  local expect = {
+    shaman = { count = 50, names = { "Elemental", "Enhancement", "Restoration" } },
+    warlock = { count = 52, names = { "Affliction", "Demonology", "Destruction" } },
+    priest = { count = 52, names = { "Discipline", "Holy", "Shadow" } },   -- 53 in the data, one stray
+    warrior = { count = 53, names = { "Arms", "Fury", "Protection" } },
+  }
+  for class, want in pairs(expect) do
+    local fix = dofile(root .. "/../tests/talent_fixtures/" .. class .. ".lua")
+    Install(fix)
+    local tree, why = T.ReadTree()
+    check(tree ~= nil, class .. " tree reads: " .. tostring(why))
+    if tree then
+      check(#tree.list == want.count, ("%s: %d talents (%d)"):format(class, want.count, #tree.list))
+      local got = {}
+      for i, tr in ipairs(tree.trees) do got[i] = tr.name end
+      check(table.concat(got, "/") == table.concat(want.names, "/"), class .. " trees: " .. table.concat(got, "/"))
+      local maxRow, maxCol = 0, 0
+      for _, tr in ipairs(tree.trees) do maxRow = math.max(maxRow, tr.rows); maxCol = math.max(maxCol, tr.cols) end
+      check(maxRow == 7 and maxCol <= 4, ("%s: 7 rows, at most 4 columns (%d, %d)"):format(class, maxRow, maxCol))
+      -- every 31-point talent is on the bottom row
+      for _, node in ipairs(tree.list) do
+        if node.row == 7 then check(#node.from == 1, class .. ": " .. node.name .. " on the bottom row has its arrow") end
+      end
+    end
+  end
+  -- Warlock: talents a few units off the grid still share a row
+  Install(dofile(root .. "/../tests/talent_fixtures/warlock.lua"))
+  local w = T.ReadTree()
+  local function N(t, name) return t.byName[name:lower()] end
+  check(N(w, "Improved Life Tap").row == 1 and N(w, "Suppression").row == 1 and N(w, "Amplify Curse").row == 3,
+    "Warlock: Improved Life Tap (2120) and Amplify Curse (3320) are on their rows")
+  check(T.Simulate({ "Suppression" }, w).ok, "Warlock: Suppression needs no points first")
+  check(N(w, "Amplify Curse").col == 3 and N(w, "Curse of Exhaustion").from[1] == N(w, "Amplify Curse").id, "Warlock: Amplify Curse column and arrow")
+  -- Priest: the stray second Holy Specialization is ignored
+  Install(dofile(root .. "/../tests/talent_fixtures/priest.lua"))
+  local p = T.ReadTree()
+  check(N(p, "Holy Specialization").id == 110855 and N(p, "Holy Specialization").row == 1 and p.trees[N(p, "Holy Specialization").tree].name == "Holy",
+    "Priest: Holy Specialization is the real one, row 1 of Holy")
+  check(not p.nodes[105865], "Priest: the stray copy isn't on the trees")
+  check(T.Simulate({ "Holy Specialization", "Holy Specialization" }, p).ok, "Priest: Holy Specialization can be taken")
+  C_ClassTalents, C_Traits, UnitClass = realCT, realTraits, realClass
 end
 
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))

@@ -188,16 +188,53 @@ local function SpellName(id)
   return GetSpellInfo and (GetSpellInfo(id))
 end
 
--- Sorted unique values of field `key` among `nodes`.
-local function Unique(nodes, key)
-  local seen, list = {}, {}
+-- Positions that are within GRID_TOL of each other are the same row or
+-- column: the game puts a few talents slightly off the grid (a Warlock's
+-- Improved Life Tap sits at 2120 next to the rest of the row at 2130).
+local GRID_TOL = 150
+
+-- Groups the values of field `key` among `nodes`.
+-- Returns { [value] = group number (1 = smallest) }, number of groups, groups ({min, max}).
+local function Cluster(nodes, key)
+  local seen, sorted = {}, {}
   for _, n in ipairs(nodes) do
-    if not seen[n[key]] then seen[n[key]] = true; list[#list + 1] = n[key] end
+    local v = n[key]
+    if not seen[v] then seen[v] = true; sorted[#sorted + 1] = v end
   end
-  table.sort(list)
-  local index = {}
-  for i, v in ipairs(list) do index[v] = i end
-  return list, index
+  table.sort(sorted)
+  local index, groups, last = {}, {}, nil
+  for _, v in ipairs(sorted) do
+    if not last or v - last > GRID_TOL then groups[#groups + 1] = { min = v, max = v } end
+    groups[#groups].max = v
+    index[v] = #groups
+    last = v
+  end
+  return index, #groups, groups
+end
+
+-- Talents far below the rest of the trees aren't part of them (the Priest
+-- data has a stray second Holy Specialization way off the bottom). Keep
+-- rows from the top down until there's a gap much wider than the usual
+-- space between rows.
+local function DropStrays(nodes)
+  local index, count, groups = Cluster(nodes, "y")
+  if count < 3 then return nodes end
+  local gaps = {}
+  for i = 2, count do gaps[#gaps + 1] = groups[i].min - groups[i - 1].max end
+  local sortedGaps = {}
+  for i, g in ipairs(gaps) do sortedGaps[i] = g end
+  table.sort(sortedGaps)
+  local usual = sortedGaps[math.ceil(#sortedGaps / 2)]
+  local lastRow = count
+  for i, g in ipairs(gaps) do
+    if g > math.max(1000, usual * 3) then lastRow = i break end
+  end
+  if lastRow == count then return nodes end
+  local kept = {}
+  for _, n in ipairs(nodes) do
+    if index[n.y] <= lastRow then kept[#kept + 1] = n end
+  end
+  return kept
 end
 
 -- Returns a tree table or nil, reason:
@@ -216,6 +253,7 @@ function T.ReadTree()
     local treeIDs = cfg.treeIDs or {}
     if not treeIDs[1] then error("no talent tree", 0) end
     tree = { configID = configID, treeID = treeIDs[1], list = {}, nodes = {}, byName = {}, trees = {} }
+    local raw = {}
     for _, tid in ipairs(treeIDs) do
       for _, nodeID in ipairs(C_Traits.GetTreeNodes(tid) or {}) do
         local n = C_Traits.GetNodeInfo(configID, nodeID)
@@ -234,12 +272,16 @@ function T.ReadTree()
               to = {}, from = {},
             }
             for _, e in ipairs(n.visibleEdges or {}) do node.to[#node.to + 1] = e.targetNode end
-            tree.nodes[nodeID] = node
-            tree.list[#tree.list + 1] = node
-            tree.byName[name:lower()] = node
+            raw[#raw + 1] = node
           end
         end
       end
+    end
+    for _, node in ipairs(DropStrays(raw)) do
+      tree.nodes[node.id] = node
+      tree.list[#tree.list + 1] = node
+      local key = node.name:lower()
+      if not tree.byName[key] then tree.byName[key] = node end
     end
     if #tree.list == 0 then error("no talents found", 0) end
     for _, node in ipairs(tree.list) do
@@ -250,14 +292,21 @@ function T.ReadTree()
 
     -- Which tree each talent is in: the game's sub-trees if it has them,
     -- otherwise three columns split at the two widest gaps.
-    local subs = Unique(tree.list, "sub")
+    local subIndex, subCount = {}, 0
+    for _, node in ipairs(tree.list) do
+      if node.sub ~= 0 and not subIndex[node.sub] then subCount = subCount + 1; subIndex[node.sub] = true end
+    end
     local count
-    if #subs >= 2 and subs[1] ~= 0 then
-      local _, subIndex = Unique(tree.list, "sub")
-      for _, node in ipairs(tree.list) do node.tree = subIndex[node.sub] end
-      count = #subs
+    if subCount >= 2 then
+      local idx = Cluster(tree.list, "sub")
+      for _, node in ipairs(tree.list) do node.tree = idx[node.sub] end
+      count = subCount
     else
-      local xs = Unique(tree.list, "x")
+      local seenX, xs = {}, {}
+      for _, node in ipairs(tree.list) do
+        if not seenX[node.x] then seenX[node.x] = true; xs[#xs + 1] = node.x end
+      end
+      table.sort(xs)
       local gaps = {}
       for i = 2, #xs do gaps[#gaps + 1] = { at = xs[i], size = xs[i] - xs[i - 1] } end
       table.sort(gaps, function(a, b) return a.size > b.size end)
@@ -278,8 +327,8 @@ function T.ReadTree()
       tr.names[node.name] = true
     end
     for t, tr in ipairs(tree.trees) do
-      local _, rowIndex = Unique(tr.nodes, "y")
-      local _, colIndex = Unique(tr.nodes, "x")
+      local rowIndex = Cluster(tr.nodes, "y")
+      local colIndex = Cluster(tr.nodes, "x")
       for _, node in ipairs(tr.nodes) do node.row, node.col = rowIndex[node.y], colIndex[node.x] end
       tr.name = ns.NameTalentTree(ns.GetClassToken(), tr.names) or ("Tree " .. t)
       tr.rows, tr.cols = 0, 0

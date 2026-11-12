@@ -2,6 +2,10 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.13.1
+- **Talent planner, Warlock and Priest:** the trees now draw and check correctly. The game puts a few talents slightly off the grid (Warlock's Improved Life Tap and Amplify Curse), which made Suppression look like it needed 5 points first. A stray second Holy Specialization in the Priest data is now ignored.
+- No gameplay changes.
+
 ## 0.13.0
 - **Talent planner (`/tac talents`):** your three talent trees, read from the game, with a build point by point from level 10 to 60.
 - **Tactara's builds:** Arms, Fury and Protection leveling builds for Warrior, from current Forever guides and checked against the game's trees. More classes are coming.
