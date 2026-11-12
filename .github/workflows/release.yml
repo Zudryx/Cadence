@@ -70,6 +70,14 @@ jobs:
           VERSION: ${{ steps.v.outputs.version }}
           N: ${{ github.run_number }}
         run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            # docs-only pushes after a release: nothing new to test
+            echo "::notice::v$VERSION is already released, so no test build. Bump the version to make the next one."
+            for t in $(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" -q '.[] | select(.prerelease) | .tag_name' | grep -- "^v$VERSION-test\." || true); do
+              gh release delete "$t" --cleanup-tag -y
+            done
+            exit 0
+          fi
           TAG="v$VERSION-test.$N"
           { echo "**Test build $N of Tactara $VERSION.** Not on CurseForge yet, and the normal updater won't install it."
             echo "To try it: download the Tactara zip below, or run \"Update Tactara (testing).bat\" from TactaraUpdater.zip."
