@@ -1380,5 +1380,66 @@ do
   T.DeleteCustom("Warrior - Update Test (kept)")
 end
 
+
+-- first time on a character: one question about the talent planner
+do
+  local T, P = ns.Talents, ns.TalentPlanner
+  local shown
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(which, text) shown = { which = which, text = text } end
+  local realLevel, realShow = UnitLevel, P.Show
+  local level, opened = 5, 0
+  UnitLevel = function() return level end
+  P.Show = function() opened = opened + 1 end
+  TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = nil, nil
+  TactaraCharDB.welcomeDone, TactaraCharDB.welcomeAt10, TactaraDB.welcomeOff = nil, nil, nil
+
+  inCombat = true
+  T.Welcome()
+  check(shown == nil, "welcome waits for the fight to end")
+  inCombat = false
+  T.HandleEvent("PLAYER_REGEN_ENABLED")
+  check(shown and shown.which == "TACTARA_WELCOME" and shown.text:find("first talent point comes at level 10"), "level 5: asked, mentions level 10")
+  local d = StaticPopupDialogs.TACTARA_WELCOME
+  check(d.button1 == "Open planner" and d.button2 == "At level 10" and d.button3 == "No thanks", "Open planner / At level 10 / No thanks")
+  d.OnCancel()   -- At level 10 (Escape does the same)
+  check(TactaraCharDB.welcomeDone and TactaraCharDB.welcomeAt10, "At level 10 is remembered")
+  shown = nil
+  T.Welcome()
+  check(shown == nil, "asked only once per character")
+  T.HandleEvent("PLAYER_LEVEL_UP", 9)
+  check(shown == nil, "not at level 9")
+  T.HandleEvent("PLAYER_LEVEL_UP", 10)
+  runTimers()
+  check(shown and shown.which == "TACTARA_WELCOME_10" and shown.text:find("first talent point"), "asked again at level 10")
+  StaticPopupDialogs.TACTARA_WELCOME_10.OnAccept()
+  check(opened == 1 and TactaraCharDB.welcomeAt10 == nil, "and it opens the planner")
+
+  level, shown = 12, nil
+  TactaraCharDB.welcomeDone = nil
+  T.Welcome()
+  d = StaticPopupDialogs.TACTARA_WELCOME
+  check(shown and shown.text:find("Pick a talent build") and d.button2 == "Later" and d.OnCancel == nil, "level 12: Open planner / Later / No thanks")
+  check(not TactaraCharDB.welcomeDone, "Later asks again next login")
+  d.OnAlt()
+  check(TactaraCharDB.welcomeDone, "No thanks: never again on this character")
+  TactaraCharDB.welcomeDone = nil
+  T.Welcome()
+  StaticPopupDialogs.TACTARA_WELCOME.OnAccept()
+  check(opened == 2 and TactaraCharDB.welcomeDone, "Open planner opens it and counts as answered")
+
+  TactaraCharDB.welcomeDone, shown = nil, nil
+  T.SetActive("Warrior - Arms")
+  T.Welcome()
+  check(shown == nil, "not asked when you already follow a build")
+  TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = nil, nil
+  TactaraDB.welcomeOff = true
+  T.Welcome()
+  check(shown == nil, "not asked when turned off for all characters")
+  TactaraDB.welcomeOff, TactaraCharDB.welcomeDone = nil, true
+  UnitLevel, P.Show = realLevel, realShow
+  StaticPopupDialogs, StaticPopup_Show = nil, nil
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

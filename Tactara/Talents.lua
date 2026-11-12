@@ -252,6 +252,59 @@ function T.KeepMine()
 end
 
 local promptWaiting = false
+---------------------------------------------------------------------------
+-- First time on a character: one question about the talent planner
+---------------------------------------------------------------------------
+
+local welcomeWaiting = false
+
+local function Popup(key, text, b1, b2, b3, onAccept, onCancel, onAlt)
+  if not (StaticPopupDialogs and StaticPopup_Show) then return false end
+  StaticPopupDialogs[key] = {
+    text = "%s", button1 = b1, button2 = b2, button3 = b3,
+    OnAccept = onAccept, OnCancel = onCancel, OnAlt = onAlt,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+  }
+  StaticPopup_Show(key, text)
+  return true
+end
+
+local function OpenPlanner()
+  TactaraCharDB.welcomeDone = true
+  ns.TalentPlanner.Show()
+end
+
+-- Asked once per character (new character, first install, reset, or a
+-- character that hasn't picked a build yet), unless turned off for all.
+function T.Welcome()
+  if TactaraCharDB.welcomeDone or TactaraDB.welcomeOff or T.ActiveBuild() then return end
+  if InCombatLockdown() then welcomeWaiting = true return end
+  welcomeWaiting = false
+  local level = UnitLevel and UnitLevel("player") or 1
+  local intro = "|cffffd100Tactara|r can plan your talents from level 10 to 60, from its own builds or your own, and learn them with a click as you level."
+  if level < T.FIRST_LEVEL then
+    Popup("TACTARA_WELCOME", intro .. "\n\nYour first talent point comes at level 10. Look at the talent planner now, or be reminded at level 10?",
+      "Open planner", "At level 10", "No thanks",
+      OpenPlanner,
+      function() TactaraCharDB.welcomeDone, TactaraCharDB.welcomeAt10 = true, true end,
+      function() TactaraCharDB.welcomeDone = true end)
+  else
+    Popup("TACTARA_WELCOME", intro .. "\n\nPick a talent build to follow, or plan your own?",
+      "Open planner", "Later", "No thanks",
+      OpenPlanner,
+      nil,
+      function() TactaraCharDB.welcomeDone = true end)
+  end
+end
+
+local function WelcomeAt10(level)
+  if not TactaraCharDB.welcomeAt10 or (tonumber(level) or 0) < T.FIRST_LEVEL then return end
+  TactaraCharDB.welcomeAt10 = nil
+  if T.ActiveBuild() then return end
+  Popup("TACTARA_WELCOME_10", "Level 10: your first talent point!\n\nOpen the |cffffd100Tactara|r talent planner to pick a build or plan your own?",
+    "Open planner", "Not now", nil, function() ns.TalentPlanner.Show() end)
+end
+
 function T.PromptUpdate()
   local old = T.ActiveBuild()
   if not (old and old.outdated) then return end
@@ -787,13 +840,16 @@ function T.HandleEvent(event, arg1)
     if C_Timer and C_Timer.After then
       C_Timer.After(8, T.Remind)
       C_Timer.After(10, T.PromptUpdate)
+      C_Timer.After(12, T.Welcome)
     end
   elseif event == "PLAYER_LEVEL_UP" then
+    WelcomeAt10(arg1)
     -- the new point shows up a moment after the level
     if C_Timer and C_Timer.After then C_Timer.After(1.5, T.TryAutoLearn) else T.TryAutoLearn() end
   elseif event == "PLAYER_REGEN_ENABLED" then
     if autoWaiting then T.TryAutoLearn() end
     if promptWaiting then T.PromptUpdate() end
+    if welcomeWaiting then T.Welcome() end
   else
     if event == "TRAIT_CONFIG_UPDATED" and T.pendingReport then T.pendingReport() end
     if not T.learning then T.Refresh() end

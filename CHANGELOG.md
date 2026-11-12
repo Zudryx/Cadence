@@ -3,6 +3,7 @@
 Each `## x.y.z` section becomes the release notes for that version.
 
 ## 0.14.0
+- **A one-time question on each character:** the first time you play a character with Tactara (a new character, a fresh install, or one that hasn't picked a talent build), Tactara asks once whether to open the talent planner. Below level 10 you can choose **At level 10** instead, and you're asked again when you get your first talent point. Never in combat. Characters already following a build aren't asked. Turn it off for all your characters on the settings page (Talents).
 - **Build updates are your choice:** when Tactara updates one of its talent builds that you're following, you keep following the version you picked. Tactara asks once: **Switch**, **Later** or **Keep mine**. It tells you where the build changed and whether the new version fits your talents or would need a respec. **Keep mine** saves your version as your own build, which never changes. The planner shows the same choice.
 - **Talent planner, Warlock and Priest:** the trees now draw and check correctly. The game puts a few talents slightly off the grid (Warlock's Improved Life Tap and Amplify Curse), which made Suppression look like it needed 5 points first. A stray second Holy Specialization in the Priest data is now ignored.
 - No gameplay changes.

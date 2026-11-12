@@ -76,7 +76,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
 - **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
-- **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, and the chat reminder.
+- **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 
 The `/tac` commands still work, and both always show the same settings.
@@ -95,6 +95,7 @@ The `/tac` commands still work, and both always show the same settings.
   - **Learn automatically when I level up** (off by default) does the same by itself after each level, once you're out of combat.
   - Otherwise Tactara reminds you in chat, and the next talent glows in your talent window for you to click.
   - If WoW ever stops addons from learning talents, Tactara says so once and keeps the glow.
+- **First time on a character,** Tactara asks once whether to open the planner. Below level 10 you can pick **At level 10** to be asked when your first talent point arrives. Turn it off for all characters on the settings page.
 - **When Tactara updates a build you're following,** nothing changes under you: you keep following the version you picked, and Tactara asks once whether to **Switch**, decide **Later**, or **Keep mine** (saved as your own build, which never changes). It says where the build changed and whether the new version needs a respec. The planner shows the same choice.
 - The level-by-level list shows what you've learned (green) and what's next (blue). Talents you have that the build doesn't use show their points in red on the trees.
 

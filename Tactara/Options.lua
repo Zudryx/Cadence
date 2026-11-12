@@ -284,6 +284,13 @@ local function BuildVertical()
     function() ns.Talents.UpdateWindowButton() end)
   Check(TactaraCharDB, "talentGlow", "Glow the next talent", "In your talent window, the next talent of your build glows.", true,
     function() ns.Talents.Refresh() end)
+  do
+    local variable = "Tactara_welcome"
+    local s = Settings.RegisterProxySetting(cat, variable, VarType("boolean"), "Ask new characters about the planner", true,
+      function() return not TactaraDB.welcomeOff end,
+      function(v) if v then TactaraDB.welcomeOff = nil else TactaraDB.welcomeOff = true end end)
+    CreateCheckbox(cat, s, "The first time you play a character with Tactara, it asks once whether to open the talent planner (or reminds you at level 10). For all your characters.")
+  end
   Check(TactaraCharDB, "talentReminders", "Remind me about talent points", "A chat line when you have talent points to spend, with the next one in your build.", true,
     function() end)
 

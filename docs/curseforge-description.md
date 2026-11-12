@@ -45,7 +45,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off.
-  - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, and the reminder.
+  - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Helper icons work like action buttons:** each shows its keybind and a cooldown sweep. It turns red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used.
 - **Works with your bars:** the glow works on Blizzard's action bars and the popular action bar addons, and with spells inside your own macros. It only draws on top of your buttons and never changes them.
 
