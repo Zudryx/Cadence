@@ -79,6 +79,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
+- **Reminders:** before-the-pull reminders (under the helper and in chat, under the helper only, or off) and the trainer reminder after a level-up.
 
 The `/tac` commands still work, and both always show the same settings.
 
@@ -122,6 +123,13 @@ The `/tac` commands still work, and both always show the same settings.
 - **Stuns and crowd control** (Intimidating Shout, Piercing Howl, Disarm) are in each rotation's `[defensive]` list but commented out. Remove the `#` in `/tac` to turn one on.
 - `/tac interrupts` and `/tac defensives` turn each one on or off. If WoW hides what they need (your health, what the target is casting), they don't guess. They just stay quiet.
 
+## Reminders
+
+Tactara only tells you; it never casts, buys or learns anything for you.
+
+- **Before the pull:** when you target an enemy and you're not fighting yet, a line under the helper popup lists what your rotation wants up and isn't: a buff it keeps up (Battle Shout only when you have the rage), your pet, or, for Rogues and Shamans, a poison or weapon imbue. Totems and in-fight lines like Slice and Dice aren't on it. A chat line says the same when you pick an enemy, at most once a minute (the same reminder at most every five minutes, and not while you're mounted). Turn chat off, or the whole thing, on the settings page (Reminders) or with `/tac prepull on` / `helper` / `off`. If WoW hides a buff from addons, Tactara doesn't guess.
+- **Trainer:** when you level up, a chat line lists the spells now waiting at your class trainer, the ones your rotation uses first. It's read from your spellbook, so it covers new spells, not new ranks of ones you know. At login it only speaks up if your rotation is waiting on one. `/tac trainer` shows the list any time; `/tac trainer off` turns the level-up line off.
+
 ## Commands
 
 | Command | What it does |
@@ -149,11 +157,14 @@ The `/tac` commands still work, and both always show the same settings.
 | `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
+| `/tac prepull` `on` / `helper` / `off` | Before-the-pull reminders: under the helper and in chat, under the helper only, or off |
+| `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |
 | `/tac reset` | Restart from the opener |
 | `/tac errors` | Show/hide red "not ready" errors while pressing (hidden by default) |
 | `/tac test` | Diagnostics: your keys and settings |
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
 | `/tac probe talents` | A read-only report on your talents and the talent window, in a window you can copy from. Changes nothing. |
+| `/tac probe reminders` | A read-only report on what the trainer and before-the-pull reminders can see. Changes nothing. |
 | `/tac debug` | Prints every press, every cast sent and every game error to chat |
 | `/tac keydown auto` / `off` | Troubleshooting only: cast on key down (default) or key up |
 

@@ -246,6 +246,9 @@ local function InitDB()
   if not IDLE[TactaraCharDB.helperIdle] then TactaraCharDB.helperIdle = "fade" end
   if not IDLE[TactaraCharDB.keyIdle] then TactaraCharDB.keyIdle = "show" end
   if TactaraCharDB.minimapButton == nil then TactaraCharDB.minimapButton = true end
+  if TactaraCharDB.trainerReminder == nil then TactaraCharDB.trainerReminder = true end
+  local PREPULL = { both = true, helper = true, off = true }
+  if not PREPULL[TactaraCharDB.prePull] then TactaraCharDB.prePull = "both" end
   local ang = tonumber(TactaraCharDB.minimapAngle)
   TactaraCharDB.minimapAngle = ang and (ang % 360) or 225
   for _, k in ipairs({ "keyIcons", "helperIcons" }) do
@@ -388,6 +391,8 @@ local HELP = {
   "|cffffd100/tac copy|r [name]  copy keys and display settings from another character",
   "|cffffd100/tac defaults|r  new characters start with this character's settings (|cffffd100/tac defaults clear|r)",
   "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
+  "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
+  "|cffffd100/tac prepull|r on|helper|off  reminders before a fight: missing buffs, pet, poison or weapon imbue",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
@@ -403,6 +408,7 @@ local HELP = {
   "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
   "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
   "|cffffd100/tac probe talents|r  report how your talents look to Tactara, in a window you can copy from (changes nothing)",
+  "|cffffd100/tac probe reminders|r  report what Tactara sees for the trainer and before-the-pull reminders (changes nothing)",
   "|cffffd100/tac debug|r  print every press, cast and game error to chat",
   "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
   "Key bindings: Esc > Options > Keybindings > AddOns > Tactara",
@@ -479,6 +485,26 @@ local function HandleSlash(msg)
       ns.UpdateMinimapButton()
       ns.Print("Minimap button " .. (TactaraCharDB.minimapButton and "on" or "off (the minimap's addon menu still has Tactara)"))
     end
+  elseif cmd == "trainer" then
+    local v = rest:lower()
+    if v == "on" or v == "off" then
+      TactaraCharDB.trainerReminder = (v == "on")
+      ns.Print("Trainer reminder after a level-up " .. v .. ".")
+    else
+      ns.Reminders.ShowTrainer()
+    end
+  elseif cmd == "prepull" or cmd == "pull" then
+    local v = rest:lower()
+    local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
+    if MODES[v] then
+      TactaraCharDB.prePull = MODES[v]
+    else
+      TactaraCharDB.prePull = (TactaraCharDB.prePull == "off") and "both" or "off"
+    end
+    ns.Reminders.ResetChatThrottle()
+    ns.HelperRefresh()
+    local say = { both = "on (under the helper popup and in chat)", helper = "under the helper popup only", off = "off" }
+    ns.Print("Before-the-pull reminders " .. say[TactaraCharDB.prePull] .. ".")
   elseif cmd == "copy" then
     local who = rest
     if who == "" then
@@ -552,7 +578,10 @@ local function HandleSlash(msg)
   elseif cmd == "test" or cmd == "diag" then
     ns.Diagnose()
   elseif cmd == "probe" then
-    if rest:lower():match("^talent") then ns.ProbeTalents() else ns.Probe() end
+    local what = rest:lower()
+    if what:match("^talent") then ns.ProbeTalents()
+    elseif what:match("^remind") or what:match("^trainer") or what:match("^pull") then ns.ProbeReminders()
+    else ns.Probe() end
   elseif cmd == "spells" then
     ns.ReportSpells()
   elseif cmd == "glow" and rest ~= "" and rest:lower() ~= "on" and rest:lower() ~= "off" then

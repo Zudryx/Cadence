@@ -451,3 +451,110 @@ function ns.ProbeTalents()
   end
   return text
 end
+
+---------------------------------------------------------------------------
+-- /tac probe reminders
+-- Read only: what the trainer and before-the-pull reminders can see
+-- (spells not learned yet and their levels, weapon enchants, poison and
+-- imbue spells, pet). Nothing is cast or changed.
+---------------------------------------------------------------------------
+
+local REMINDER_FUNCTIONS = {
+  "C_SpellBook.GetNumSpellBookSkillLines", "C_SpellBook.GetSpellBookSkillLineInfo",
+  "C_SpellBook.GetSpellBookItemInfo", "C_SpellBook.GetSpellBookItemLevelLearned",
+  "C_Spell.GetSpellLevelLearned", "GetSpellLevelLearned", "GetSpellAvailableLevel",
+  "GetNumSpellTabs", "GetSpellTabInfo", "GetSpellBookItemInfo",
+  "GetWeaponEnchantInfo", "GetInventoryItemID", "C_Item.GetItemInfoInstant",
+  "C_Spell.GetSpellPowerCost", "C_UnitAuras.GetAuraDataBySpellName",
+}
+
+function ns.ProbeReminders()
+  local L = {}
+  local function add(text) L[#L + 1] = text end
+  local function try(label, fn)
+    local ok, err = pcall(fn)
+    if not ok then add(label .. ": error " .. tostring(err):gsub("^.-:%d+: ", ""):sub(1, 100)) end
+  end
+  local R = ns.Reminders
+  local version, build = GetBuildInfo()
+  local _, class = UnitClass("player")
+  add(("Tactara %s reminders probe. Read only: nothing was cast or changed."):format(ns.VERSION))
+  add(("game %s (%s), %s level %s, rotation: %s"):format(tostring(version), tostring(build), tostring(class),
+    tostring(UnitLevel("player")), tostring(ns.activeName)))
+  local have, missing = {}, {}
+  for _, path in ipairs(REMINDER_FUNCTIONS) do
+    if Has(path) then have[#have + 1] = path else missing[#missing + 1] = path end
+  end
+  add("functions: " .. table.concat(have, ", "))
+  add("not there: " .. (#missing > 0 and table.concat(missing, ", ") or "none"))
+
+  add("")
+  add("== Spells not learned yet (spellbook) ==")
+  try("spellbook", function()
+    if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
+      for li = 1, C_SpellBook.GetNumSpellBookSkillLines() or 0 do
+        local line = C_SpellBook.GetSpellBookSkillLineInfo(li) or {}
+        add(("line %d: %s, %s items, offspec %s, hidden %s"):format(li, Str(line.name), Str(line.numSpellBookItems),
+          Str(line.offSpecID), Str(line.shouldHide)))
+      end
+    end
+    local future = R.FutureSpells()
+    add(("%d not learned yet:"):format(#future))
+    for i, s in ipairs(future) do
+      if i > 60 then add("...") break end
+      add(("  %s (id %s) level %s, %s"):format(s.name, Str(s.id), Str(s.level), Str(s.line)))
+    end
+    local waiting = R.TrainerSpells()
+    local names = {}
+    for _, s in ipairs(waiting) do names[#names + 1] = s.name .. (s.inRotation and "*" or "") end
+    add(("waiting at the trainer now (%d, * = in your rotation): %s"):format(#waiting,
+      #names > 0 and table.concat(names, ", ") or "none"))
+  end)
+  try("rotation", function()
+    local _, notYet = ns.RotationSpells()
+    add("rotation spells not learned yet: " .. (#notYet > 0 and table.concat(notYet, ", ") or "none"))
+  end)
+
+  add("")
+  add("== Before the pull ==")
+  try("weapons", function()
+    add("GetWeaponEnchantInfo: " .. (GetWeaponEnchantInfo and Fmt(GetWeaponEnchantInfo()):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") or "not there"))
+    for _, slot in ipairs({ 16, 17 }) do
+      local id = GetInventoryItemID and GetInventoryItemID("player", slot)
+      local equipLoc = id and C_Item and C_Item.GetItemInfoInstant and select(4, C_Item.GetItemInfoInstant(id))
+      add(("slot %d: item %s, %s"):format(slot, Str(id), Str(equipLoc)))
+    end
+  end)
+  try("coats", function()
+    for _, list in ipairs({ R.POISONS, R.IMBUES }) do
+      for _, s in ipairs(list) do
+        if ns.IsKnown(s) then
+          local ok, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", s, "HELPFUL")
+          add(("known: %s, buff on you: %s"):format(s, ok and (aura and "yes" or "no") or "HIDDEN"))
+        end
+      end
+    end
+  end)
+  try("pet", function()
+    add(("pet: exists %s, dead %s"):format(Str(UnitExists("pet")), Str(UnitIsDead("pet"))))
+  end)
+  try("list", function()
+    local list = R.PrePullList()
+    local t = {}
+    for _, x in ipairs(list) do t[#t + 1] = x.text .. " [" .. tostring(x.spell) .. "]" end
+    add("missing now: " .. (#t > 0 and table.concat(t, ", ") or "nothing"))
+    local comp = ns.HelperComp and ns.HelperComp()
+    local prep = {}
+    for _, e in ipairs(comp and comp.priority or {}) do
+      local kinds = {}
+      for _, c in ipairs(e.live) do kinds[#kinds + 1] = c.kind end
+      if #kinds > 0 then prep[#prep + 1] = e.spell .. " @" .. table.concat(kinds, "/") end
+    end
+    add("rotation lines with checks: " .. (#prep > 0 and table.concat(prep, ", ") or "none"))
+  end)
+
+  local text = table.concat(L, "\n")
+  ns.ShowCopyText("Tactara reminders probe", text)
+  ns.Print("Reminders probe done. Copy the text in the window (Ctrl+C) and paste it to whoever asked for it. Nothing was changed.")
+  return text
+end

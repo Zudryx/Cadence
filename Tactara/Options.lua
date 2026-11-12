@@ -304,6 +304,15 @@ local function BuildVertical()
   Check(TactaraCharDB, "interrupts", "Suggest interrupts", "A red slot when your target is casting something you can stop.", true, Refresh)
   Check(TactaraCharDB, "defensives", "Suggest defensives", "An orange slot when you're low on health and a defensive or self-heal is ready.", true, Refresh)
 
+  Header("Reminders")
+  Dropdown(TactaraCharDB, "prePull", "Before the pull", "When you target an enemy and you're not fighting yet: a buff your rotation keeps up, your pet, or a poison or weapon imbue that's missing. Tactara only tells you; you cast it.", "both", {
+    { "both", "Under the helper and in chat", "A line under the helper popup, and a chat line now and then (at most once a minute)." },
+    { "helper", "Under the helper popup" },
+    { "off", "Off" },
+  }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
+  Check(TactaraCharDB, "trainerReminder", "New spells at the trainer", "A chat line when you level up and new spells are waiting at your class trainer, the ones your rotation uses first. /tac trainer shows the list any time.", true,
+    function() end)
+
   Settings.RegisterAddOnCategory(cat)
   return cat
 end
@@ -325,6 +334,8 @@ local COMMANDS = {
   "/tac glow strong | normal | subtle | test",
   "/tac helper auto | priority | sequence",
   "/tac interrupts | defensives  - suggestions on/off",
+  "/tac prepull on | helper | off  - reminders before a fight",
+  "/tac trainer [on | off]  - spells waiting at your trainer",
   "/tac use <name> | auto  - pick a rotation",
   "/tac help  - every command",
 }

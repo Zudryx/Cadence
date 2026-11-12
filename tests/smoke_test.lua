@@ -518,7 +518,7 @@ do
   for _, v in ipairs({ "active", "hideErrors", "keyDown", "showHelper", "helperScale", "showDisplay", "displayScale",
       "locked", "highlight", "glowStyle", "helperMode", "interrupts", "defensives", "helperCooldowns", "helperTint",
       "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "minimapButton",
-      "talentAutoLearn", "talentGlow", "talentReminders", "talentButton" }) do
+      "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "prePull", "trainerReminder" }) do
     check(reg.settings["Tactara_" .. v] ~= nil, "setting " .. v)
   end
   local function S(v) return reg.settings["Tactara_" .. v] end
@@ -549,7 +549,7 @@ do
 
   local headers = 0
   for _, i in ipairs(reg.inits) do if i.header then headers = headers + 1 end end
-  check(headers == 7, "seven sections on the page (" .. headers .. ")")
+  check(headers == 8, "eight sections on the page (" .. headers .. ")")
 
   S("showHelper"):SetValue(false)
   check(TactaraCharDB.showHelper == false and not ns.helperPopup:IsShown(), "unticking the helper hides it")

@@ -248,7 +248,11 @@ function ns.UpdateHelperPopup()
   SetIcon(f.interrupt, util.interrupt)
   SetIcon(f.defensive, util.defensive)
 
-  if locked then
+  -- enemy picked, not fighting yet: anything your rotation wants up first
+  local prep = ns.Reminders and ns.Reminders.PrePullText()
+  if prep then
+    f.label:SetText(prep)
+  elseif locked then
     f.label:SetText("")
   else
     f.label:SetText("Tactara HELPER: best skill now (drag, /tac lock)")

@@ -1541,5 +1541,205 @@ do
   UnitName, GetRealmName = nil, nil
 end
 
+-- trainer reminder: spells you can learn now, the ones your rotation uses first
+do
+  local R = ns.Reminders
+  local realSB, realRotSpells, realLevel = C_SpellBook, ns.RotationSpells, UnitLevel
+  local LEVELS = { [6343] = 6, [1715] = 8, [72] = 10, [12294] = 40, [6552] = 4 }
+  local ITEMS = {
+    [1] = { itemType = 1, name = "Heroic Strike", spellID = 78 },
+    [2] = { itemType = 2, name = "Thunder Clap", spellID = 6343 },
+    [3] = { itemType = 2, name = "Hamstring", spellID = 1715 },
+    [4] = { itemType = 2, name = "Mortal Strike", spellID = 12294 },
+    [5] = { itemType = 2, name = "Shield Bash", spellID = 72 },
+    [6] = { itemType = 2, name = "Pummel", spellID = 6552 },   -- other spec's line
+  }
+  Enum.SpellBookSpellBank = { Player = 0 }
+  C_SpellBook = {
+    FindSpellBookSlotForSpell = realSB.FindSpellBookSlotForSpell,
+    GetNumSpellBookSkillLines = function() return 2 end,
+    GetSpellBookSkillLineInfo = function(i)
+      if i == 1 then return { name = "Warrior", itemIndexOffset = 0, numSpellBookItems = 5 } end
+      return { name = "Fury", itemIndexOffset = 5, numSpellBookItems = 1, offSpecID = 72 }
+    end,
+    GetSpellBookItemInfo = function(slot) return ITEMS[slot] or { itemType = 1 } end,
+  }
+  C_Spell.GetSpellLevelLearned = function(id) return LEVELS[id] or 0 end
+  ns.RotationSpells = function() return { "Heroic Strike" }, { "Thunder Clap", "Mortal Strike" } end
+  UnitLevel = function() return 12 end
+  ns.ClearKnownCache()
+
+  local list = R.TrainerSpells(12)
+  local names = {}
+  for _, x in ipairs(list) do names[#names + 1] = x.name end
+  check(table.concat(names, ",") == "Thunder Clap,Hamstring,Shield Bash", "waiting at level 12, rotation first: " .. table.concat(names, ","))
+  local msg = R.TrainerMessage(list)
+  check(msg:find("^3 spells are waiting at your class trainer") and msg:find("Thunder Clap|r %(in your rotation%); Hamstring, Shield Bash%.$"),
+    "trainer message: " .. msg)
+  check(#R.TrainerSpells(5) == 0 and #R.TrainerSpells(40) == 4, "learn levels decide what's waiting")
+  check(R.FutureSpells()[1].line == "Warrior" and #R.FutureSpells() == 4, "other spec's spells left out")
+  local okP, probe = pcall(ns.ProbeReminders)
+  check(okP and probe:find("waiting at the trainer now %(3") and probe:find("Thunder Clap%*"), "/tac probe reminders: " .. tostring(probe))
+
+  chat = {}
+  TactaraCharDB.trainerReminder = true
+  R.HandleEvent("PLAYER_LEVEL_UP", 12)
+  runTimers()
+  check(table.concat(chat, " "):find("3 spells are waiting at your class trainer"), "a line after a level-up")
+  chat = {}
+  TactaraCharDB.trainerReminder = false
+  R.HandleEvent("PLAYER_LEVEL_UP", 12)
+  runTimers()
+  check(#chat == 0, "turned off: nothing")
+  SlashCmdList.TACTARA("trainer")
+  check(table.concat(chat, " "):find("waiting at your class trainer"), "/tac trainer lists them anyway")
+  SlashCmdList.TACTARA("trainer on")
+  check(TactaraCharDB.trainerReminder == true, "/tac trainer on")
+  check(R.CheckTrainer(12, true) == true, "at login when your rotation is waiting on a spell")
+  ns.RotationSpells = function() return {}, {} end
+  check(R.CheckTrainer(12, true) == false and R.CheckTrainer(12) == true, "at login quiet when it's only other spells")
+  LEVELS = {}
+  chat = {}
+  SlashCmdList.TACTARA("trainer")
+  check(table.concat(chat, " "):find("Nothing new is waiting"), "nothing waiting")
+
+  -- older spellbook functions
+  C_SpellBook = { FindSpellBookSlotForSpell = realSB.FindSpellBookSlotForSpell, GetSpellBookItemInfo = realSB.GetSpellBookItemInfo }
+  GetNumSpellTabs = function() return 1 end
+  GetSpellTabInfo = function() return "Arms", "tex", 0, 3, false, 0 end
+  GetSpellBookItemInfo = function(slot) if slot == 2 then return "FUTURESPELL", 6343 end return "SPELL", 78 end
+  GetSpellBookItemName = function(slot) return slot == 2 and "Thunder Clap" or "Heroic Strike" end
+  GetSpellAvailableLevel = function(slot) return slot == 2 and 6 or 1 end
+  C_Spell.GetSpellLevelLearned = nil
+  local old = R.TrainerSpells(12)
+  check(#old == 1 and old[1].name == "Thunder Clap" and old[1].level == 6, "older spellbook functions work too")
+  GetNumSpellTabs, GetSpellTabInfo, GetSpellBookItemInfo, GetSpellBookItemName, GetSpellAvailableLevel = nil, nil, nil, nil, nil
+
+  C_SpellBook, ns.RotationSpells, UnitLevel = realSB, realRotSpells, realLevel
+  Enum.SpellBookSpellBank = nil
+  ns.ClearKnownCache()
+end
+
+-- before the pull: missing buffs, pet, poisons and imbues (Tactara only says so)
+do
+  local R = ns.Reminders
+  local env = { isKnown = function() return true end, hasBuff = function() return nil end }
+  local comp = ns.Compile(ns.Parse([[
+name: prep test
+[priority]
+/cast Call Pet @nopet
+/cast Demon Armor @missing Demon Armor
+/cast Searing Totem @missing Searing Totem
+/cast Slice and Dice @missing Slice and Dice @combo 1
+/cast Battle Shout @missing Battle Shout
+/cast Ice Barrier @missing Ice Barrier
+/cast Shadow Bolt
+]]), "main", env)
+  local realMain = ns.compiled.main
+  local realExists, realClass, realInv, realItem = UnitExists, UnitClass, GetInventoryItemID, C_Item
+  local petUp = false
+  UnitExists = function(u) if u == "pet" then return petUp end return realExists(u) end
+  for k in pairs(playerAuras) do playerAuras[k] = nil end
+  for k in pairs(usable) do usable[k] = nil end
+  for k in pairs(cooldowns) do cooldowns[k] = nil end
+  C_Spell.GetSpellPowerCost = function(name) if name == "Battle Shout" then return { { type = 1, name = "RAGE" } } end return { { type = 0 } } end
+  usable["Battle Shout"] = { false, true }   -- no rage before a fight
+  cooldowns["Ice Barrier"] = { isActive = true, isOnGCD = false, startTime = now - 1, duration = 1000 }
+
+  local function texts(list) local t = {} for _, x in ipairs(list) do t[#t + 1] = x.text end return table.concat(t, ",") end
+  check(texts(R.PrePullList(comp)) == "your pet,Demon Armor", "pet first, then buffs; no totems, combat lines, rage-less shouts or cooldowns: " .. texts(R.PrePullList(comp)))
+  check(R.PrePullList(comp)[1].spell == "Call Pet", "the pet reminder has the spell's icon")
+  usable["Battle Shout"] = nil
+  check(texts(R.PrePullList(comp)) == "your pet,Demon Armor,Battle Shout", "a shout counts when you have the rage")
+  usable["Battle Shout"] = { false, true }
+  petUp = true
+  playerAuras["Demon Armor"] = { expirationTime = now + 600, duration = 1800 }
+  check(#R.PrePullList(comp) == 0, "all set: nothing")
+  playerAuras["Demon Armor"] = "hidden"
+  check(#R.PrePullList(comp) == 0, "hidden by the game: no guess")
+  playerAuras["Demon Armor"] = nil
+
+  -- under the helper popup and in chat
+  ns.compiled.main = comp
+  inCombat, hasTarget = false, true
+  TactaraCharDB.prePull = "both"
+  check(R.PrePullText() and R.PrePullText():find("Before the pull:|r Demon Armor$"), "popup line: " .. tostring(R.PrePullText()))
+  TactaraCharDB.showHelper, TactaraCharDB.locked = true, true
+  ns.UpdateHelperPopup()
+  check(ns.helperPopup.label._text:find("Before the pull"), "shown under the helper popup")
+  hasTarget = false
+  check(R.PrePullText() == nil, "no enemy picked: nothing")
+  ns.UpdateHelperPopup()
+  hasTarget = true
+  inCombat = true
+  check(R.PrePullText() == nil, "in a fight: nothing")
+  inCombat = false
+  R.ResetChatThrottle()
+  chat = {}
+  R.HandleEvent("PLAYER_TARGET_CHANGED")
+  check(table.concat(chat, " "):find("Before you pull: Demon Armor%."), "chat line when you pick an enemy: " .. table.concat(chat, " | "))
+  check(R.ChatPrePull() == false, "not again right away")
+  now = now + 61
+  check(R.ChatPrePull() == false, "the same reminder waits five minutes")
+  petUp = false
+  check(R.ChatPrePull() == true, "something new after a minute")
+  now = now + 301
+  check(R.ChatPrePull() == true, "the same again after five minutes")
+  IsMounted = function() return true end
+  now = now + 301
+  check(R.ChatPrePull() == false and R.PrePullText() ~= nil, "mounted: no chat, the popup line stays")
+  IsMounted = nil
+  SlashCmdList.TACTARA("prepull helper")
+  check(TactaraCharDB.prePull == "helper" and R.ChatPrePull() == false and R.PrePullText() ~= nil, "helper only: no chat")
+  SlashCmdList.TACTARA("prepull off")
+  check(TactaraCharDB.prePull == "off" and R.PrePullText() == nil, "off")
+  SlashCmdList.TACTARA("prepull")
+  check(TactaraCharDB.prePull == "both", "/tac prepull turns it back on")
+  petUp = true
+
+  -- poisons and weapon imbues
+  local inv = { [16] = 1002, [17] = 1002 }
+  local LOC = { [1002] = "INVTYPE_WEAPON", [1003] = "INVTYPE_SHIELD" }
+  GetInventoryItemID = function(_, slot) return inv[slot] end
+  C_Item = { GetItemInfoInstant = function(id) return id, "Weapon", "x", LOC[id] end }
+  local mh, oh = false, false
+  GetWeaponEnchantInfo = function() return mh, 0, 0, 0, oh, 0, 0, 0 end
+  UnitClass = function() return "Rogue", "ROGUE", 4 end
+  known["Deadly Poison"] = true
+  ns.ClearKnownCache()
+  local function weapon() local l = R.PrePullList(comp); return l[#l] and l[#l].kind == "weapon" and l[#l] end
+  check(weapon() and weapon().text == "a poison on your weapons" and weapon().spell == "Deadly Poison", "rogue: no poison on")
+  mh = true
+  check(weapon(), "off hand still bare")
+  oh = true
+  check(not weapon(), "both coated")
+  mh, oh = false, false
+  playerAuras["Deadly Poison"] = { expirationTime = now + 3000, duration = 3600 }
+  check(not weapon(), "poison as a buff on you counts")
+  playerAuras["Deadly Poison"] = nil
+  UnitClass = function() return "Shaman", "SHAMAN", 7 end
+  known["Rockbiter Weapon"] = true
+  inv[17] = 1003
+  mh = true
+  ns.ClearKnownCache()
+  check(not weapon(), "shaman with a shield: main hand is enough")
+  mh = false
+  check(weapon() and weapon().text == "a weapon imbue" and weapon().spell == "Rockbiter Weapon", "shaman: no imbue")
+  GetWeaponEnchantInfo = function() error("secret value") end
+  check(not weapon(), "hidden: no guess")
+  known["Rockbiter Weapon"], known["Deadly Poison"] = nil, nil
+  ns.ClearKnownCache()
+  GetWeaponEnchantInfo = function() return false end
+  check(not weapon(), "no imbue learned yet: nothing")
+
+  UnitExists, UnitClass, GetInventoryItemID, C_Item = realExists, realClass, realInv, realItem
+  GetWeaponEnchantInfo, C_Spell.GetSpellPowerCost = nil, nil
+  ns.compiled.main = realMain
+  for k in pairs(usable) do usable[k] = nil end
+  for k in pairs(cooldowns) do cooldowns[k] = nil end
+  hasTarget = false
+  R.ResetChatThrottle()
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

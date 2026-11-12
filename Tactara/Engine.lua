@@ -381,6 +381,10 @@ function ns.RotationSpells()
       for _, line in ipairs(step.lines) do addLine(line) end
     end
   end
+  -- the helper's lists too (buffs, interrupts, defensives)
+  for _, key in ipairs({ "priority", "interrupt", "defensive" }) do
+    for _, line in ipairs(rot.sections[key]) do addLine(line) end
+  end
   return known, missing
 end
 
