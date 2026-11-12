@@ -1,4 +1,4 @@
-Tactara puts your rotation on one key, or highlights the next spell on your action bars so you can press it yourself. It covers every class and spec in **WoW Forever** and grows with you from level 1 to 60.
+Tactara puts your rotation on one key, or highlights the next spell on your action bars so you can press it yourself, and plans your talents level by level. It covers every class and spec in **WoW Forever** and grows with you from level 1 to 60.
 
 ## Two ways to play
 
@@ -28,16 +28,23 @@ You can use both at once.
 
 Rotations are built from the WoW Forever class guides and include Forever's new spells. Healing specs get the solo damage rotation you level with. Healing your group stays in your hands, and self-heals still show up as suggestions when you're hurt.
 
+## Plan your talents
+
+- **Talent planner:** `/tac talents`, or the **Tactara planner** button at the bottom of your talent window, shows your three talent trees with a build laid out point by point from level 10 to 60.
+- **Follow Tactara's build or make your own.** Warrior has recommended Arms, Fury and Protection builds from current Forever guides, and more classes are coming. Start a build from scratch, copy one of Tactara's, or start from the talents you already have so there's no need to respec. The planner only lets you add points the game would take.
+- **Learn with one click.** **Learn next** and **Learn all** spend your points on the build you picked. You can also have Tactara learn them when you level up (off by default, never in combat). Otherwise you get a reminder, and the next talent glows in your talent window.
+- **Share builds** as text and import other people's.
+
 ## Make it yours
 
 - **Rotation editor:** `/tac` opens an in-game editor. Change any rotation, write your own, and share it as plain text.
-- **Talent planner:** `/tac talents` shows your talent trees with a build point by point, level 10 to 60. Follow Tactara's build (Warrior for now, more classes coming), make your own, or start from the talents you already have, share it as text, and learn the next point with one click, or let Tactara learn it when you level up. The next talent also glows in your talent window.
 - **Minimap button:** left-click opens the editor, right-click opens the settings page and shift-click the talent planner. Drag it anywhere around the minimap, or hide it.
 - **Settings page:** Esc > Options > AddOns > Tactara, or `/tac options`.
   - Your keys: one-button, AoE and interrupt.
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off.
+  - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, and the reminder.
 - **Helper icons work like action buttons:** each shows its keybind and a cooldown sweep. It turns red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used.
 - **Works with your bars:** the glow works on Blizzard's action bars and the popular action bar addons, and with spells inside your own macros. It only draws on top of your buttons and never changes them.
 
