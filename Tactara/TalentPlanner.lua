@@ -493,7 +493,7 @@ local function Build()
 
   local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   title:SetPoint("TOP", frame, "TOP", 0, -6)
-  title:SetText("Tactara " .. ns.VERSION .. " - talent planner")
+  ns.Style.Title(frame, title, "Tactara " .. ns.VERSION .. " - talent planner")
 
   -- builds list
   local listTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")

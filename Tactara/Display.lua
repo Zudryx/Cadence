@@ -97,12 +97,33 @@ function ns.CreateDisplay()
   f.pullTag = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.pullTag:SetPoint("BOTTOM", f.icons[1], "BOTTOM", 0, 2)
   f.pullTag:SetText("PULL")
+  ns.Style.Caption(f.pullTag, ns.Style.BRAND)
   f.pullTag:Hide()
 
   display = f
   ns.display = f
   ns.UpdateDisplay()
   return f
+end
+
+-- The frame around a key bar icon: the next press in Tactara's cyan, the
+-- rest a thin dark edge; none in the minimal look.
+local function StyleKeyIcon(t, i)
+  local S = ns.Style
+  if S.Minimal() then
+    t.edges:Set(0)
+  elseif i == 1 then
+    t.edges:Set(2, S.BRAND)
+  else
+    t.edges:Set(1, S.DARK, 0.85)
+  end
+  t.look = S.Look()
+end
+
+-- Shows or hides an icon with its frame.
+local function ShowKeyIcon(t, show)
+  if show then t:Show() else t:Hide() end
+  if t.edges then t.edges:Show(show) end
 end
 
 -- Icons are made as they're needed: big first one, smaller ones after it.
@@ -118,6 +139,8 @@ function ns.KeyIcon(f, i)
     t:SetPoint("BOTTOMLEFT", ns.KeyIcon(f, i - 1), "BOTTOMRIGHT", 4, 0)
     t:SetAlpha(0.75)
   end
+  t.edges = ns.Style.Edges(f, t)
+  StyleKeyIcon(t, i)
   f.icons[i] = t
   return t
 end
@@ -203,11 +226,16 @@ function ns.UpdateDisplay()
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
 
+  local look = ns.Style.Look()
+  for i, t in ipairs(f.icons) do
+    if t.look ~= look then StyleKeyIcon(t, i) end
+  end
+
   local n, all = ns.IconCount("keyIcons")
   local shown, pull = ns.KeyQueue(n, all)
   local slots = all and math.max(#shown, 1) or n
   ns.SetDisplayWidth(f, BIG + (slots - 1) * (SMALL + 4))
-  for i = slots + 1, #f.icons do f.icons[i]:Hide() end
+  for i = slots + 1, #f.icons do ShowKeyIcon(f.icons[i], false) end
 
   if #shown == 0 then
     f.pullTag:Hide()
@@ -215,7 +243,7 @@ function ns.UpdateDisplay()
     f:Show()
     for i = 1, slots do
       ns.KeyIcon(f, i):SetTexture(QUESTION_MARK)
-      f.icons[i]:Show()
+      ShowKeyIcon(f.icons[i], true)
     end
     f.label:SetText("Tactara key: no steps yet (drag to move, /tac lock)")
     return
@@ -228,9 +256,9 @@ function ns.UpdateDisplay()
     local icon = ns.KeyIcon(f, i)
     if shown[i] then
       icon:SetTexture(SpellIcon(shown[i]))
-      icon:Show()
+      ShowKeyIcon(icon, true)
     else
-      icon:Hide()
+      ShowKeyIcon(icon, false)
     end
   end
 

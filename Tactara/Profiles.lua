@@ -21,7 +21,7 @@ ns.Profiles = Pr
 Pr.KEYS = {
   "binds", "keyDown",
   "display", "helperPos", "displayScale", "helperScale", "showHelper", "showDisplay", "locked",
-  "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "helperCooldowns", "helperTint",
+  "helperIdle", "keyIdle", "fadeAlpha", "displayStyle", "keyIcons", "helperIcons", "helperCooldowns", "helperTint",
   "highlight", "helperMode", "interrupts", "defensives", "interruptSound", "defensiveSound",
   "minimapButton", "minimapAngle",
   "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "trainerReminder", "prePull", "buffSound", "buffLow", "supplies", "ammoLow", "shardLow", "hideMounted",
@@ -144,6 +144,7 @@ function Pr.ShowCopy()
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     f.title:SetPoint("TOP", f, "TOP", 0, -6)
     f.title:SetText("Copy Tactara settings from...")
+    ns.Style.TitleIcon(f, f.title)
     f.hint = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     f.hint:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -32)
     f.hint:SetWidth(308)

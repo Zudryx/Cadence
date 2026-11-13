@@ -130,7 +130,7 @@ function W.Show(since)
   if #sections == 0 then sections = W.SectionsSince(nil) end
   if #sections == 0 then return nil end
   frame = frame or Build()
-  frame.title:SetText(("Tactara %s: what's new"):format(ns.VERSION))
+  ns.Style.Title(frame, frame.title, ("Tactara %s: what's new"):format(ns.VERSION))
   frame.body:SetText(W.Text(sections))
   local h = frame.body.GetStringHeight and frame.body:GetStringHeight() or 300
   frame.child:SetHeight(math.max(10, (tonumber(h) or 300) + 10))
@@ -258,7 +258,7 @@ local function BuildKeys()
   f:SetScript("OnHide", function() W.CloseKeys("done") end)   -- Escape or the X
   f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   f.title:SetPoint("TOP", f, "TOP", 0, -6)
-  f.title:SetText("Tactara keys")
+  ns.Style.Title(f, f.title, "Tactara keys")
 
   f.intro = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   f.intro:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -34)

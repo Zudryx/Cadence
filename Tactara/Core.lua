@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.18.0"
+ns.VERSION = "0.19.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -331,6 +331,7 @@ local function InitDB()
   local BUFF_LOW = { early = true, normal = true, late = true, off = true }
   if not BUFF_LOW[TactaraCharDB.buffLow] then TactaraCharDB.buffLow = "normal" end
   if TactaraCharDB.hideMounted == nil then TactaraCharDB.hideMounted = false end
+  if not ns.Style.LOOKS[TactaraCharDB.displayStyle] then TactaraCharDB.displayStyle = "standard" end
   for _, k in ipairs({ "interruptSound", "defensiveSound", "buffSound" }) do
     local v = TactaraCharDB[k]
     if not (v == "off" or (ns.SoundFor and ns.SoundFor(v))) then TactaraCharDB[k] = "off" end
@@ -484,6 +485,7 @@ local HELP = {
   "|cffffd100/tac supplies|r  ammo, Soul Shards, reagents or totems running low (|cffffd100on|r / |cffffd100helper|r / |cffffd100off|r: the reminder; |cffffd100ammo 300|r / |cffffd100shards 3|r: your limits)",
   "|cffffd100/tac buffs low|r early|normal|late|off  when a buff counts as running low",
   "|cffffd100/tac mounted|r on|off  hide the helper and key bar while mounted or on a flight path",
+  "|cffffd100/tac look|r standard|minimal  framed icons, or just the icons",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
@@ -603,6 +605,17 @@ local function HandleSlash(msg)
       ns.HelperRefresh()
     end
     ns.Print("Buffs running low: " .. SAY[TactaraCharDB.buffLow or "normal"] .. ". /tac buffs low early|normal|late|off")
+  elseif cmd == "look" or cmd == "style" then
+    local v = rest:lower()
+    if v == "" then v = ns.Style.Minimal() and "standard" or "minimal" end
+    if ns.Style.LOOKS[v] then
+      TactaraCharDB.displayStyle = v
+      ns.HelperRefresh()
+      ns.Print(v == "minimal" and "Display look: minimal (just the icons)."
+        or "Display look: standard (framed icons, the best spell in cyan, captions under the interrupt and defensive slots).")
+    else
+      ns.Print("/tac look standard or /tac look minimal")
+    end
   elseif cmd == "mounted" or cmd == "mount" then
     local v = rest:lower()
     if v == "on" then TactaraCharDB.hideMounted = true

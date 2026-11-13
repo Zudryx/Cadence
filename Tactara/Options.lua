@@ -264,6 +264,10 @@ local function BuildVertical()
   Dropdown(TactaraCharDB, "helperIdle", "Helper popup when not fighting", "How the helper popup looks between fights." .. IDLE_TIP, "fade", IDLE_CHOICES, Refresh)
   Dropdown(TactaraCharDB, "keyIdle", "Key bar when not fighting", "How the key bar looks between fights." .. IDLE_TIP, "show", IDLE_CHOICES, Refresh)
   PercentSlider("fadeAlpha", "See-through amount", "How visible a see-through display is: lower is fainter.", 0.45, 0.1, 0.9, Refresh)
+  Dropdown(TactaraCharDB, "displayStyle", "Display look", "How the helper popup and the key bar are drawn.", "standard", {
+    { "standard", "Standard", "A thin frame around each icon, the best spell (and your key's next press) framed in Tactara's cyan, and the interrupt and defensive slots framed in red and orange with a caption under them." },
+    { "minimal", "Minimal", "Just the icons. The interrupt and defensive slots keep a thin red or orange edge so you can tell them apart." },
+  }, Refresh)
   Check(TactaraCharDB, "hideMounted", "Hide while mounted", "Hides the helper popup and the key bar while you're on a mount or a flight path. They're back when you get off, or as soon as a fight starts. While the displays are unlocked they stay, so you can still move them.", false, Refresh)
   Check(TactaraCharDB, "minimapButton", "Minimap button", "A Tactara button on the edge of the minimap: left-click for the rotation editor, right-click for this page. Drag it to move it around the minimap. The minimap's addon menu has Tactara either way.", true,
     function() ns.UpdateMinimapButton() end)
@@ -390,6 +394,7 @@ local COMMANDS = {
   "/tac supplies ammo 300 | shards 3  - your limits",
   "/tac buffs low early | normal | late | off",
   "/tac mounted on | off  - hide the displays while mounted",
+  "/tac look standard | minimal  - how the displays look",
   "/tac sound interrupt | defensive <sound> | off",
   "/tac trainer [on | off]  - spells waiting at your trainer",
   "/tac new  - what's new in this version",

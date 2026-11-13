@@ -6,7 +6,8 @@
 -- list), smaller icons = what comes after (1 to 10 icons, or everything
 -- usable now). To the right, an interrupt
 -- slot (red) and a defensive slot (orange) appear only when needed. Each
--- icon shows the key it's bound to on your action bars.
+-- icon shows the key it's bound to on your action bars. The frames around
+-- the icons follow the "Display look" setting (Style.lua).
 
 local ADDON, ns = ...
 
@@ -108,7 +109,34 @@ local function UpdateIconState(holder, spell)
 end
 ns.UpdateIconState = UpdateIconState
 
-local function MakeIcon(parent, size, color)
+-- The frame around each icon: the best spell now in Tactara's cyan, the
+-- ones after it a thin dark edge, the interrupt and defensive slots in their
+-- own colors with a caption under them. The minimal look keeps only a thin
+-- colored edge on those two slots.
+local UTIL_KINDS = { interrupt = "INTERRUPT", defensive = "DEFENSIVE" }
+
+local function StyleIcon(h)
+  local S = ns.Style
+  local minimal = S.Minimal()
+  if UTIL_KINDS[h.kind] then
+    local color = ns.GLOW_COLORS[h.kind]
+    h.edges:Set(minimal and 1 or 2, color)
+    if h.tag then
+      S.Caption(h.tag, color)
+      if minimal then h.tag:Hide() else h.tag:Show() end
+    end
+  elseif minimal then
+    h.edges:Set(0)
+  elseif h.kind == "now" then
+    h.edges:Set(2, S.BRAND)
+  else
+    h.edges:Set(1, S.DARK, 0.85)
+  end
+  h.look = S.Look()
+end
+
+-- kind: "now" (the best spell), "next", "interrupt" or "defensive"
+local function MakeIcon(parent, size, kind)
   local holder = CreateFrame("Frame", nil, parent)
   holder:SetSize(size, size)
   holder.tex = holder:CreateTexture(nil, "ARTWORK")
@@ -129,14 +157,14 @@ local function MakeIcon(parent, size, color)
   end
   holder.key = holder.over:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
   holder.key:SetPoint("TOPRIGHT", -2, -2)
-  if color then
-    holder.border = holder:CreateTexture(nil, "BACKGROUND")
-    holder.border:SetPoint("TOPLEFT", -2, 2)
-    holder.border:SetPoint("BOTTOMRIGHT", 2, -2)
-    holder.border:SetColorTexture(color[1], color[2], color[3], 1)
+  holder.kind = kind
+  holder.edges = ns.Style.Edges(holder, holder.tex)
+  if UTIL_KINDS[kind] then
     holder.tag = holder.over:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    holder.tag:SetPoint("TOP", holder, "BOTTOM", 0, -1)
+    holder.tag:SetPoint("TOP", holder, "BOTTOM", 0, -3)
+    holder.tag:SetText(UTIL_KINDS[kind])
   end
+  StyleIcon(holder)
   return holder
 end
 
@@ -157,7 +185,7 @@ end
 -- Icons are made as they're needed: big first one, smaller ones after it.
 local function HelperIcon(f, i)
   if f.icons[i] then return f.icons[i] end
-  local h = MakeIcon(f, i == 1 and BIG or SMALL)
+  local h = MakeIcon(f, i == 1 and BIG or SMALL, i == 1 and "now" or "next")
   if i == 1 then
     h:SetPoint("LEFT", f, "LEFT", 0, 0)
   else
@@ -195,13 +223,12 @@ function ns.CreateHelperPopup()
   f.pullTag = f.icons[1].over:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.pullTag:SetPoint("BOTTOM", 0, 2)
   f.pullTag:SetText("PULL")
+  ns.Style.Caption(f.pullTag, ns.Style.BRAND)
   f.pullTag:Hide()
 
-  f.interrupt = MakeIcon(f, UTIL, ns.GLOW_COLORS.interrupt)
-  f.interrupt.tag:SetText("INTERRUPT")
-  f.defensive = MakeIcon(f, UTIL, ns.GLOW_COLORS.defensive)
+  f.interrupt = MakeIcon(f, UTIL, "interrupt")
+  f.defensive = MakeIcon(f, UTIL, "defensive")
   f.defensive:SetPoint("LEFT", f.interrupt, "RIGHT", 10, 0)
-  f.defensive.tag:SetText("DEFENSIVE")
 
   f.label = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   f.label:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 0, -2)
@@ -223,6 +250,12 @@ function ns.UpdateHelperPopup()
   local locked = TactaraCharDB.locked
   f:EnableMouse(not locked)
   if locked then f.bg:Hide() else f.bg:Show() end
+
+  local look = ns.Style.Look()
+  for _, h in ipairs(f.icons) do
+    if h.look ~= look then StyleIcon(h) end
+  end
+  if f.interrupt.look ~= look then StyleIcon(f.interrupt); StyleIcon(f.defensive) end
 
   local n, all = ns.IconCount("helperIcons")
   local shown, pull = ns.HelperQueue(n, true, "priority", all)

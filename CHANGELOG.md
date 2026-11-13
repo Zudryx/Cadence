@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.19.0
+- **A cleaner look for the helper popup and the key bar.** Every icon has a thin frame. The best spell now, and your key's next press, are framed in Tactara's cyan (the color of its logo and the glow). The interrupt and defensive slots are framed in red and orange, with an outlined caption in the same color under them. PULL is in cyan too.
+- **Display look:** Standard (all of the above) or **Minimal**: just the icons, with a thin red or orange edge left on the interrupt and defensive slots so you can tell them apart. Settings page (Displays) or `/tac look minimal`.
+- Tactara's windows (rotation editor, talent planner, what's new, key setup) show the logo and the name in cyan in their title. Menus, buttons and the settings page stay the game's own, so they look like the rest of your UI.
+- No gameplay changes.
+
 ## 0.18.0
 - **Your own limits:** on the settings page (Reminders), or with commands:
   - **Buffs running low:** Early (twice as long left), Normal, Late (half) or Only when missing. `/tac buffs low early`

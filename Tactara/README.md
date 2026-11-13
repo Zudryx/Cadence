@@ -76,7 +76,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 
 - **Rotation:** automatic (follows your talents) or a fixed one, plus a button to the rotation editor.
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
-- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, hide them while you're mounted or on a flight path, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
+- **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, pick the **display look** (Standard: a thin frame around each icon, the best spell and your key's next press framed in Tactara's cyan, red and orange frames and captions on the interrupt and defensive slots; Minimal: just the icons), hide them while you're mounted or on a flight path, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. **Export** gives the same settings as text to back up or give to a friend (any account or computer); **Import** takes that text back, asks first, and only sets keys if you choose **With keys**. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
@@ -178,6 +178,7 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac supplies` | Ammo, Soul Shards, reagents or totems running low (`on` / `helper` / `off`: the reminder; `ammo 300` / `shards 3`: your limits) |
 | `/tac buffs low` `early` / `normal` / `late` / `off` | When a buff counts as running low |
 | `/tac mounted` `on` / `off` | Hide the helper and key bar while mounted or on a flight path |
+| `/tac look` `standard` / `minimal` | How the helper popup and key bar look: framed icons, or just the icons |
 | `/tac new` | What's new in this version (also shown once after each update) |
 | `/tac export` / `import` | Your settings as text, to back up or share; import asks first and keeps your keys unless you choose otherwise |
 | `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |

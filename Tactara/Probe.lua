@@ -227,6 +227,7 @@ function ns.ShowCopyText(title, text, opts)
   local f = copyFrame
   f.text, f.editable, f.onAccept = text, opts.editable, opts.onAccept
   f.title:SetText(title)
+  ns.Style.TitleIcon(f, f.title)
   f.hint:SetText(opts.hint or "It's all selected: press Ctrl+C to copy it, then paste it anywhere.")
   if opts.button then f.accept:SetText(opts.button); f.accept:Show() else f.accept:Hide() end
   f.edit:SetText(text)

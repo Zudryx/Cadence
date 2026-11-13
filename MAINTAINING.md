@@ -60,6 +60,10 @@ If the game's interface version changes, update `## Interface:` in `Tactara/Tact
 
 Each new release is also uploaded to CurseForge (project 1795307, set by `## X-Curse-Project-ID` in `Tactara/Tactara.toc`) by `.github/scripts/curseforge_upload.py`, tagged with the WoW Forever game version that matches `## Interface` (16001 = 1.60.1) and with that version's CHANGELOG section. It needs the `CF_API_KEY` repository secret; without it the upload is skipped with a notice. To test the token without uploading, run the Release workflow by hand (Actions > Release > Run workflow) with **CurseForge: check**. If an upload fails, fix the cause and run it with **upload**.
 
+## Look
+
+Tactara's menus, windows, buttons and settings page are the game's own templates on purpose: they fit the rest of the UI, UI packs restyle them, and client patches keep them working. Its own look is only on the helper popup and the key bar, plus the logo in window titles, and lives in `Tactara/Style.lua`: the accent color (the logo's cyan, `#4fc3f7`, also the chat prefix and the "next" glow), the icon frames, and the Standard / Minimal display look. Change the accent there, not in each file.
+
 ## Games in other languages
 
 Rotations and builds use English names; `Tactara/SpellIDs.lua` has the spell ID for each, and on other languages Tactara asks the game for the name in that language (`Tactara/Locale.lua`). `SpellIDs.lua` is made by `python3 tests/make_spell_ids.py` from `tests/spell_ids/icy_veins.json` (the spell links on the Icy Veins WoW Forever class guides; `_extra` for IDs found by hand in their spell database) and the talent IDs in `tests/talent_fixtures/`. When a rotation uses a spell that has no ID, the tests say which: add it to the JSON and run the script. When `/tac probe locale` on a live game says an ID is named differently or unknown, fix it in `OVERRIDE` / `DROP` at the top of the script (they win over the JSON, so refreshing the JSON from the pages doesn't undo them). `/tac probe locale` in game checks every ID against the game's own names.

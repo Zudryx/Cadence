@@ -317,7 +317,7 @@ local function Build()
 
   local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   title:SetPoint("TOP", frame, "TOP", 0, -6)
-  title:SetText("Tactara " .. ns.VERSION .. " - one-button rotations")
+  ns.Style.Title(frame, title, "Tactara " .. ns.VERSION .. " - one-button rotations")
 
   -- left: rotation list
   listTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")

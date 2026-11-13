@@ -329,6 +329,47 @@ check(litNames() == "ActionButton11", "after stance page swap: " .. oldBtn .. " 
 check(ns.display.icons[1]._texture == "icon:" .. ns.KeyQueue(1)[1], "key bar icon 1 = key's next press")
 check(ns.helperPopup.icons[1].tex._texture == "icon:" .. ns.HelperQueue(1, true, "priority")[1], "popup icon 1 = best priority pick")
 
+-- 14b) the display look: framed icons in Tactara's cyan, or just the icons
+do
+  local S = ns.Style
+  local pop, bar = ns.helperPopup, ns.display
+  local function edges(h) return h.edges.thickness, h.edges.color end
+  check(S.Brand("Tactara") == "|cff4fc3f7Tactara|r" and ns.GLOW_COLORS.next == S.BRAND, "one accent: chat prefix, glow and frames")
+  check(TactaraCharDB.displayStyle == "standard" and S.Look() == "standard", "standard look by default")
+  local t, c = edges(pop.icons[1])
+  check(t == 2 and c == S.BRAND, "best spell now: a cyan frame")
+  t, c = edges(pop.icons[2])
+  check(t == 1 and c == S.DARK, "the ones after it: a thin dark frame")
+  t, c = edges(pop.interrupt)
+  check(t == 2 and c == ns.GLOW_COLORS.interrupt and pop.interrupt.tag:IsShown() and pop.interrupt.tag:GetText() == "INTERRUPT"
+    and pop.interrupt.tag.captionColor == ns.GLOW_COLORS.interrupt, "interrupt slot: red frame, red caption")
+  t, c = edges(pop.defensive)
+  check(t == 2 and c == ns.GLOW_COLORS.defensive and pop.defensive.tag:GetText() == "DEFENSIVE", "defensive slot: orange")
+  t, c = edges(bar.icons[1])
+  check(t == 2 and c == S.BRAND and bar.icons[1].edges:IsShown(), "key bar: next press framed in cyan")
+  check(edges(bar.icons[2]) == 1, "key bar: the rest thin")
+  check(pop.pullTag.captionColor == S.BRAND and bar.pullTag.captionColor == S.BRAND, "PULL in cyan")
+
+  SlashCmdList.TACTARA("look minimal")
+  check(TactaraCharDB.displayStyle == "minimal", "/tac look minimal")
+  check(edges(pop.icons[1]) == 0 and edges(pop.icons[2]) == 0 and edges(bar.icons[1]) == 0, "minimal: no frames on spell icons")
+  t, c = edges(pop.interrupt)
+  check(t == 1 and c == ns.GLOW_COLORS.interrupt and not pop.interrupt.tag:IsShown(), "minimal: interrupt keeps a thin red edge, no caption")
+  SlashCmdList.TACTARA("look")
+  check(TactaraCharDB.displayStyle == "standard" and edges(pop.icons[1]) == 2 and pop.interrupt.tag:IsShown(), "/tac look toggles back")
+  SlashCmdList.TACTARA("look shiny")
+  check(TactaraCharDB.displayStyle == "standard", "unknown look: unchanged")
+
+  -- an icon that's hidden takes its frame with it
+  local keep = TactaraCharDB.keyIcons
+  TactaraCharDB.keyIcons = 1
+  ns.UpdateDisplay()
+  check(not bar.icons[2]:IsShown() and not bar.icons[2].edges:IsShown(), "hidden key bar icon: no frame left behind")
+  TactaraCharDB.keyIcons = keep
+  ns.UpdateDisplay()
+  check(bar.icons[2].edges:IsShown(), "and back")
+end
+
 -- 15) highlight off -> glows cleared
 SlashCmdList.TACTARA("highlight")
 check(litNames() == "" and ns.lastHighlight == nil, "/tac highlight off clears glows")
@@ -1740,6 +1781,8 @@ do
     and body:find("Tactara " .. ns.WHATS_NEW[2].version, 1, true) and not body:find("Tactara " .. ns.WHATS_NEW[3].version, 1, true),
     "shows every version since the one you had: " .. body:sub(1, 80))
   check(TactaraDB.whatsNewSeen == ns.VERSION, "and remembers it")
+  check(W.frame.title:GetText():find("^|cff4fc3f7Tactara|r ") and W.frame.tactaraLogo
+    and W.frame.tactaraLogo._texture == ns.Style.ICON, "title: Tactara in cyan, the logo beside it")
   W.frame:Hide()
   check(W.CheckWhatsNew() == false and not W.frame:IsShown(), "only once")
   TactaraDB.whatsNewSeen, TactaraDB.whatsNewOff = nil, true
@@ -1781,6 +1824,7 @@ do
   check(kf.keys.main:GetText() == "Not set (click)" and kf.keys.aoe:GetText() == "Not set (click)"
     and kf.keys.interrupt:GetText() == "Not set (click)" and kf.remove:GetText() == "Remove", "the buttons say what they do")
   check(kf.done:GetText() == "Done" and kf.no:GetText() == "No thanks", "Done / No thanks")
+  check(kf.title:GetText() == "|cff4fc3f7Tactara|r keys" and kf.tactaraLogo, "key window title: the logo and the cyan name")
   check(W.Busy(), "busy while the window is up")
   -- the planner question waits for it
   TactaraCharDB.welcomeDone, TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = nil, nil, nil

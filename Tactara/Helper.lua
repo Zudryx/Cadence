@@ -31,7 +31,7 @@ local PRESS_GRACE = 0.6     -- ignore cast events this soon after a Tactara pres
 local LOOKAHEAD = 3         -- manual cast may skip up to this many steps
 local SEQUENCE_HOLD = 3     -- seconds after a Tactara press that the helper shows the key's sequence
 local GLOW_COLORS = {
-  next = { 0.30, 0.75, 1.00 },        -- blue: next spell (like retail's Assisted Highlight)
+  next = ns.Style.BRAND,              -- Tactara's cyan: next spell (like retail's Assisted Highlight)
   interrupt = { 1.00, 0.20, 0.20 },   -- red: interrupt now
   defensive = { 1.00, 0.60, 0.10 },   -- orange: defensive cooldown
 }

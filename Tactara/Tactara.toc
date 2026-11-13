@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Tactara
 ## Notes: One-button rotations or a highlight on your next spell, for every class. You press every key. Grows with your level. Built for WoW Forever.
-## Version: 0.18.0
+## Version: 0.19.0
 ## IconTexture: Interface\AddOns\Tactara\Media\Icon
 ## AddonCompartmentFunc: Tactara_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: Tactara_OnAddonCompartmentEnter
@@ -12,6 +12,7 @@
 ## SavedVariablesPerCharacter: TactaraCharDB
 
 Core.lua
+Style.lua
 Parser.lua
 SpellIDs.lua
 Locale.lua

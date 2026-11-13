@@ -43,7 +43,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 - **Minimap button:** left-click opens the editor, right-click opens the settings page and shift-click the talent planner. Drag it anywhere around the minimap, or hide it.
 - **Settings page:** Esc > Options > AddOns > Tactara, or `/tac options`.
   - Your keys: one-button, AoE and interrupt.
-  - Displays: size, how many icons (1 to 10, or the whole rotation), normal, see-through or hidden between fights, and hidden while mounted.
+  - Displays: size, how many icons (1 to 10, or the whole rotation), a standard (framed) or minimal look, normal, see-through or hidden between fights, and hidden while mounted.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off, with an optional sound for each.
   - Reminders: buffs before and after a fight (with an optional sound) and supplies (each under the helper and in chat, under the helper only, or off, with your own limits), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
