@@ -84,11 +84,11 @@ D.BY_LEVEL = {
     {60, "Bane of Doom"},
   },
   -- Classic trainer levels plus Blizzard's Forever deep dive (Revive 12,
-  -- Omen of Clarity 20, Lacerate 42, Faerie Fire (Feral) baseline with forms)
+  -- Omen of Clarity 20, Lacerate 42, Faerie Fire works in forms)
   DRUID = {
     {1, "Wrath"}, {1, "Healing Touch"}, {1, "Mark of the Wild"}, {4, "Moonfire"}, {4, "Rejuvenation"},
     {6, "Thorns"}, {8, "Entangling Roots"}, {10, "Bear Form"}, {10, "Maul"}, {10, "Growl"},
-    {10, "Demoralizing Roar"}, {10, "Nature's Grasp"}, {10, "Faerie Fire (Feral)"}, {12, "Regrowth"},
+    {10, "Demoralizing Roar"}, {10, "Nature's Grasp"}, {12, "Regrowth"},
     {12, "Enrage"}, {14, "Bash"}, {16, "Swipe"}, {18, "Faerie Fire"}, {18, "Hibernate"},
     {20, "Cat Form"}, {20, "Claw"}, {20, "Rip"}, {20, "Starfire"}, {20, "Omen of Clarity"},
     {22, "Shred"}, {24, "Rake"}, {26, "Dash"}, {30, "Tranquility"}, {32, "Ferocious Bite"},

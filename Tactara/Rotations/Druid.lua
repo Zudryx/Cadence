@@ -6,7 +6,8 @@
 -- Based on the WoW Forever Druid guides on Warcraft Tavern, wowtbc.gg and
 -- Mobalytics, and Blizzard's Forever class deep dive (checked November
 -- 2026). Forever changes that matter here:
---   * Faerie Fire (Feral) is free in Bear and Cat Form (6-second cooldown).
+--   * Faerie Fire works in Bear and Cat Form too, free (6-second cooldown);
+--     Faerie Fire is gone (checked with /tac probe locale, Nov 2026).
 --   * Omen of Clarity is trained at 20; Tiger's Fury is gone (the Shifting
 --     Power talent gives Energy instead).
 --   * Bears: Lacerate (42) and Primal Bite (talent) for threat.
@@ -25,14 +26,14 @@ name: Druid - Feral (Cat)
 class: DRUID
 detect: Cat Form
 tree: Feral
-prefer: Shifting Power, Improved Shifting Power, Shredding Attacks, Savage Fury
+prefer: Shifting Power, Shredding Attacks, Savage Fury
 default: yes
-notes: Cat Form from 20 (Bear Form from 10, Wrath and Moonfire before): Rake, Claw (Shred from behind), Rip and Ferocious Bite to spend, Faerie Fire (Feral) on cooldown, Shifting Power and Berserk.
+notes: Cat Form from 20 (Bear Form from 10, Wrath and Moonfire before): Rake, Claw (Shred from behind), Rip and Ferocious Bite to spend, Faerie Fire on cooldown, Shifting Power and Berserk.
 
 [keypress]
 /cast [noform] Cat Form
 /cast [noform] Bear Form @unless Cat Form
-/cast [nocombat,harm,nodead] Faerie Fire (Feral)
+/cast [nocombat,harm,nodead] Faerie Fire
 /startattack [harm,nodead]
 
 [opener]
@@ -60,7 +61,7 @@ notes: Cat Form from 20 (Bear Form from 10, Wrath and Moonfire before): Rake, Cl
     /cast Claw
     /cast Demoralizing Roar
     /cast Wrath
-1x /cast Faerie Fire (Feral)
+1x /cast Faerie Fire
     /cast Claw
     /cast Maul
     /cast Wrath
@@ -86,7 +87,7 @@ notes: Cat Form from 20 (Bear Form from 10, Wrath and Moonfire before): Rake, Cl
 /cast Omen of Clarity @missing Omen of Clarity
 /cast Berserk
 /cast Shifting Power
-/cast Faerie Fire (Feral) @nodebuff Faerie Fire (Feral)
+/cast Faerie Fire @nodebuff Faerie Fire
 /cast Rake @nodebuff Rake
 /cast Rip @nodebuff Rip @combo 5
 /cast Ferocious Bite @combo 5
@@ -112,16 +113,16 @@ class: DRUID
 detect: Primal Bite
 tree: Feral
 prefer: Primal Bite, Natural Reaction, Thick Hide
-notes: Tanking in Dire Bear Form (Bear Form before 40): Faerie Fire (Feral) to pull, Lacerate (42) and Primal Bite for threat, Maul with spare Rage, Swipe and Demoralizing Roar for groups.
+notes: Tanking in Dire Bear Form (Bear Form before 40): Faerie Fire to pull, Lacerate (42) and Primal Bite for threat, Maul with spare Rage, Swipe and Demoralizing Roar for groups.
 
 [keypress]
 /cast [noform] Dire Bear Form
 /cast [noform] Bear Form @unless Dire Bear Form
-/cast [nocombat,harm,nodead] Faerie Fire (Feral)
+/cast [nocombat,harm,nodead] Faerie Fire
 /startattack [harm,nodead]
 
 [opener]
-/cast Faerie Fire (Feral)
+/cast Faerie Fire
     /cast Maul
     /cast Moonfire
 /cast Demoralizing Roar
@@ -136,7 +137,7 @@ notes: Tanking in Dire Bear Form (Bear Form before 40): Faerie Fire (Feral) to p
 3x /cast Primal Bite
     /cast Maul
     /cast Wrath
-1x /cast Faerie Fire (Feral)
+1x /cast Faerie Fire
     /cast Maul
 1x /cast Demoralizing Roar
     /cast Maul
@@ -161,7 +162,7 @@ notes: Tanking in Dire Bear Form (Bear Form before 40): Faerie Fire (Feral) to p
 /cast Berserk
 /cast Swipe @enemies 3
 /cast Demoralizing Roar @nodebuff Demoralizing Roar
-/cast Faerie Fire (Feral) @nodebuff Faerie Fire (Feral)
+/cast Faerie Fire @nodebuff Faerie Fire
 /cast Primal Bite
 /cast Lacerate
 /cast Maul

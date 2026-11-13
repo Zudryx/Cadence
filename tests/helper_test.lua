@@ -2795,7 +2795,7 @@ do
   check(not ns.SPELL_IDS.ROGUE["Improved Sinister Strike"] and not ns.SPELL_IDS.WARRIOR["Raging Blows"]
     and not ns.SPELL_IDS.PALADIN["Blessing of Salvation"] and not ns.SPELL_IDS.MAGE["Polymorph: Pig"], "old names and IDs dropped")
   check(ns.TALENT_IDS.ROGUE["Efficient Strikes"] == 13732 and ns.TALENT_IDS.WARRIOR["Improved Whirlwind"] == 1310315, "the talents keep their IDs")
-  local GAPS = { ["Faerie Fire (Feral)"] = true, ["Improved Shifting Power"] = true }   -- no ID found yet
+  local GAPS = {}   -- spells with no ID found yet (none now)
   local NAMES = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true, ["missing"] = true, ["nodebuff"] = true }
   local missing = {}
   for _, class in ipairs({ "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }) do

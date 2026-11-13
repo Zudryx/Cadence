@@ -60,7 +60,7 @@ local DEFAULT_DURATIONS = {
   ["Immolate"] = 15, ["Siphon Life"] = 30, ["Searing Pain"] = 8,
   -- Druid
   ["Mark of the Wild"] = 1800, ["Thorns"] = 600, ["Omen of Clarity"] = 600, ["Moonkin Form"] = 7200,
-  ["Moonfire"] = 12, ["Insect Swarm"] = 12, ["Faerie Fire"] = 40, ["Faerie Fire (Feral)"] = 40,
+  ["Moonfire"] = 12, ["Insect Swarm"] = 12, ["Faerie Fire"] = 40,
   ["Rake"] = 9, ["Rip"] = 12, ["Demoralizing Roar"] = 30,
 }
 local FALLBACK = { player = 60, target = 15 }
