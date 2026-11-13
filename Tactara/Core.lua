@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.17.0"
+ns.VERSION = "0.18.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -322,6 +322,15 @@ local function InitDB()
   local PREPULL = { both = true, helper = true, off = true }
   if not PREPULL[TactaraCharDB.prePull] then TactaraCharDB.prePull = "both" end
   if not PREPULL[TactaraCharDB.supplies] then TactaraCharDB.supplies = "both" end
+  local function InRange(k, lo, hi, default)
+    local v = tonumber(TactaraCharDB[k])
+    TactaraCharDB[k] = (v and v >= lo and v <= hi) and math.floor(v) or default
+  end
+  InRange("ammoLow", 0, 2000, 200)
+  InRange("shardLow", 0, 20, 2)
+  local BUFF_LOW = { early = true, normal = true, late = true, off = true }
+  if not BUFF_LOW[TactaraCharDB.buffLow] then TactaraCharDB.buffLow = "normal" end
+  if TactaraCharDB.hideMounted == nil then TactaraCharDB.hideMounted = false end
   for _, k in ipairs({ "interruptSound", "defensiveSound", "buffSound" }) do
     local v = TactaraCharDB[k]
     if not (v == "off" or (ns.SoundFor and ns.SoundFor(v))) then TactaraCharDB[k] = "off" end
@@ -472,7 +481,9 @@ local HELP = {
   "|cffffd100/tac export|r / |cffffd100import|r  your settings as text, to back up or share (keys only if you choose)",
   "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
   "|cffffd100/tac prepull|r (or |cffffd100/tac buffs|r) on|helper|off  reminders before and after a fight: buffs missing or running low, pet, poison or weapon imbue",
-  "|cffffd100/tac supplies|r  ammo, Soul Shards, reagents or totems running low (|cffffd100on|r / |cffffd100helper|r / |cffffd100off|r: the reminder)",
+  "|cffffd100/tac supplies|r  ammo, Soul Shards, reagents or totems running low (|cffffd100on|r / |cffffd100helper|r / |cffffd100off|r: the reminder; |cffffd100ammo 300|r / |cffffd100shards 3|r: your limits)",
+  "|cffffd100/tac buffs low|r early|normal|late|off  when a buff counts as running low",
+  "|cffffd100/tac mounted|r on|off  hide the helper and key bar while mounted or on a flight path",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
@@ -582,6 +593,24 @@ local function HandleSlash(msg)
     else
       ns.Reminders.ShowTrainer()
     end
+  elseif (cmd == "buffs" or cmd == "buff" or cmd == "prepull") and rest:lower():match("^low") then
+    local v = rest:lower():match("^low%s*(%a*)")
+    local SAY = { early = "early (twice as long left)", normal = "normal (an hour-long buff under 5 minutes, 30-minute under 2)",
+      late = "late (half as long left)", off = "off (only when a buff is missing)" }
+    if SAY[v] then
+      TactaraCharDB.buffLow = v
+      ns.Reminders.ResetChatThrottle()
+      ns.HelperRefresh()
+    end
+    ns.Print("Buffs running low: " .. SAY[TactaraCharDB.buffLow or "normal"] .. ". /tac buffs low early|normal|late|off")
+  elseif cmd == "mounted" or cmd == "mount" then
+    local v = rest:lower()
+    if v == "on" then TactaraCharDB.hideMounted = true
+    elseif v == "off" then TactaraCharDB.hideMounted = false
+    else TactaraCharDB.hideMounted = not TactaraCharDB.hideMounted end
+    ns.HelperRefresh()
+    ns.Print("Hide the helper and key bar while mounted or on a flight path: " .. (TactaraCharDB.hideMounted and "on" or "off")
+      .. (TactaraCharDB.hideMounted and not TactaraCharDB.locked and " (once the displays are locked)" or "") .. ".")
   elseif cmd == "prepull" or cmd == "pull" or cmd == "buffs" or cmd == "buff" then
     local v = rest:lower()
     local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
@@ -597,7 +626,22 @@ local function HandleSlash(msg)
   elseif cmd == "supplies" or cmd == "supply" or cmd == "ammo" or cmd == "reagents" then
     local v = rest:lower()
     local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
-    if MODES[v] then
+    local what, num = v:match("^(%a+)%s+(%d+)$")
+    local LIMITS = { ammo = { "ammoLow", 2000, "shots" }, arrows = { "ammoLow", 2000, "shots" },
+      bullets = { "ammoLow", 2000, "shots" }, shards = { "shardLow", 20, "Soul Shards" }, shard = { "shardLow", 20, "Soul Shards" } }
+    if what and LIMITS[what] then
+      local lim = LIMITS[what]
+      local n = math.min(tonumber(num), lim[2])
+      TactaraCharDB[lim[1]] = n
+      ns.Reminders.ResetSupplyChat()
+      ns.Reminders.MarkSupplies()
+      ns.HelperRefresh()
+      if n == 0 then
+        ns.Print(("Supplies: %s only when you're out."):format(lim[3]))
+      else
+        ns.Print(("Supplies: %s count as low under %d."):format(lim[3], n))
+      end
+    elseif MODES[v] then
       TactaraCharDB.supplies = MODES[v]
       ns.Reminders.ResetSupplyChat()
       ns.Reminders.MarkSupplies()

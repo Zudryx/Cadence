@@ -43,10 +43,10 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 - **Minimap button:** left-click opens the editor, right-click opens the settings page and shift-click the talent planner. Drag it anywhere around the minimap, or hide it.
 - **Settings page:** Esc > Options > AddOns > Tactara, or `/tac options`.
   - Your keys: one-button, AoE and interrupt.
-  - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
+  - Displays: size, how many icons (1 to 10, or the whole rotation), normal, see-through or hidden between fights, and hidden while mounted.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off, with an optional sound for each.
-  - Reminders: buffs before and after a fight (with an optional sound) and supplies (each under the helper and in chat, under the helper only, or off), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
+  - Reminders: buffs before and after a fight (with an optional sound) and supplies (each under the helper and in chat, under the helper only, or off, with your own limits), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
   - Your characters: copy settings from another character, make them the default for new ones, or export them as text to share and import them anywhere.
   - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Reminders:** when you target an enemy before a fight, and again right after a fight, Tactara tells you if a buff your rotation keeps up, your pet, or a poison or weapon imbue is missing or running low (like a Blessing with under 5 minutes left), for every class. After a level-up, it lists the new spells waiting at your class trainer, the ones your rotation uses first. It only tells you; you cast them.

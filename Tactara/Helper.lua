@@ -190,13 +190,20 @@ end
 -- Blessing under 5 minutes, a 30-minute buff under 2, a 5-10 minute one
 -- under 1, a 1-2 minute one (Battle Shout) under 30 seconds. Shorter ones
 -- (Seals) only when they're about to drop. Never for auras and forms.
+-- The "Buffs running low" setting moves these: early = twice as long,
+-- late = half, off = only when they're missing.
+ns.BUFF_LOW_FACTOR = { early = 2, normal = 1, late = 0.5, off = 0 }
+
 function ns.BuffLowAt(full)
   if not full or full == math.huge then return 0 end
-  if full >= 3000 then return 300 end
-  if full >= 1200 then return 120 end
-  if full >= 300 then return 60 end
-  if full >= 60 then return 30 end
-  return REFRESH
+  local base
+  if full >= 3000 then base = 300
+  elseif full >= 1200 then base = 120
+  elseif full >= 300 then base = 60
+  elseif full >= 60 then base = 30
+  else return REFRESH end
+  local factor = ns.BUFF_LOW_FACTOR[TactaraCharDB and TactaraCharDB.buffLow or "normal"] or 1
+  return base * factor
 end
 
 function ns.CheckLive(c)
@@ -674,8 +681,9 @@ for _, e in ipairs({ "ACTIONBAR_SLOT_CHANGED", "ACTIONBAR_PAGE_CHANGED", "UPDATE
   "UPDATE_SHAPESHIFT_FORM", "PLAYER_ENTERING_WORLD", "ACTIONBAR_HIDEGRID" }) do
   Reg(e)
 end
+-- mounting, and taking or leaving a flight path (for "hide while mounted")
 for _, e in ipairs({ "PLAYER_TARGET_CHANGED", "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_USABLE",
-  "PLAYER_REGEN_DISABLED" }) do
+  "PLAYER_REGEN_DISABLED", "PLAYER_MOUNT_DISPLAY_CHANGED", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED" }) do
   Reg(e)
 end
 Reg("UNIT_SPELLCAST_SUCCEEDED", "player")

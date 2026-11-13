@@ -2088,6 +2088,36 @@ name: prep test
   TactaraCharDB.showHelper, TactaraCharDB.locked = true, true
   ns.UpdateHelperPopup()
   check(ns.helperPopup.label._text:find("Before the pull"), "shown under the helper popup")
+  -- hide while mounted (off unless you turn it on)
+  TactaraCharDB.showDisplay = true
+  ns.compiled.main = realMain      -- a rotation with key steps, so the key bar has something to show
+  local mounted, taxi = true, false
+  IsMounted = function() return mounted end
+  UnitOnTaxi = function() return taxi end
+  ns.UpdateHelperPopup(); ns.UpdateDisplay()
+  check(ns.helperPopup:IsShown() and ns.display:IsShown(), "mounted, setting off: both displays stay")
+  SlashCmdList.TACTARA("mounted on")
+  check(TactaraCharDB.hideMounted == true and not ns.helperPopup:IsShown() and not ns.display:IsShown(), "/tac mounted on: both hide on a mount")
+  mounted = false
+  ns.HelperRefresh()
+  check(ns.helperPopup:IsShown() and ns.display:IsShown(), "off the mount: back")
+  taxi = true
+  ns.HelperRefresh()
+  check(not ns.helperPopup:IsShown() and not ns.display:IsShown(), "on a flight path: hidden")
+  taxi, mounted = false, true
+  inCombat = true
+  ns.HelperRefresh()
+  check(ns.helperPopup:IsShown() and ns.display:IsShown(), "mounted in a fight: shown")
+  inCombat = false
+  TactaraCharDB.locked = false
+  ns.HelperRefresh()
+  check(ns.helperPopup:IsShown(), "unlocked to move them: shown")
+  TactaraCharDB.locked = true
+  SlashCmdList.TACTARA("mounted off")
+  ns.HelperRefresh()
+  check(TactaraCharDB.hideMounted == false and ns.helperPopup:IsShown(), "/tac mounted off")
+  IsMounted, UnitOnTaxi = nil, nil
+  ns.compiled.main = comp
   hasTarget = false
   check(R.PrePullText() == nil, "no enemy picked: nothing")
   ns.UpdateHelperPopup()
@@ -2202,6 +2232,19 @@ name: after test
   check(texts(R.PrePullList(comp)) == "Blessing of Might (4 min left),Battle Shout (20 sec left)",
     "before the pull: an hour-long Blessing under 5 minutes, a shout under 30 seconds: " .. texts(R.PrePullList(comp)))
   check(texts(R.AfterFightList(comp)) == "Blessing of Might (4 min left),Battle Shout (20 sec left)", "after the fight: the same")
+  playerAuras["Blessing of Might"] = { expirationTime = now + 500, duration = 3600 }
+  check(not texts(R.PrePullList(comp)):find("Blessing"), "8 minutes left: fine")
+  SlashCmdList.TACTARA("buffs low early")
+  check(TactaraCharDB.buffLow == "early" and ns.BuffLowAt(3600) == 600 and texts(R.PrePullList(comp)):find("Blessing of Might %(9 min left%)"),
+    "/tac buffs low early: an hour-long buff under 10 minutes")
+  SlashCmdList.TACTARA("buffs low late")
+  check(ns.BuffLowAt(3600) == 150 and ns.BuffLowAt(120) == 15, "late: half")
+  SlashCmdList.TACTARA("buffs low off")
+  playerAuras["Blessing of Might"] = { expirationTime = now + 60, duration = 3600 }
+  check(ns.BuffLowAt(3600) == 0 and not texts(R.PrePullList(comp)):find("Blessing"), "off: a minute left isn't a reminder")
+  check(ns.BuffLowAt(30) == 3, "Seals: about to drop, whatever the setting")
+  SlashCmdList.TACTARA("buffs low normal")
+  check(TactaraCharDB.buffLow == "normal", "back to normal")
   playerAuras["Blessing of Might"] = { expirationTime = 0, duration = 0 }
   check(not texts(R.PrePullList(comp)):find("Blessing") and select(1, ns.BuffTimeLeft("Blessing of Might")) == math.huge,
     "no end time: it stays until you change it")
@@ -2429,6 +2472,19 @@ do
   check(texts() == "1 arrow left", "one arrow")
   counts[2512] = 0
   check(texts() == "no arrows left", "out of arrows")
+  -- your own limit
+  counts[2512] = 250
+  check(texts() == "", "250 arrows: fine at the normal 200")
+  SlashCmdList.TACTARA("supplies ammo 300")
+  check(TactaraCharDB.ammoLow == 300 and texts() == "250 arrows left", "/tac supplies ammo 300: 250 is low now")
+  SlashCmdList.TACTARA("supplies ammo 0")
+  counts[2512] = 5
+  check(texts() == "", "limit 0: 5 arrows isn't a warning")
+  counts[2512] = 0
+  check(texts() == "no arrows left", "limit 0: out still is")
+  SlashCmdList.TACTARA("supplies ammo 5000")
+  check(TactaraCharDB.ammoLow == 2000, "the limit has a top")
+  TactaraCharDB.ammoLow = 200
   inv[0] = nil
   bags[0] = { { itemID = 2512, stackCount = 120 }, { itemID = 2516, stackCount = 400 }, nil, { itemID = 99, stackCount = 5 } }
   check(R.AmmoCount(2) == 120 and texts() == "120 arrows left", "no ammo slot: arrows in your bags (bullets don't count): " .. texts())
@@ -2520,6 +2576,15 @@ do
   check(texts() == "no Soul Shards", "no shards")
   counts[6265] = 4
   check(texts() == "", "four shards: fine")
+  SlashCmdList.TACTARA("supplies shards 5")
+  check(TactaraCharDB.shardLow == 5 and texts() == "4 Soul Shards left", "/tac supplies shards 5: four is low now")
+  SlashCmdList.TACTARA("supplies shards 0")
+  counts[6265] = 1
+  check(texts() == "", "limit 0: one shard isn't a warning")
+  counts[6265] = 0
+  check(texts() == "no Soul Shards", "limit 0: none still is")
+  TactaraCharDB.shardLow = 2
+  counts[6265] = 4
   stock = { 6265 }
   counts[6265] = 0
   R.HandleEvent("MERCHANT_SHOW")
@@ -2725,6 +2790,11 @@ end
 -- every spell the built-in rotations use has an ID (for games in other languages)
 do
   local L = ns.Locale
+  -- corrections from a live /tac probe locale (tests/make_spell_ids.py)
+  check(ns.SPELL_IDS.DRUID["Feral Charge"] == 1238122, "Feral Charge is the talent's own charge (Cat and Bear)")
+  check(not ns.SPELL_IDS.ROGUE["Improved Sinister Strike"] and not ns.SPELL_IDS.WARRIOR["Raging Blows"]
+    and not ns.SPELL_IDS.PALADIN["Blessing of Salvation"] and not ns.SPELL_IDS.MAGE["Polymorph: Pig"], "old names and IDs dropped")
+  check(ns.TALENT_IDS.ROGUE["Efficient Strikes"] == 13732 and ns.TALENT_IDS.WARRIOR["Improved Whirlwind"] == 1310315, "the talents keep their IDs")
   local GAPS = { ["Faerie Fire (Feral)"] = true, ["Improved Shifting Power"] = true }   -- no ID found yet
   local NAMES = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true, ["missing"] = true, ["nodebuff"] = true }
   local missing = {}

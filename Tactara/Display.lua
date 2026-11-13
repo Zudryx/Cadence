@@ -165,6 +165,18 @@ function ns.NotFighting()
   return not (ok and enemy)
 end
 
+-- "Hide while mounted" (off unless you turn it on): on a mount or a flight
+-- path, and not in a fight, both displays step aside. Not while they're
+-- unlocked, so you can still move them.
+function ns.HiddenForMount()
+  if not (TactaraCharDB and TactaraCharDB.hideMounted and TactaraCharDB.locked) then return false end
+  if InCombatLockdown() or (UnitAffectingCombat and UnitAffectingCombat("player")) then return false end
+  local ok, riding = pcall(function()
+    return (IsMounted and IsMounted()) or (UnitOnTaxi and UnitOnTaxi("player")) or false
+  end)
+  return ok and riding and true or false
+end
+
 -- Returns false when the display should stay hidden right now.
 function ns.ApplyIdleLook(f, mode)
   if mode == "show" or not ns.NotFighting() then
@@ -182,7 +194,7 @@ end
 function ns.UpdateDisplay()
   local f = display
   if not f then return end
-  if not TactaraCharDB.showDisplay then
+  if not TactaraCharDB.showDisplay or ns.HiddenForMount() then
     f:Hide()
     return
   end

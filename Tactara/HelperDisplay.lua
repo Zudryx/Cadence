@@ -216,7 +216,7 @@ end
 function ns.UpdateHelperPopup()
   local f = popup
   if not f then return end
-  if not TactaraCharDB.showHelper then
+  if not TactaraCharDB.showHelper or ns.HiddenForMount() then
     f:Hide()
     return
   end

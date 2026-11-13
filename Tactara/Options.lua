@@ -158,6 +158,18 @@ local function BuildVertical()
     OnChange(s, variable, fn)
   end
 
+  -- A slider for a plain number; format(v) is what it shows.
+  local function NumberSlider(key, label, tooltip, default, min, max, step, format, fn)
+    local variable = "Tactara_" .. key
+    local s = Settings.RegisterAddOnSetting(cat, variable, key, TactaraCharDB, VarType("number"), label, default)
+    local opts = Settings.CreateSliderOptions(min, max, step)
+    if opts.SetLabelFormatter and MinimalSliderWithSteppersMixin and MinimalSliderWithSteppersMixin.Label then
+      opts:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, format)
+    end
+    Settings.CreateSlider(cat, s, opts, tooltip)
+    OnChange(s, variable, fn)
+  end
+
   local function SizeSlider(key, label, tooltip)
     PercentSlider(key, label, tooltip, 1, 0.5, 2, function() ns.ApplyDisplayScales() end)
   end
@@ -252,6 +264,7 @@ local function BuildVertical()
   Dropdown(TactaraCharDB, "helperIdle", "Helper popup when not fighting", "How the helper popup looks between fights." .. IDLE_TIP, "fade", IDLE_CHOICES, Refresh)
   Dropdown(TactaraCharDB, "keyIdle", "Key bar when not fighting", "How the key bar looks between fights." .. IDLE_TIP, "show", IDLE_CHOICES, Refresh)
   PercentSlider("fadeAlpha", "See-through amount", "How visible a see-through display is: lower is fainter.", 0.45, 0.1, 0.9, Refresh)
+  Check(TactaraCharDB, "hideMounted", "Hide while mounted", "Hides the helper popup and the key bar while you're on a mount or a flight path. They're back when you get off, or as soon as a fight starts. While the displays are unlocked they stay, so you can still move them.", false, Refresh)
   Check(TactaraCharDB, "minimapButton", "Minimap button", "A Tactara button on the edge of the minimap: left-click for the rotation editor, right-click for this page. Drag it to move it around the minimap. The minimap's addon menu has Tactara either way.", true,
     function() ns.UpdateMinimapButton() end)
   Check(TactaraCharDB, "locked", "Lock positions", "Turn off to drag the displays where you want them.", false, Refresh)
@@ -317,6 +330,12 @@ local function BuildVertical()
     { "helper", "Under the helper popup" },
     { "off", "Off" },
   }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
+  Dropdown(TactaraCharDB, "buffLow", "Buffs running low", "When a buff counts as running low, before the pull and after the fight. Normal: an hour-long Blessing under 5 minutes, a 30-minute buff under 2, a 5 to 10 minute one under 1, Battle Shout under 30 seconds. Seals only count when they're about to drop either way.", "normal", {
+    { "early", "Early (twice as long left)" },
+    { "normal", "Normal" },
+    { "late", "Late (half as long left)" },
+    { "off", "Only when missing" },
+  }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
   Dropdown(TactaraCharDB, "buffSound", "Sound for buff reminders", "A sound with the before-the-pull and after-the-fight reminders (as often as their chat lines)." .. SOUND_TIP, "off",
     SoundChoices, function(v) ns.PlayAlert(v) end)
   Dropdown(TactaraCharDB, "supplies", "Supplies", "A Hunter's arrows or bullets, a Warlock's Soul Shards, and the reagents or totems your spells need (Flash Powder for Vanish, an Ankh, a Fire Totem...), when they run low. Tactara only tells you; you buy them. /tac supplies shows the list any time.", "both", {
@@ -324,6 +343,11 @@ local function BuildVertical()
     { "helper", "Under the helper popup" },
     { "off", "Off" },
   }, function() ns.Reminders.ResetSupplyChat(); ns.Reminders.MarkSupplies(); Refresh() end)
+  local function SupplyLimit() ns.Reminders.ResetSupplyChat(); ns.Reminders.MarkSupplies(); Refresh() end
+  NumberSlider("ammoLow", "Low on ammo under", "Hunters: arrows or bullets count as low under this many. At 0, only when you're out.", 200, 0, 1000, 50,
+    function(v) v = math.floor(v + 0.5); return v == 0 and "Only when out" or (v .. " shots") end, SupplyLimit)
+  NumberSlider("shardLow", "Low on Soul Shards under", "Warlocks: Soul Shards count as low under this many. At 0, only when you're out.", 2, 0, 10, 1,
+    function(v) v = math.floor(v + 0.5); return v == 0 and "Only when out" or tostring(v) end, SupplyLimit)
   Check(TactaraCharDB, "trainerReminder", "New spells at the trainer", "A chat line when you level up and new spells are waiting at your class trainer, the ones your rotation uses first. /tac trainer shows the list any time.", true,
     function() end)
   do
@@ -363,6 +387,9 @@ local COMMANDS = {
   "/tac interrupts | defensives  - suggestions on/off",
   "/tac prepull on | helper | off  - buffs before and after a fight",
   "/tac supplies [on | helper | off]  - ammo, shards, reagents",
+  "/tac supplies ammo 300 | shards 3  - your limits",
+  "/tac buffs low early | normal | late | off",
+  "/tac mounted on | off  - hide the displays while mounted",
   "/tac sound interrupt | defensive <sound> | off",
   "/tac trainer [on | off]  - spells waiting at your trainer",
   "/tac new  - what's new in this version",

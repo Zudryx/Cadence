@@ -24,6 +24,21 @@ EXTRA_CLASS = {
     "Templar's Bulwark": "paladin",
 }
 
+# Corrections from /tac probe locale on a live game (November 2026). The Icy
+# Veins pages link a few spells by an old ID or an old name; these win over
+# the JSON, so refreshing it from the pages doesn't bring them back.
+OVERRIDE = {
+    # the talent itself is the charge in Forever (Cat and Bear); 16979 is the
+    # old Bear-only spell, called "Feral Charge (Bear)" in the game
+    "druid": {"Feral Charge": 1238122},
+}
+DROP = {
+    "warrior": ["Raging Blows"],                # 1310315 is the talent Improved Whirlwind
+    "rogue": ["Improved Sinister Strike"],      # 13732 is the talent Efficient Strikes
+    "mage": ["Polymorph: Pig"],                 # 28285 teaches it; the pig spell is named "Polymorph"
+    "paladin": ["Blessing of Light", "Blessing of Salvation"],   # not in WoW Forever
+}
+
 def q(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -40,6 +55,11 @@ def render():
     spells = {c: dict(data.get(c, {})) for c in CLASSES}
     for name, sid in data.get("_extra", {}).items():
         spells[EXTRA_CLASS[name]].setdefault(name, sid)
+    for c, names in DROP.items():
+        for name in names:
+            spells[c].pop(name, None)
+    for c, fixed in OVERRIDE.items():
+        spells[c].update(fixed)
     L = [
         "-- Copyright (C) 2026 Zudryx. Part of Tactara, licensed under the GNU GPL v3 only.",
         "-- SPDX-License-Identifier: GPL-3.0-only",

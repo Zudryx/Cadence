@@ -500,8 +500,19 @@ end
 -- Supplies: ammo, Soul Shards, reagents and totems
 ---------------------------------------------------------------------------
 
-R.AMMO_LOW = 200      -- one stack of arrows or bullets
-R.SHARD_LOW = 2       -- fewer Soul Shards than this
+R.AMMO_LOW = 200      -- one stack of arrows or bullets (the default; settings page)
+R.SHARD_LOW = 2       -- fewer Soul Shards than this (the default; settings page)
+
+-- Your limits (0 = only when you're out).
+function R.AmmoLow()
+  local n = TactaraCharDB and tonumber(TactaraCharDB.ammoLow)
+  return n or R.AMMO_LOW
+end
+
+function R.ShardLow()
+  local n = TactaraCharDB and tonumber(TactaraCharDB.shardLow)
+  return n or R.SHARD_LOW
+end
 local SUPPLY_SAME = 600   -- the same supply line in chat at most every 10 minutes
 
 -- English names, for when the game hasn't loaded an item's own name yet.
@@ -687,7 +698,7 @@ function R.SupplyList()
   if class == "HUNTER" then
     local kind = R.AmmoKind()
     local n = kind and R.AmmoCount(kind)
-    if n and n < R.AMMO_LOW then
+    if n and (n <= 0 or n < R.AmmoLow()) then
       local w = AMMO_WORDS[kind]
       if n <= 0 then
         out[#out + 1] = { key = "ammo", level = "out", ammo = kind, text = "no " .. w[2] .. " left",
@@ -701,7 +712,7 @@ function R.SupplyList()
 
   if class == "WARLOCK" and Known("Drain Soul") then
     local n = ItemCount(SOUL_SHARD)
-    if n and n < R.SHARD_LOW then
+    if n and (n <= 0 or n < R.ShardLow()) then
       local item = { SOUL_SHARD }
       if n <= 0 then
         out[#out + 1] = { key = "shards", level = "out", items = item, text = "no Soul Shards",

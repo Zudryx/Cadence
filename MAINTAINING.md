@@ -62,7 +62,7 @@ Each new release is also uploaded to CurseForge (project 1795307, set by `## X-C
 
 ## Games in other languages
 
-Rotations and builds use English names; `Tactara/SpellIDs.lua` has the spell ID for each, and on other languages Tactara asks the game for the name in that language (`Tactara/Locale.lua`). `SpellIDs.lua` is made by `python3 tests/make_spell_ids.py` from `tests/spell_ids/icy_veins.json` (the spell links on the Icy Veins WoW Forever class guides; `_extra` for IDs found by hand in their spell database) and the talent IDs in `tests/talent_fixtures/`. When a rotation uses a spell that has no ID, the tests say which: add it to the JSON and run the script. `/tac probe locale` in game checks every ID against the game's own names.
+Rotations and builds use English names; `Tactara/SpellIDs.lua` has the spell ID for each, and on other languages Tactara asks the game for the name in that language (`Tactara/Locale.lua`). `SpellIDs.lua` is made by `python3 tests/make_spell_ids.py` from `tests/spell_ids/icy_veins.json` (the spell links on the Icy Veins WoW Forever class guides; `_extra` for IDs found by hand in their spell database) and the talent IDs in `tests/talent_fixtures/`. When a rotation uses a spell that has no ID, the tests say which: add it to the JSON and run the script. When `/tac probe locale` on a live game says an ID is named differently or unknown, fix it in `OVERRIDE` / `DROP` at the top of the script (they win over the JSON, so refreshing the JSON from the pages doesn't undo them). `/tac probe locale` in game checks every ID against the game's own names.
 
 ## Supplies (reagents, ammo, totems)
 
