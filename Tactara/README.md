@@ -89,7 +89,7 @@ The `/tac` commands still work, and both always show the same settings.
 
 `/tac talents` (or the **Tactara planner** button at the bottom of the game's talent window, the **Talents** button in `/tac`, or shift-click the minimap button) opens your three talent trees, read straight from the game, with a build on them point by point from level 10 to 60.
 
-- **Tactara's builds:** a leveling build for every spec of every class, from current Forever guides (Method, Maxroll, Icy Veins and Warcraft Tavern), each checked point by point against the game's trees. Druid's Feral build covers both Cat and Bear.
+- **Tactara's builds:** a leveling build for every spec of every class, from the Icy Veins leveling guides, each checked point by point against the game's trees. Druid's Feral build covers both Cat and Bear.
 - **Your own builds:** click **New**, **Copy** one of Tactara's, or **Start from my talents** to begin with the points you already have (no respec needed) and plan the rest. Click a talent to add a point to the end of the build, right-click to take its last point back, **Undo** takes back the last point. If you change one of Tactara's builds, you get your own copy and the original stays as it was. Rename yours in the box at the top. The planner won't let you add a point the game wouldn't take: 5 points per row in a tree, an arrow needs the talent before it maxed, 51 points in all.
 - **Share:** **Share** gives your build as text; **Import** takes one pasted from someone else.
 - **Use this build** picks the build Tactara follows for this character. Then:

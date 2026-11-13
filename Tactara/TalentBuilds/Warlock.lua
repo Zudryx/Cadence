@@ -3,7 +3,7 @@
 
 -- Tactara: recommended Warlock talent builds for WoW Forever, level 10-60.
 --
--- Point-by-point leveling orders from the Warcraft Tavern leveling guides (November 2026),
+-- Point-by-point leveling orders from the Icy Veins leveling guides (November 2026),
 -- checked against the talent trees in the game (game build 70888): every
 -- row and arrow requirement is met at the level each point is taken.
 --
@@ -17,79 +17,86 @@ ns.RegisterTalentBuild([=[
 name: Warlock - Affliction
 class: WARLOCK
 tree: Affliction
-source: Warcraft Tavern leveling build (41/7/3), November 2026
-notes: Amplify Curse at 30, Siphon Life at 41 and Wrack at 50.
+source: Icy Veins leveling build (40/11/0), November 2026
+notes: Siphon Life at 30, Demonic Sacrifice at 41 and Wrack at 51.
 order:
-Improved Life Tap 2
-Suppression 5
+Suppression 4
 Improved Corruption 5
-Improved Drains 3
+Grim Reach
 Improved Bane of Agony 2
-Fel Concentration 3
-Amplify Curse
 Pandemic 3
-Malevolence 5
 Nightfall 2
+Malevolence 3
 Siphon Life
-Soul Siphon 3
+Demonic Embrace 5
+Demonic Aegis 2
+Fel Vitality 3
+Demonic Sacrifice
+Malevolence 2
+Grim Reach
+Improved Life Tap
 Shadow Mastery 5
 Wrack
-Unholy Power 5
-Demonic Energies 2
-Improved Shadow Bolt 3
+Improved Life Tap
+Soul Siphon 3
+Improved Drains 3
+Fel Concentration 2
 ]=])
 
 ns.RegisterTalentBuild([=[
 name: Warlock - Demonology
 class: WARLOCK
 tree: Demonology
-source: Warcraft Tavern leveling build (20/31/0), November 2026
-notes: Affliction first, Demonology from 30: Demonic Sacrifice at 44, Soul Link at 51 and Demonic Pact at 60.
+source: Icy Veins leveling build (20/31/0), November 2026
+notes: Fel Domination at 28, Soul Link at 30 and Demonic Pact at 40, then Affliction for Improved Corruption and Malevolence.
 order:
-Improved Life Tap 2
-Suppression 5
-Improved Corruption 5
-Improved Drains 3
-Pandemic 3
-Malevolence 2
-Demonic Embrace
 Unholy Power 5
-Fel Vitality 3
 Demonic Energies 2
-Improved Sayaad 3
-Demonic Sacrifice
+Fel Vitality 3
 Master Summoner 2
-Fel Domination
+Improved Voidwalker 3
 Demonic Brand 3
+Fel Domination
+Demonic Sacrifice
 Soul Link
 Demonic Knowledge 3
+Demonic Aegis
 Master Demonologist 5
 Demonic Pact
+Suppression 4
+Improved Corruption 5
+Improved Life Tap
+Improved Bane of Agony 2
+Pandemic 3
+Malevolence 5
 ]=])
 
 ns.RegisterTalentBuild([=[
 name: Warlock - Destruction
 class: WARLOCK
 tree: Destruction
-source: Warcraft Tavern leveling build (17/3/31), November 2026
-notes: Affliction first, Destruction from 30: Shadowburn at 46 and Conflagrate at 50.
+source: Icy Veins leveling build (6/11/34), November 2026
+notes: Shadowburn at 20, Conflagrate at 25 and Incinerate at 40, then Demonology for Demonic Embrace.
 order:
-Improved Life Tap 2
-Suppression 5
-Improved Corruption 5
-Amplify Curse
-Pandemic 3
-Malevolence
-Improved Imp 3
 Bane 5
-Cataclysm 3
 Aftermath 5
-Ruin 3
 Shadowburn
-Agonizing Flames 3
+Destructive Reach 2
+Ruin 2
 Conflagrate
-Bane of Havoc
+Intensity 3
+Agonizing Flames
 Fire and Brimstone 3
+Bane of Havoc
+Agonizing Flames
 Shadow and Flame 5
 Incinerate
+Agonizing Flames
+Suppression 4
+Demonic Embrace 5
+Demonic Aegis 2
+Fel Vitality 3
+Demonic Sacrifice
+Improved Life Tap 2
+Ruin 2
 ]=])

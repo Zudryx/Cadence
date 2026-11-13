@@ -986,7 +986,7 @@ do
   -- the built-in builds are legal, 51 points each
   local builds = T.BuildsForClass("WARRIOR")
   check(#builds == 3, "three Warrior builds")
-  local want = { ["Warrior - Arms"] = "34/15/2", ["Warrior - Fury"] = "19/32/0", ["Warrior - Protection"] = "10/10/31" }
+  local want = { ["Warrior - Arms"] = "33/16/2", ["Warrior - Fury"] = "16/33/2", ["Warrior - Protection"] = "4/16/31" }
   for _, b in ipairs(builds) do
     local split, sim = T.Split(b, tree)
     check(sim.ok and sim.total == 51, b.name .. " is legal with 51 points: "

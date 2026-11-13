@@ -3,7 +3,7 @@
 
 -- Tactara: recommended Rogue talent builds for WoW Forever, level 10-60.
 --
--- Point-by-point leveling orders from the Warcraft Tavern leveling guides (November 2026),
+-- Point-by-point leveling orders from the Icy Veins leveling guides (November 2026),
 -- checked against the talent trees in the game (game build 70888): every
 -- row and arrow requirement is met at the level each point is taken.
 --
@@ -17,94 +17,96 @@ ns.RegisterTalentBuild([=[
 name: Rogue - Combat
 class: ROGUE
 tree: Combat
-source: Warcraft Tavern leveling build (15/36/0), November 2026
-notes: Riposte at 22, Blade Flurry at 32 and Adrenaline Rush at 42, then Assassination for Malice and Ruthlessness.
+source: Icy Veins leveling build (16/35/0), November 2026
+notes: Riposte at 20, Blade Flurry at 30 and Adrenaline Rush at 40, then Assassination for Malice and Ruthlessness.
 order:
-Remorseless Attacks 2
 Efficient Strikes 2
 Coup de Grace 3
-Deflection 3
 Precision 2
+Deflection 3
 Riposte
 Precision
-Endurance 2
-Composure
+Composure 2
+Endurance
 Flawless Execution
 Weapon Expertise 2
 Aggression 2
 Blade Flurry
-Dual Wield Specialization 2
-Hack and Slash 5
-Flash of Steel 2
+Hack and Slash 4
+Flash of Steel 5
 Adrenaline Rush
-Flash of Steel 3
-Composure
+Hack and Slash
 Aggression
+Dual Wield Specialization 2
+Remorseless Attacks 2
 Malice 3
-Improved Slice and Dice 3
-Malice 2
-Lethality 2
 Ruthlessness 3
+Malice 2
+Blood Splatter
+Lethality 2
+Improved Slice and Dice 2
+Cold Blood
 ]=])
 
 ns.RegisterTalentBuild([=[
 name: Rogue - Assassination
 class: ROGUE
 tree: Assassination
-source: Warcraft Tavern leveling build (36/10/5), November 2026
-notes: Daggers for Mutilate. Venom at 30, Mutilate at 40 and Cold Blood at 50, then Subtlety for Opportunity.
+source: Icy Veins leveling build (31/15/5), November 2026
+notes: Daggers for Mutilate. Cold Blood at 25, Venom at 30 and Mutilate at 40, then Subtlety for Opportunity.
 order:
 Remorseless Attacks 2
-Malice 5
-Improved Slice and Dice 3
-Lethality 2
+Malice 3
 Ruthlessness 3
-Improved Poisons 5
+Malice 2
+Blood Splatter
+Lethality 2
+Improved Slice and Dice 2
+Cold Blood
+Vile Poisons 4
 Venom
-Relentless Strikes 5
+Relentless Strikes 4
 Seal Fate 3
+Relentless Strikes
 Vile Poisons
 Mutilate
-Vile Poisons 4
 Opportunity 5
-Cold Blood
 Coup de Grace 3
 Lightning Reflexes 2
+Precision 3
 Puncturing Wounds 3
-Precision 2
+Composure 2
+Endurance 2
 ]=])
 
 ns.RegisterTalentBuild([=[
 name: Rogue - Subtlety
 class: ROGUE
 tree: Subtlety
-source: Warcraft Tavern leveling build (13/3/35), November 2026
-notes: Bleeds and Hemorrhage: Premeditation at 25, Ghostly Strike at 27, Hemorrhage at 32 and Death Mark at 42, then Assassination for Malice.
+source: Icy Veins leveling build (15/5/31), November 2026
+notes: Premeditation at 23, Ghostly Strike at 25, Hemorrhage at 30 and Death Mark at 42, then Combat and Assassination.
 order:
-Remorseless Attacks 2
-Setup 3
-Master of Deception 2
-Camouflage 3
-Dirty Deeds 2
+Opportunity 5
+Improved Ambush 3
+Setup 2
 Serrated Blades 3
 Premeditation
-Initiative
+Dirty Deeds
 Ghostly Strike
-Initiative 2
-Dirty Tricks 2
+Setup
+Camouflage 3
 Hemorrhage
-Quick Getaway 2
+Efficient Strikes 2
 Preparation
-Opportunity
-Boot Knife 2
-Opportunity 3
+Initiative 3
+Boot Knife 5
 Death Mark
-Opportunity
-Master of Deception
-Malice 5
-Improved Slice and Dice 3
-Blood Splatter
 Coup de Grace 3
+Remorseless Attacks 2
+Malice 3
+Ruthlessness 3
+Malice 2
+Blood Splatter
 Lethality 2
-Elusiveness 2
+Improved Slice and Dice 2
 ]=])
