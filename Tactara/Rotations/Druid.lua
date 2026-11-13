@@ -7,7 +7,7 @@
 -- Mobalytics, and Blizzard's Forever class deep dive (checked November
 -- 2026). Forever changes that matter here:
 --   * Faerie Fire works in Bear and Cat Form too, free (6-second cooldown);
---     Faerie Fire is gone (checked with /tac probe locale, Nov 2026).
+--     the old Feral version is gone (checked with /tac probe locale, Nov 2026).
 --   * Omen of Clarity is trained at 20; Tiger's Fury is gone (the Shifting
 --     Power talent gives Energy instead).
 --   * Bears: Lacerate (42) and Primal Bite (talent) for threat.
