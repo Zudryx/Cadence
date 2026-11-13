@@ -2280,6 +2280,45 @@ name: after test
   check(TactaraCharDB.prePull == "helper", "/tac buffs works like /tac prepull")
   SlashCmdList.TACTARA("buffs on")
 
+  -- you click a buff off in a fight (or it's dispelled): Tactara's timer can't
+  -- see that; the game can, once the fight is over and it's showing your buffs
+  ns.SetTrackedSpells(ns.Parse("[priority]\n/cast Frost Armor @missing Frost Armor"))
+  local frost = ns.Compile(ns.Parse("name: frost\n[priority]\n/cast Frost Armor @missing Frost Armor"), "main", env)
+  for k in pairs(playerAuras) do playerAuras[k] = nil end
+  ns.auraLookupsWork = nil
+  inCombat = true
+  ns.TrackCast("Frost Armor")
+  check(ns.CheckLive({ kind = "missing", arg = "Frost Armor" }) == false, "in a fight: Tactara's timer says it's up")
+  inCombat = false
+  check(texts(R.AfterFightList(frost)) == "", "the game hasn't shown a buff this session: the timer still wins")
+  playerAuras["Arcane Intellect"] = { name = "Arcane Intellect", expirationTime = now + 1700, duration = 1800 }
+  ns.BuffTimeLeft("Arcane Intellect")
+  check(ns.auraLookupsWork == true, "the game showed one of your buffs: lookups work")
+  check(texts(R.AfterFightList(frost)) == "Frost Armor", "after the fight: Frost Armor, taken off")
+  check(ns.TrackedRemaining("player", "Frost Armor") == nil, "and Tactara's timer for it is dropped")
+  hasTarget = true
+  check(texts(R.PrePullList(frost)) == "Frost Armor", "before the next pull too")
+  check(ns.HasBuff("Frost Armor") == false, "and the opener puts it back up")
+  hasTarget = false
+  ns.TrackCast("Frost Armor")
+  C_Secrets = { ShouldSpellAuraBeSecret = function() return true end }
+  check(texts(R.AfterFightList(frost)) == "", "the game says it hides that buff: the timer")
+  C_Secrets = { ShouldSpellAuraBeSecret = function() return false end }
+  check(texts(R.AfterFightList(frost)) == "Frost Armor", "and when it doesn't: gone")
+  C_Secrets = nil
+  ns.auraLookupsWork = nil
+  C_UnitAuras.GetAuraDataByIndex = function(_, i) if i == 1 then return { name = "Arcane Intellect" } end end
+  check(ns.AuraReadable("Frost Armor") == true, "a buff the game lists right now: lookups work")
+  C_UnitAuras.GetAuraDataByIndex = function() error("secret value") end
+  ns.auraLookupsWork = nil
+  check(ns.AuraReadable("Frost Armor") == nil, "the list is hidden: can't tell")
+  C_UnitAuras.GetAuraDataByIndex = nil
+  inCombat = true
+  check(ns.AuraReadable("Frost Armor") == false, "in a fight: never")
+  inCombat = false
+  playerAuras["Arcane Intellect"] = nil
+  ns.auraLookupsWork = nil
+
   -- buffs that replace each other: the old one's timer goes
   ns.SetTrackedSpells(ns.Parse("[priority]\n/cast Aspect of the Hawk @missing Aspect of the Hawk\n/cast Ice Armor @missing Ice Armor"))
   ns.TrackCast("Aspect of the Hawk")

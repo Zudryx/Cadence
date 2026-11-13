@@ -230,6 +230,13 @@ function ns.TrackedRemaining(unit, spell)
   return left
 end
 
+-- The game says it's gone (you clicked it off, it was dispelled): drop our timer.
+function ns.ForgetTracked(unit, spell)
+  local bucket
+  if unit == "player" then bucket = tracked.player.me else bucket = tracked.target[TargetKey()] end
+  if bucket then bucket[spell] = nil end
+end
+
 -- If we can't tell targets apart, a new target means unknown debuffs.
 local f = CreateFrame("Frame")
 ns.trackerFrame = f

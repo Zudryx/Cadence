@@ -122,9 +122,10 @@ end
 
 -- Is this buff (on you) / your debuff (on the target) missing or about to run out?
 -- A spell on your stance bar (Paladin auras, stances, forms) asks the stance
--- bar. Otherwise the game's answer wins when it gives one, and Tactara's own
--- timer from your cast decides when it doesn't. true = missing, false = up,
--- nil = can't tell.
+-- bar. Otherwise the game's answer wins when it gives one (including "not
+-- there", out of combat, when it's showing your buffs: ns.AuraReadable), and
+-- Tactara's own timer from your cast decides when it doesn't. true = missing,
+-- false = up, nil = can't tell.
 local REFRESH = 3
 local function AuraMissing(unit, name, filter)
   if unit == "player" then
@@ -138,12 +139,17 @@ local function AuraMissing(unit, name, filter)
     okAPI, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, unit, name, filter)
   end
   if okAPI and aura ~= nil then
+    if unit == "player" then ns.NoteAuraSeen(aura) end
     pcall(function() ns.LearnDuration(name, aura.duration) end)
     local okT, expiring = pcall(function()
       local exp = aura.expirationTime
       return exp ~= nil and exp > 0 and (exp - GetTime()) < REFRESH
     end)
     return okT and expiring or false
+  end
+  if okAPI and unit == "player" and ns.AuraReadable(name) then
+    ns.ForgetTracked("player", name)         -- clicked off, dispelled or died: it's gone
+    return true
   end
   if mine then return mine < REFRESH end     -- our timer says it's up
   if okAPI then return true end              -- game says no, and we didn't cast it
@@ -161,6 +167,7 @@ function ns.BuffTimeLeft(name)
     okAPI, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", name, "HELPFUL")
   end
   if okAPI and aura ~= nil then
+    ns.NoteAuraSeen(aura)
     local ok, left, full = pcall(function()
       local exp, dur = aura.expirationTime, aura.duration
       if not exp or exp == 0 then return math.huge, math.huge end
@@ -168,6 +175,10 @@ function ns.BuffTimeLeft(name)
       return math.max(0, exp - GetTime()), d
     end)
     if ok then return left, full or ns.BuffDuration(name) end
+  end
+  if okAPI and ns.AuraReadable(name) then
+    ns.ForgetTracked("player", name)
+    return 0, ns.BuffDuration(name)
   end
   local mine = ns.TrackedRemaining("player", name)
   if mine then return math.max(0, mine), ns.BuffDuration(name) end

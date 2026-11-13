@@ -570,6 +570,8 @@ function ns.ProbeReminders()
       t[#t + 1] = ("%s #%s%s%s"):format(name, Str(spellID), active and " (on)" or "", castable == false and " (can't cast)" or "")
     end
     add(("stance bar (%s): %s"):format(Str(n), #t > 0 and table.concat(t, ", ") or "empty"))
+    add(("the game has shown Tactara one of your buffs this session: %s; C_Secrets there: %s")
+      :format(Str(ns.auraLookupsWork), Str(C_Secrets and C_Secrets.ShouldSpellAuraBeSecret and true)))
     local comp = ns.compiled and ns.compiled.main
     local checked = {}
     for _, e in ipairs(comp and comp.priority or {}) do
@@ -577,9 +579,9 @@ function ns.ProbeReminders()
         if c.kind == "missing" and not checked[c.arg] then
           checked[c.arg] = true
           local left, full = ns.BuffTimeLeft(c.arg)
-          add(("@missing %s: stance bar says %s, buff check says %s, time left %s of %s (low under %s)")
+          add(("@missing %s: stance bar says %s, buff check says %s, time left %s of %s (low under %s), game's \"not there\" trusted: %s")
             :format(c.arg, Str(ns.FormActive(c.arg)), Str(ns.CheckLive(c)), Str(left and math.floor(left)),
-              Str(full and math.floor(full)), Str(ns.BuffLowAt(full))))
+              Str(full and math.floor(full)), Str(ns.BuffLowAt(full)), Str(ns.AuraReadable(c.arg))))
         end
       end
     end

@@ -220,6 +220,42 @@ function ns.FormActive(name)
   return nil
 end
 
+-- Does "not there" from the game really mean the buff is gone (you clicked it
+-- off, it was dispelled, you died)? Forever hides buffs in combat, and at
+-- times even out of it, so Tactara keeps its own timer from your cast. That
+-- timer can't see a buff you took off, so the game's answer wins when:
+-- you're out of combat, the game doesn't say it hides this buff, and it has
+-- shown Tactara one of your buffs this session (lookups work right now).
+-- true = trust "not there", false = the game hides it, nil = can't tell.
+function ns.NoteAuraSeen(aura)
+  if ns.auraLookupsWork or InCombatLockdown() or aura == nil then return end
+  local ok = pcall(function() return aura.name .. "" end)
+  if ok then ns.auraLookupsWork = true end
+end
+
+local function SeesAnyBuff()
+  if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return false end
+  local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, "player", 1, "HELPFUL")
+  if not ok or a == nil then return false end
+  return (pcall(function() return a.name .. "" end))
+end
+
+function ns.AuraReadable(name)
+  if InCombatLockdown() then return false end
+  if C_Secrets and C_Secrets.ShouldSpellAuraBeSecret then
+    local english = ns.Locale and ns.Locale.English(name) or name
+    local id = ns.Locale and ns.Locale.IdFor(english)
+    local ok, secret = pcall(C_Secrets.ShouldSpellAuraBeSecret, id or name)
+    if ok and secret == true then return false end
+  end
+  if ns.auraLookupsWork then return true end
+  if SeesAnyBuff() then
+    ns.auraLookupsWork = true
+    return true
+  end
+  return nil
+end
+
 -- true = buff is up with plenty of time left, false = missing/expiring, nil = can't tell.
 -- Only called out of combat; if the game hides the value, we treat it as "can't tell".
 function ns.HasBuff(name)
@@ -232,12 +268,17 @@ function ns.HasBuff(name)
     ok, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", name, "HELPFUL")
   end
   if ok and aura ~= nil then
+    ns.NoteAuraSeen(aura)
     local ok2, longEnough = pcall(function()
       local exp = aura.expirationTime
       if not exp or exp == 0 then return true end
       return (exp - GetTime()) >= ns.BUFF_REFRESH_SECONDS
     end)
     if ok2 then return longEnough and true or false end
+  end
+  if ok and ns.AuraReadable(name) then     -- the game shows buffs right now: it's gone
+    if ns.ForgetTracked then ns.ForgetTracked("player", name) end
+    return false
   end
   if mine then return mine >= ns.BUFF_REFRESH_SECONDS end   -- our own timer from your cast
   if ok then return false end

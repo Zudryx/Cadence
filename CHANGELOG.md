@@ -7,6 +7,7 @@ Each `## x.y.z` section becomes the release notes for that version.
 - **Running low counts too,** before the pull and after the fight: an hour-long Blessing under 5 minutes, a 30-minute buff under 2, a 5 to 10 minute one under 1, Battle Shout under 30 seconds. The line says how long is left, like *Blessing of Might (4 min left)*. Seals still only show when they're missing or about to drop. Auras, aspects and forms never run low.
 - **A sound for buff reminders,** off until you pick one: settings page (Reminders) or `/tac sound buffs ready`.
 - The setting is now **Buffs before and after a fight** (settings page, Reminders); `/tac buffs on` / `helper` / `off` works like `/tac prepull`.
+- **A buff you click off (or that's dispelled, or lost when you die) is noticed now.** In a fight the game hides your buffs, so Tactara times them from your casts, and a timer can't see a buff come off. Once the fight is over, when the game is showing your buffs again, its "not there" wins over the timer: the after-the-fight check and the before-the-pull line list it, and the opener puts it back up.
 - When the game hides your buffs, Tactara times them from your casts. Now a buff that replaces another (one Seal for another, one Blessing, aura, aspect, armor or shield for another) ends the old one's timer too, so Tactara doesn't think your old aspect is still up.
 - `/tac probe reminders` shows each buff's time left and what the after-the-fight check sees.
 - Tactara still only tells you; you cast the buff.
