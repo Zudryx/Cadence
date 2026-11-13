@@ -555,6 +555,28 @@ function ns.ProbeReminders()
     add("rotation lines with checks: " .. (#prep > 0 and table.concat(prep, ", ") or "none"))
   end)
 
+  try("stance bar", function()
+    if not (GetNumShapeshiftForms and GetShapeshiftFormInfo) then return add("stance bar: functions missing") end
+    local n = GetNumShapeshiftForms()
+    local t = {}
+    for i = 1, (tonumber(n) or 0) do
+      local _, active, castable, spellID = GetShapeshiftFormInfo(i)
+      local name = spellID and ns.Locale.NameOf(spellID) or "?"
+      t[#t + 1] = ("%s #%s%s%s"):format(name, Str(spellID), active and " (on)" or "", castable == false and " (can't cast)" or "")
+    end
+    add(("stance bar (%s): %s"):format(Str(n), #t > 0 and table.concat(t, ", ") or "empty"))
+    local comp = ns.compiled and ns.compiled.main
+    local checked = {}
+    for _, e in ipairs(comp and comp.priority or {}) do
+      for _, c in ipairs(e.live or {}) do
+        if c.kind == "missing" and not checked[c.arg] then
+          checked[c.arg] = true
+          add(("@missing %s: stance bar says %s, buff check says %s"):format(c.arg, Str(ns.FormActive(c.arg)), Str(ns.CheckLive(c))))
+        end
+      end
+    end
+  end)
+
   add("")
   add("== Supplies ==")
   try("ammo", function()

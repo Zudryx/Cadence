@@ -121,10 +121,16 @@ end
 ---------------------------------------------------------------------------
 
 -- Is this buff (on you) / your debuff (on the target) missing or about to run out?
--- The game's answer wins when it gives one; otherwise Tactara's own timer
--- from your cast decides. true = missing, false = up, nil = can't tell.
+-- A spell on your stance bar (Paladin auras, stances, forms) asks the stance
+-- bar. Otherwise the game's answer wins when it gives one, and Tactara's own
+-- timer from your cast decides when it doesn't. true = missing, false = up,
+-- nil = can't tell.
 local REFRESH = 3
 local function AuraMissing(unit, name, filter)
+  if unit == "player" then
+    local form = ns.FormActive(name)      -- a Paladin aura or a stance: the stance bar knows
+    if form ~= nil then return not form end
+  end
   local mine = ns.TrackedRemaining(unit, name)
   local aura
   local okAPI = false

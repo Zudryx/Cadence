@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.16.0"
+ns.VERSION = "0.16.1"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -193,10 +193,39 @@ end
 
 ns.BUFF_REFRESH_SECONDS = 30
 
+-- Spells on your stance bar: Paladin auras (Forever's "Aura" bar), Warrior
+-- stances, Druid forms, Shadowform... The game tells addons which one is on
+-- even when it hides your buffs, and it's right after a reload too.
+-- true = this one is on, false = it's on the bar but not on, nil = not a
+-- stance bar spell (or the game won't say).
+function ns.FormActive(name)
+  if not (name and GetNumShapeshiftForms and GetShapeshiftFormInfo) then return nil end
+  local okN, n = pcall(function() return tonumber(GetNumShapeshiftForms()) end)
+  if not (okN and n) then return nil end
+  local english = ns.Locale and ns.Locale.English(name) or name
+  local wantId = ns.Locale and ns.Locale.IdFor and ns.Locale.IdFor(english)
+  for i = 1, n do
+    local ok, _, active, _, spellID = pcall(GetShapeshiftFormInfo, i)
+    if ok and spellID then
+      local okId, id = pcall(function() return tonumber(spellID) end)
+      local fname = okId and id and ns.Locale and ns.Locale.NameOf(id)
+      local match = (fname and (fname == name or ns.Locale.English(fname) == english)) or (okId and id and id == wantId)
+      if match then
+        local okA, on = pcall(function() return active and true or false end)
+        if okA then return on end
+        return nil
+      end
+    end
+  end
+  return nil
+end
+
 -- true = buff is up with plenty of time left, false = missing/expiring, nil = can't tell.
 -- Only called out of combat; if the game hides the value, we treat it as "can't tell".
 function ns.HasBuff(name)
   if InCombatLockdown() then return nil end
+  local form = ns.FormActive(name)
+  if form ~= nil then return form end
   local mine = ns.TrackedRemaining and ns.TrackedRemaining("player", name)
   local ok, aura = false, nil
   if C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName then

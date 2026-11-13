@@ -473,6 +473,48 @@ C_UnitAuras.GetAuraDataBySpellName = savedAuraFn
 UnitGUID = nil
 now = now + 200
 playerAuras["Battle Shout"] = { expirationTime = now + 100, duration = 120 }
+
+-- 19c) Paladin auras (and stances, forms) are on the stance bar: it knows
+-- which one is on even when buffs are hidden, and after a reload
+do
+  local forms = {}
+  GetNumShapeshiftForms = function() return #forms end
+  GetShapeshiftFormInfo = function(i)
+    local f = forms[i]
+    return "icon", f.on, true, f.id
+  end
+  local realName = C_Spell.GetSpellName
+  C_Spell.GetSpellName = function(id) return ({ [10293] = "Devotion Aura", [10301] = "Retribution Aura" })[id] or realName(id) end
+  C_UnitAuras.GetAuraDataBySpellName = function() return nil end   -- Forever hides the buff
+  local dev = { kind = "missing", arg = "Devotion Aura" }
+  local ret = { kind = "missing", arg = "Retribution Aura" }
+  inCombat = false
+  check(ns.CheckLive(dev) == true and ns.FormActive("Devotion Aura") == nil, "no stance bar, hidden buff, no timer: missing")
+  forms = { { id = 10293, on = true }, { id = 10301, on = false } }
+  check(ns.FormActive("Devotion Aura") == true, "Devotion Aura is on (stance bar)")
+  check(ns.CheckLive(dev) == false, "@missing Devotion Aura: not missing while it's on")
+  check(ns.HasBuff("Devotion Aura") == true, "@ifmissing sees it too")
+  check(ns.CheckLive(ret) == true and ns.HasBuff("Retribution Aura") == false, "the aura that isn't on is missing")
+  forms[1].on, forms[2].on = false, true
+  check(ns.CheckLive(dev) == true and ns.CheckLive(ret) == false, "switch auras: the stance bar follows")
+  forms = { { id = 999999, on = true } }
+  C_Spell.GetSpellName = function(id) return id == 999999 and "Devotion Aura" or realName(id) end
+  check(ns.CheckLive(dev) == false, "matched by name when the rank's ID is a different one")
+  C_Spell.GetSpellName = function(id) return ({ [10293] = "Devotion Aura" })[id] or realName(id) end
+  forms = { { id = 10293, on = false } }
+  C_Spell.GetSpellName = realName
+  check(ns.FormActive("Devotion Aura") == false, "matched by spell ID when the name isn't readable")
+  check(ns.FormActive("Blessing of Might") == nil and ns.FormActive("Battle Shout") == nil, "spells not on the stance bar: not a form")
+  -- before the pull: no reminder for an aura that's on
+  forms = { { id = 10293, on = true } }
+  check(ns.LiveOK({ live = { dev } }) == false, "an aura that's on isn't listed before the pull")
+  GetShapeshiftFormInfo = function() error("secret value") end
+  check(ns.FormActive("Devotion Aura") == nil, "the game hides the stance bar: no guess")
+  GetNumShapeshiftForms, GetShapeshiftFormInfo = nil, nil
+  C_Spell.GetSpellName = realName
+  C_UnitAuras.GetAuraDataBySpellName = savedAuraFn
+  inCombat = true
+end
 targetAuras["Rend"] = nil
 
 -- helper popup shows the top 3

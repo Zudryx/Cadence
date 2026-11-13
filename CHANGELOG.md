@@ -2,6 +2,10 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.16.1
+- **Paladin auras:** the helper and the before-the-pull line now see the aura you have on, even after a reload or when you turned it on before logging in. Tactara reads it from your aura bar (the stance bar), which the game always shows to addons. The same goes for Warrior stances, Druid forms and Shadowform. `/tac probe reminders` lists what's on your stance bar.
+- No gameplay changes.
+
 ## 0.16.0
 - **What's new:** after Tactara updates, a window shows what changed (including any versions you skipped), once for all your characters. `/tac new` shows it any time. Turn it off on the settings page (Reminders).
 - **Set up your keys:** a character with no Tactara key gets a small window, before the talent planner question, with the same key buttons as the settings page: **One-button key**, **AoE key**, **Interrupt key**, and **Remove** to give them all back. Click a button and press any key; right-click one to clear it. **Done** closes it (with no key set, it asks again next time); **No thanks** doesn't ask again. `/tac reset keybinds` (or `/tac keys`) opens it any time and keeps the keys you have. The glow and the helper popup work without a key.
