@@ -1270,6 +1270,11 @@ do
     warlock = { count = 52, names = { "Affliction", "Demonology", "Destruction" } },
     priest = { count = 52, names = { "Discipline", "Holy", "Shadow" } },   -- 53 in the data, one stray
     warrior = { count = 53, names = { "Arms", "Fury", "Protection" } },
+    rogue = { count = 54, names = { "Assassination", "Combat", "Subtlety" } },
+    mage = { count = 53, names = { "Arcane", "Fire", "Frost" } },
+    druid = { count = 52, names = { "Balance", "Feral", "Restoration" } },
+    paladin = { count = 51, names = { "Holy", "Protection", "Retribution" } },
+    hunter = { count = 50, names = { "Beast Mastery", "Marksmanship", "Survival" } },   -- 52 in the data, two strays
   }
   for class, want in pairs(expect) do
     local fix = dofile(root .. "/../tests/talent_fixtures/" .. class .. ".lua")
@@ -1284,10 +1289,12 @@ do
       local maxRow, maxCol = 0, 0
       for _, tr in ipairs(tree.trees) do maxRow = math.max(maxRow, tr.rows); maxCol = math.max(maxCol, tr.cols) end
       check(maxRow == 7 and maxCol <= 4, ("%s: 7 rows, at most 4 columns (%d, %d)"):format(class, maxRow, maxCol))
-      -- every 31-point talent is on the bottom row
+      -- every 31-point talent is on the bottom row, with one arrow at most
+      -- (Moonkin Form has none), and every talent can be reached
       for _, node in ipairs(tree.list) do
-        if node.row == 7 then check(#node.from == 1, class .. ": " .. node.name .. " on the bottom row has its arrow") end
+        if node.row == 7 then check(#node.from <= 1, class .. ": " .. node.name .. " on the bottom row has one arrow at most") end
       end
+      check(T.Simulate(T.FromCurrent(tree), tree).ok, class .. ": empty tree is fine")
     end
   end
   -- Warlock: talents a few units off the grid still share a row
@@ -1305,6 +1312,30 @@ do
     "Priest: Holy Specialization is the real one, row 1 of Holy")
   check(not p.nodes[105865], "Priest: the stray copy isn't on the trees")
   check(T.Simulate({ "Holy Specialization", "Holy Specialization" }, p).ok, "Priest: Holy Specialization can be taken")
+  -- Hunter: the stray second Lightning Reflexes, the far-off Improved Serpent
+  -- Sting and the arrow back up from Bestial Wrath are left out
+  Install(dofile(root .. "/../tests/talent_fixtures/hunter.lua"))
+  local h = T.ReadTree()
+  check(N(h, "Lightning Reflexes").id == 110859 and not h.nodes[104982] and not h.nodes[105003],
+    "Hunter: strays left out")
+  check(#N(h, "Intimidation").from == 1 and N(h, "Intimidation").from[1] == N(h, "Bestial Swiftness").id
+    and N(h, "Bestial Wrath").from[1] == N(h, "Intimidation").id and #N(h, "Bestial Wrath").to == 0,
+    "Hunter: Bestial Swiftness > Intimidation > Bestial Wrath, no arrow back up")
+  local bm = {}
+  local function take(name, n) for _ = 1, n do bm[#bm + 1] = name end end
+  take("Endurance Training", 5); take("Improved Aspect of the Monkey", 3); take("Focused Fire", 2)
+  take("Bestial Swiftness", 1); take("Unleashed Fury", 5); take("Ferocity", 5); take("Spirit Bond", 2)
+  take("Intimidation", 1); take("Bestial Discipline", 2); take("Frenzy", 5); take("Bestial Wrath", 1)
+  local sim = T.Simulate(bm, h)
+  check(sim.ok, "Hunter: Bestial Wrath can be taken: " .. tostring(sim.firstError and sim.firstError.err))
+  -- Paladin: Holy Shock's arrow across its own row to Boundless Light counts
+  Install(dofile(root .. "/../tests/talent_fixtures/paladin.lua"))
+  local pal = T.ReadTree()
+  check(N(pal, "Boundless Light").from[1] == N(pal, "Holy Shock").id, "Paladin: Holy Shock > Boundless Light, same row")
+  -- Druid: Moonkin Form has no arrow
+  Install(dofile(root .. "/../tests/talent_fixtures/druid.lua"))
+  local dr = T.ReadTree()
+  check(#N(dr, "Moonkin Form").from == 0 and N(dr, "Moonkin Form").row == 7, "Druid: Moonkin Form, bottom row, no arrow")
   C_ClassTalents, C_Traits, UnitClass = realCT, realTraits, realClass
 end
 

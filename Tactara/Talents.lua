@@ -403,12 +403,13 @@ local function Cluster(nodes, key)
   return index, #groups, groups
 end
 
--- Talents far below the rest of the trees aren't part of them (the Priest
--- data has a stray second Holy Specialization way off the bottom). Keep
--- rows from the top down until there's a gap much wider than the usual
--- space between rows.
-local function DropStrays(nodes)
-  local index, count, groups = Cluster(nodes, "y")
+-- Talents far away from the rest of the trees aren't part of them: the
+-- Priest data has a stray second Holy Specialization way off the bottom, and
+-- the Hunter data a second Lightning Reflexes far off to the right. Along
+-- each direction, keep the biggest run of rows (or columns) with no gap much
+-- wider than usual between them.
+local function KeepMain(nodes, key, minGap, times)
+  local index, count, groups = Cluster(nodes, key)
   if count < 3 then return nodes end
   local gaps = {}
   for i = 2, count do gaps[#gaps + 1] = groups[i].min - groups[i - 1].max end
@@ -416,16 +417,32 @@ local function DropStrays(nodes)
   for i, g in ipairs(gaps) do sortedGaps[i] = g end
   table.sort(sortedGaps)
   local usual = sortedGaps[math.ceil(#sortedGaps / 2)]
-  local lastRow = count
-  for i, g in ipairs(gaps) do
-    if g > math.max(1000, usual * 3) then lastRow = i break end
+  local limit = math.max(minGap, usual * times)
+  -- runs of groups split at the wide gaps; count talents in each
+  local runOf, run, sizes = {}, 1, { 0 }
+  runOf[1] = 1
+  for i = 2, count do
+    if gaps[i - 1] > limit then run = run + 1; sizes[run] = 0 end
+    runOf[i] = run
   end
-  if lastRow == count then return nodes end
+  if run == 1 then return nodes end
+  for _, n in ipairs(nodes) do
+    local r = runOf[index[n[key]]]
+    sizes[r] = sizes[r] + 1
+  end
+  local best = 1
+  for r = 2, run do if sizes[r] > sizes[best] then best = r end end
   local kept = {}
   for _, n in ipairs(nodes) do
-    if index[n.y] <= lastRow then kept[#kept + 1] = n end
+    if runOf[index[n[key]]] == best then kept[#kept + 1] = n end
   end
   return kept
+end
+
+local function DropStrays(nodes)
+  -- rows are about 600 apart; the three trees about 2200 apart side by side
+  nodes = KeepMain(nodes, "y", 1000, 3)
+  return KeepMain(nodes, "x", 5000, 5)
 end
 
 -- Returns a tree table or nil, reason:
@@ -475,10 +492,19 @@ function T.ReadTree()
       if not tree.byName[key] then tree.byName[key] = node end
     end
     if #tree.list == 0 then error("no talents found", 0) end
+    -- Arrows only run down a tree (or across a row): the Hunter data also
+    -- has one from Bestial Wrath back up to Intimidation, which would make
+    -- each need the other. Those are left out.
     for _, node in ipairs(tree.list) do
-      for _, to in ipairs(node.to) do
-        if tree.nodes[to] then table.insert(tree.nodes[to].from, node.id) end
+      local to = {}
+      for _, id in ipairs(node.to) do
+        local target = tree.nodes[id]
+        if target and target.y >= node.y - GRID_TOL then
+          to[#to + 1] = id
+          table.insert(target.from, node.id)
+        end
       end
+      node.to = to
     end
 
     -- Which tree each talent is in: the game's sub-trees if it has them,
