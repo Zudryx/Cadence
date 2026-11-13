@@ -80,8 +80,8 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. **Export** gives the same settings as text to back up or give to a friend (any account or computer); **Import** takes that text back, asks first, and only sets keys if you choose **With keys**. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
-- **Suggestions:** interrupt and defensive suggestions on or off.
-- **Reminders:** before-the-pull reminders (under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your key and the talent planner), and the "what's new" window after an update.
+- **Suggestions:** interrupt and defensive suggestions on or off, and a sound for each (off until you pick one).
+- **Reminders:** before-the-pull reminders and supply reminders (each under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your key and the talent planner), and the "what's new" window after an update.
 
 The `/tac` commands still work, and both always show the same settings.
 
@@ -126,12 +126,20 @@ The `/tac` commands still work, and both always show the same settings.
 - They're never part of the one-button rotation, so the key won't waste them.
 - **Stuns and crowd control** (Intimidating Shout, Piercing Howl, Disarm) are in each rotation's `[defensive]` list but commented out. Remove the `#` in `/tac` to turn one on.
 - `/tac interrupts` and `/tac defensives` turn each one on or off. If WoW hides what they need (your health, what the target is casting), they don't guess. They just stay quiet.
+- **Sounds:** a sound can play when either slot lights up: raid warning, ready check, alarm clock, map ping or whisper. Both are off until you pick one on the settings page (Suggestions) or with `/tac sound interrupt raid` / `/tac sound defensive alarm` (`off` turns one off). The interrupt sound plays at most every 1.5 seconds and the defensive one at most every 10, so a chain of casts or your health bobbing around doesn't keep buzzing. They play on the master channel, so you hear them with game sounds turned down. `/tac sound test` plays both. Like the glow, a sound only tells you; you still press the key.
 
 ## Reminders
 
 Tactara only tells you; it never casts, buys or learns anything for you.
 
 - **Before the pull:** when you target an enemy and you're not fighting yet, a line under the helper popup lists what your rotation wants up and isn't: a buff it keeps up (Battle Shout only when you have the rage), your pet, or, for Rogues and Shamans, a poison or weapon imbue. Totems and in-fight lines like Slice and Dice aren't on it. A chat line says the same when you pick an enemy, at most once a minute (the same reminder at most every five minutes, and not while you're mounted). Turn chat off, or the whole thing, on the settings page (Reminders) or with `/tac prepull on` / `helper` / `off`. If WoW hides a buff from addons, Tactara doesn't guess.
+- **Supplies:** what your spells need, when it runs low:
+  - **Hunters:** arrows or bullets for the bow, crossbow or gun you have on, under 200 shots.
+  - **Warlocks:** Soul Shards, under 2 (once you have Drain Soul).
+  - **Reagents** for spells your rotation casts: Flash Powder for Vanish, Blinding Powder for Blind, a Light Feather for Slow Fall or Levitate, Arcane Powder, candles, seeds for Rebirth, Symbols, an Infernal Stone... An **Ankh** for Reincarnation always, rotation or not.
+  - **Shamans:** the Earth, Fire, Water or Air Totem item your totems need.
+
+  You see them under the helper popup (with the before-the-pull line) when you target an enemy, in chat when one runs low or runs out (not every arrow; the same one at most every 10 minutes), and at a vendor that sells one (*This vendor sells what you're low on: ...*). `/tac supplies` shows the list any time. Turn chat off, or the whole thing, on the settings page (Reminders) or with `/tac supplies on` / `helper` / `off`. Items go by their item ID, so this works in any game language.
 - **Trainer:** when you level up, a chat line lists the spells now waiting at your class trainer, the ones your rotation uses first. It's read from your spellbook, so it covers new spells, not new ranks of ones you know. At login it only speaks up if your rotation is waiting on one. `/tac trainer` shows the list any time; `/tac trainer off` turns the level-up line off.
 
 ## Commands
@@ -161,7 +169,9 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
+| `/tac sound` `interrupt` / `defensive` <sound> / `off` | A sound when that slot lights up; `/tac sound` lists the sounds, `/tac sound test` plays them |
 | `/tac prepull` `on` / `helper` / `off` | Before-the-pull reminders: under the helper and in chat, under the helper only, or off |
+| `/tac supplies` | Ammo, Soul Shards, reagents or totems running low (`on` / `helper` / `off`: the reminder) |
 | `/tac new` | What's new in this version (also shown once after each update) |
 | `/tac export` / `import` | Your settings as text, to back up or share; import asks first and keeps your keys unless you choose otherwise |
 | `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |
@@ -171,7 +181,7 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
 | `/tac probe talents` | A read-only report on your talents and the talent window, in a window you can copy from. Changes nothing. |
 | `/tac probe locale` | A read-only check of Tactara's spell IDs (used on games in other languages) against your game |
-| `/tac probe reminders` | A read-only report on what the trainer and before-the-pull reminders can see. Changes nothing. |
+| `/tac probe reminders` | A read-only report on what the trainer, before-the-pull and supply reminders can see. Changes nothing. |
 | `/tac debug` | Prints every press, every cast sent and every game error to chat |
 | `/tac keydown auto` / `off` | Troubleshooting only: cast on key down (default) or key up |
 

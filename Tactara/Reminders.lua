@@ -10,6 +10,9 @@
 --   * Before the pull: when you target an enemy out of combat, a buff your
 --     rotation keeps up, your pet, or a poison / weapon imbue that isn't
 --     there. Shown under the helper popup, and in chat now and then.
+--   * Supplies: a Hunter's ammo, a Warlock's Soul Shards, and the reagents
+--     and totems your spells need. Under the helper popup with the line
+--     above, in chat when one runs low, and at a vendor that sells it.
 
 local ADDON, ns = ...
 
@@ -329,13 +332,21 @@ local function Texts(list)
   return t
 end
 
--- The line under the helper popup, or nil when there's nothing to say.
+-- The lines under the helper popup, or nil when there's nothing to say.
 function R.PrePullText()
-  if Mode() == "off" or InCombat() or not HostileTarget() then return nil end
+  if InCombat() or not HostileTarget() then return nil end
   if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then return nil end
-  local list = R.PrePullList()
-  if #list == 0 then return nil end
-  return "|cffff9933Before the pull:|r " .. JoinNames(Texts(list))
+  local lines = {}
+  if Mode() ~= "off" then
+    local list = R.PrePullList()
+    if #list > 0 then lines[#lines + 1] = "|cffff9933Before the pull:|r " .. JoinNames(Texts(list)) end
+  end
+  if R.SupplyMode() ~= "off" then
+    local list = R.Supplies()
+    if #list > 0 then lines[#lines + 1] = "|cffff9933Supplies:|r " .. JoinNames(Texts(list)) end
+  end
+  if #lines == 0 then return nil end
+  return table.concat(lines, "\n")
 end
 
 local lastChat, lastChatKey = -1e9, nil
@@ -364,18 +375,398 @@ function R.ResetChatThrottle()
 end
 
 ---------------------------------------------------------------------------
+-- Supplies: ammo, Soul Shards, reagents and totems
+---------------------------------------------------------------------------
+
+R.AMMO_LOW = 200      -- one stack of arrows or bullets
+R.SHARD_LOW = 2       -- fewer Soul Shards than this
+local SUPPLY_SAME = 600   -- the same supply line in chat at most every 10 minutes
+
+-- English names, for when the game hasn't loaded an item's own name yet.
+local ITEM_NAMES = {
+  [6265] = "Soul Shard", [5140] = "Flash Powder", [5530] = "Blinding Powder", [17030] = "Ankh",
+  [17056] = "Light Feather", [17020] = "Arcane Powder", [17028] = "Holy Candle", [17029] = "Sacred Candle",
+  [17034] = "Maple Seed", [17035] = "Stranglethorn Seed", [17036] = "Ashwood Seed", [17037] = "Hornbeam Seed",
+  [17038] = "Ironwood Seed", [17021] = "Wild Berries", [17026] = "Wild Thornroot", [17033] = "Symbol of Divinity",
+  [21177] = "Symbol of Kings", [5565] = "Infernal Stone", [16583] = "Demonic Figurine",
+  [5175] = "Earth Totem", [5176] = "Fire Totem", [5177] = "Water Totem", [5178] = "Air Totem",
+}
+R.ITEM_NAMES = ITEM_NAMES
+local SOUL_SHARD = 6265
+
+-- Spells that use up an item in WoW: Forever (from the Icy Veins spell
+-- database, November 2026). Items go by ID, so any game language works.
+-- always: checked whenever you know the spell; the rest only when your
+-- rotation casts it. ranks: which item each rank needs, highest rank first.
+R.REAGENTS = {
+  { spell = "Reincarnation", item = 17030, always = true },
+  { spell = "Vanish", item = 5140 },
+  { spell = "Blind", item = 5530 },
+  { spell = "Slow Fall", item = 17056 },
+  { spell = "Levitate", item = 17056 },
+  { spell = "Arcane Brilliance", item = 17020 },
+  { spell = "Prayer of Fortitude", item = 17028, ranks = { { 21564, 17029 }, { 21562, 17028 } } },
+  { spell = "Prayer of Spirit", item = 17029 },
+  { spell = "Gift of the Wild", item = 17021, ranks = { { 21850, 17026 }, { 21849, 17021 } } },
+  { spell = "Rebirth", item = 17034,
+    ranks = { { 20748, 17038 }, { 20747, 17037 }, { 20742, 17036 }, { 20739, 17035 }, { 20484, 17034 } } },
+  { spell = "Divine Intervention", item = 17033 },
+  { spell = "Greater Blessing of Kings", item = 21177 },
+  { spell = "Greater Blessing of Might", item = 21177 },
+  { spell = "Greater Blessing of Wisdom", item = 21177 },
+  { spell = "Greater Blessing of Salvation", item = 21177 },
+  { spell = "Greater Blessing of Light", item = 21177 },
+  { spell = "Greater Blessing of Sanctuary", item = 21177 },
+  { spell = "Inferno", item = 5565 },
+  { spell = "Ritual of Doom", item = 16583 },
+}
+
+-- A Shaman's totems need the element's totem in your bags (it isn't used up).
+R.TOTEM_TOOLS = {
+  { item = 5175, element = "Earth", totems = { "Stoneskin Totem", "Earthbind Totem", "Strength of Earth Totem",
+    "Stoneclaw Totem", "Tremor Totem" } },
+  { item = 5176, element = "Fire", totems = { "Searing Totem", "Fire Nova Totem", "Magma Totem", "Flametongue Totem",
+    "Frost Resistance Totem" } },
+  { item = 5177, element = "Water", totems = { "Healing Stream Totem", "Mana Spring Totem", "Poison Cleansing Totem",
+    "Disease Cleansing Totem", "Fire Resistance Totem", "Mana Tide Totem" } },
+  { item = 5178, element = "Air", totems = { "Grounding Totem", "Nature Resistance Totem", "Windfury Totem",
+    "Sentry Totem", "Windwall Totem", "Grace of Air Totem", "Tranquil Air Totem" } },
+}
+
+function R.SupplyMode()
+  local m = TactaraCharDB and TactaraCharDB.supplies
+  if m == "helper" or m == "off" then return m end
+  return "both"
+end
+
+-- How many of an item are in your bags, or nil if the game won't say.
+local function ItemCount(id)
+  local fn = (C_Item and C_Item.GetItemCount) or GetItemCount
+  if not fn then return nil end
+  local ok, n = pcall(function() return tonumber(fn(id)) end)
+  if ok then return n end
+  return nil
+end
+
+local function ItemName(id)
+  local fn = (C_Item and C_Item.GetItemNameByID) or GetItemInfo
+  if fn then
+    local ok, name = pcall(fn, id)
+    if ok and type(name) == "string" and name ~= "" then return name end
+  end
+  return ITEM_NAMES[id] or ("item " .. tostring(id))
+end
+R.ItemName = ItemName
+
+-- The item's class and subclass (6/2 arrows, 6/3 bullets, 2/2 a bow...).
+local function ItemClass(id)
+  if not (id and C_Item and C_Item.GetItemInfoInstant) then return nil end
+  local ok, _, _, _, _, _, classID, subID = pcall(C_Item.GetItemInfoInstant, id)
+  if ok then return classID, subID end
+  return nil
+end
+
+-- bows and crossbows fire arrows (2), guns fire bullets (3)
+local AMMO_FOR = { [2] = 2, [18] = 2, [3] = 3 }
+local AMMO_WORDS = { [2] = { "arrow", "arrows" }, [3] = { "bullet", "bullets" } }
+
+-- What your ranged weapon fires: 2 arrows, 3 bullets, false nothing (no
+-- weapon, a wand or thrown), nil if the game won't say.
+function R.AmmoKind()
+  if not (GetInventoryItemID and C_Item and C_Item.GetItemInfoInstant) then return nil end
+  for _, slot in ipairs({ 18, 16 }) do       -- the ranged slot, else a bow in the main hand
+    local ok, id = pcall(GetInventoryItemID, "player", slot)
+    if not ok then return nil end
+    if id then
+      local classID, subID = ItemClass(id)
+      if classID == nil then return nil end
+      if classID == 2 and AMMO_FOR[subID] then return AMMO_FOR[subID] end
+      if slot == 18 then return false end
+    end
+  end
+  return false
+end
+
+-- Shots left: the ammo you have equipped, counted across your bags, or
+-- (no ammo slot) every arrow or bullet in your bags that fits. nil = can't tell.
+function R.AmmoCount(kind)
+  if GetInventoryItemID then
+    local ok, id = pcall(GetInventoryItemID, "player", 0)
+    if ok and id then
+      local n = ItemCount(id)
+      if n then return n end
+    end
+  end
+  local C = C_Container
+  if not (C and C.GetContainerNumSlots and C.GetContainerItemInfo) then return nil end
+  local total, readBags = 0, false
+  for bag = 0, 5 do      -- backpack, four bags, the reagent bag
+    local okN, slots = pcall(C.GetContainerNumSlots, bag)
+    slots = okN and tonumber(slots) or 0
+    if slots > 0 then readBags = true end
+    for slot = 1, slots do
+      local okS, info = pcall(C.GetContainerItemInfo, bag, slot)
+      if okS and type(info) == "table" and info.itemID then
+        local classID, subID = ItemClass(info.itemID)
+        if classID == 6 and (not kind or subID == kind) then total = total + (tonumber(info.stackCount) or 0) end
+      end
+    end
+  end
+  if not readBags then return nil end
+  return total
+end
+
+local function SpellIdKnown(id)
+  for _, fn in ipairs({ IsPlayerSpell, IsSpellKnown, C_SpellBook and C_SpellBook.IsSpellKnown }) do
+    if type(fn) == "function" then
+      local ok, v = pcall(fn, id)
+      if ok and v ~= nil then return v and true or false end
+    end
+  end
+  return nil
+end
+
+-- The items a reagent spell can use: the one for your highest rank, or every
+-- rank's item when the game won't say which ranks you have.
+local function ReagentItems(r)
+  if not r.ranks then return { r.item } end
+  for _, rank in ipairs(r.ranks) do
+    local known = SpellIdKnown(rank[1])
+    if known == nil then break end
+    if known then return { rank[2] } end
+  end
+  local all = {}
+  for _, rank in ipairs(r.ranks) do all[#all + 1] = rank[2] end
+  return all
+end
+
+-- Spells your rotation casts (English names), as a set.
+local function RotationUses()
+  local set = {}
+  if ns.RotationSpells then
+    local ok, known = pcall(ns.RotationSpells)
+    if ok and type(known) == "table" then
+      for _, s in ipairs(known) do set[ns.Locale.English(s)] = true end
+    end
+  end
+  return set
+end
+
+local function Known(english)
+  return ns.IsKnown(ns.Locale.Spell(english))
+end
+
+-- What's running low, right now:
+-- { key, level = "low"|"out", text (short), chat (a sentence), items = {ids} or ammo = kind }.
+function R.SupplyList()
+  local out = {}
+  local _, class = UnitClass("player")
+
+  if class == "HUNTER" then
+    local kind = R.AmmoKind()
+    local n = kind and R.AmmoCount(kind)
+    if n and n < R.AMMO_LOW then
+      local w = AMMO_WORDS[kind]
+      if n <= 0 then
+        out[#out + 1] = { key = "ammo", level = "out", ammo = kind, text = "no " .. w[2] .. " left",
+          chat = ("You're out of %s. A general goods vendor sells them."):format(w[2]) }
+      else
+        out[#out + 1] = { key = "ammo", level = "low", ammo = kind, text = ("%d %s left"):format(n, w[n == 1 and 1 or 2]),
+          chat = ("Low on %s: %d left."):format(w[2], n) }
+      end
+    end
+  end
+
+  if class == "WARLOCK" and Known("Drain Soul") then
+    local n = ItemCount(SOUL_SHARD)
+    if n and n < R.SHARD_LOW then
+      local item = { SOUL_SHARD }
+      if n <= 0 then
+        out[#out + 1] = { key = "shards", level = "out", items = item, text = "no Soul Shards",
+          chat = "You're out of Soul Shards. Drain Soul an enemy as it dies to get one." }
+      else
+        out[#out + 1] = { key = "shards", level = "low", items = item,
+          text = ("%d Soul Shard%s left"):format(n, n == 1 and "" or "s"),
+          chat = ("Low on Soul Shards: %d left. Drain Soul an enemy as it dies to get more."):format(n) }
+      end
+    end
+  end
+
+  local uses
+  for _, r in ipairs(R.REAGENTS) do
+    if Known(r.spell) then
+      local wanted = r.always
+      if not wanted then
+        uses = uses or RotationUses()
+        wanted = uses[r.spell]
+      end
+      if wanted then
+        local items, have, readable = ReagentItems(r), 0, false
+        for _, id in ipairs(items) do
+          local n = ItemCount(id)
+          if n then readable = true; have = have + n end
+        end
+        if readable and have <= 0 then
+          local name = ItemName(items[1])
+          out[#out + 1] = { key = "reagent:" .. r.spell, level = "out", items = items,
+            text = ("no %s (%s)"):format(name, ns.Locale.Spell(r.spell)),
+            chat = ("No %s left for %s."):format(name, ns.Locale.Spell(r.spell)) }
+        end
+      end
+    end
+  end
+
+  if class == "SHAMAN" then
+    for _, t in ipairs(R.TOTEM_TOOLS) do
+      local knowsOne = false
+      for _, totem in ipairs(t.totems) do
+        if Known(totem) then knowsOne = true break end
+      end
+      if knowsOne and ItemCount(t.item) == 0 then
+        local name = ItemName(t.item)
+        out[#out + 1] = { key = "totem:" .. t.element, level = "out", items = { t.item }, text = "no " .. name,
+          chat = ("No %s in your bags: your %s totems need it."):format(name, t.element) }
+      end
+    end
+  end
+  return out
+end
+
+-- The list again, kept for a few seconds (the helper popup asks often).
+local supplyCache, supplyAt, supplyDirty = nil, -1e9, true
+function R.Supplies()
+  local now = GetTime()
+  if supplyDirty or not supplyCache or now - supplyAt > 10 then
+    supplyCache, supplyAt, supplyDirty = R.SupplyList(), now, false
+  end
+  return supplyCache
+end
+
+function R.MarkSupplies() supplyDirty = true end
+
+-- Chat when something runs low or runs out (not every arrow), at most every
+-- ten minutes for the same thing.
+local lastLevel, saidAt = {}, {}
+function R.CheckSupplyChat()
+  R.MarkSupplies()
+  local list = R.Supplies()
+  local now, lines, levels = GetTime(), {}, {}
+  for _, s in ipairs(list) do
+    levels[s.key] = s.level
+    local was = lastLevel[s.key]
+    local worse = was == nil or (was == "low" and s.level == "out")
+    local id = s.key .. ":" .. s.level
+    if worse and (not saidAt[id] or now - saidAt[id] >= SUPPLY_SAME) then
+      lines[#lines + 1] = s.chat
+      if R.SupplyMode() == "both" then saidAt[id] = now end
+    end
+  end
+  lastLevel = levels
+  if R.SupplyMode() ~= "both" or #lines == 0 then return false end
+  for _, line in ipairs(lines) do ns.Print(line) end
+  return true
+end
+
+function R.ResetSupplyChat()
+  lastLevel, saidAt = {}, {}
+end
+
+local function MerchantItems()
+  local out = {}
+  if not (GetMerchantNumItems and GetMerchantItemID) then return out end
+  local okN, n = pcall(GetMerchantNumItems)
+  for i = 1, (okN and tonumber(n) or 0) do
+    local okI, id = pcall(GetMerchantItemID, i)
+    if okI and id then
+      local name
+      if C_MerchantFrame and C_MerchantFrame.GetItemInfo then
+        local okM, info = pcall(C_MerchantFrame.GetItemInfo, i)
+        if okM and type(info) == "table" then name = info.name end
+      end
+      if not name and GetMerchantItemInfo then
+        local okM, mName = pcall(GetMerchantItemInfo, i)
+        if okM then name = mName end
+      end
+      out[#out + 1] = { id = id, name = type(name) == "string" and name or ItemName(id) }
+    end
+  end
+  return out
+end
+
+-- At a vendor: which of the things you're low on it sells.
+function R.MerchantLine()
+  local list = R.SupplyList()
+  if #list == 0 then return nil end
+  local names, seen = {}, {}
+  for _, m in ipairs(MerchantItems()) do
+    for _, s in ipairs(list) do
+      local match = false
+      if s.ammo then
+        local classID, subID = ItemClass(m.id)
+        match = classID == 6 and subID == s.ammo
+      end
+      for _, id in ipairs(s.items or {}) do
+        if id == m.id then match = true end
+      end
+      if match and not seen[m.name] then
+        seen[m.name] = true
+        names[#names + 1] = m.name
+      end
+    end
+  end
+  if #names == 0 then return nil end
+  return "This vendor sells what you're low on: " .. JoinNames(names) .. "."
+end
+
+-- /tac supplies: what's low now, whatever the setting
+function R.ShowSupplies()
+  R.MarkSupplies()
+  local list = R.Supplies()
+  if #list == 0 then
+    ns.Print("Supplies: nothing is running low.")
+  else
+    ns.Print("Supplies: " .. JoinNames(Texts(list)) .. ".")
+  end
+end
+
+---------------------------------------------------------------------------
 -- Events
 ---------------------------------------------------------------------------
 
 local f = CreateFrame("Frame")
 R.frame = f
-for _, e in ipairs({ "PLAYER_LOGIN", "PLAYER_LEVEL_UP", "PLAYER_TARGET_CHANGED" }) do
+for _, e in ipairs({ "PLAYER_LOGIN", "PLAYER_LEVEL_UP", "PLAYER_TARGET_CHANGED", "BAG_UPDATE_DELAYED",
+  "PLAYER_EQUIPMENT_CHANGED", "SPELLS_CHANGED", "MERCHANT_SHOW" }) do
   pcall(f.RegisterEvent, f, e)
+end
+
+-- Bags change a lot (every arrow): look once things settle.
+local supplyReady, supplyPending = false, false
+local function QueueSupplyCheck()
+  R.MarkSupplies()
+  if not supplyReady or supplyPending then return end
+  supplyPending = true
+  C_Timer.After(1, function()
+    supplyPending = false
+    R.CheckSupplyChat()
+  end)
 end
 
 function R.HandleEvent(event, ...)
   if event == "PLAYER_LOGIN" then
     C_Timer.After(15, function() R.CheckTrainer(nil, true) end)
+    -- your bags and spellbook are read in by then
+    C_Timer.After(16, function()
+      supplyReady = true
+      R.CheckSupplyChat()
+    end)
+  elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" or event == "SPELLS_CHANGED" then
+    QueueSupplyCheck()
+  elseif event == "MERCHANT_SHOW" then
+    if R.SupplyMode() == "both" then
+      local line = R.MerchantLine()
+      if line then ns.Print(line) end
+    end
   elseif event == "PLAYER_LEVEL_UP" then
     local level = ...
     -- give the spellbook a moment to catch up with the new level

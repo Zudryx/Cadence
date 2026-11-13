@@ -300,6 +300,16 @@ local function BuildVertical()
   Header("Suggestions")
   Check(TactaraCharDB, "interrupts", "Suggest interrupts", "A red slot when your target is casting something you can stop.", true, Refresh)
   Check(TactaraCharDB, "defensives", "Suggest defensives", "An orange slot when you're low on health and a defensive or self-heal is ready.", true, Refresh)
+  local function SoundChoices()
+    local list = { { "off", "Off" } }
+    for _, snd in ipairs(ns.SOUNDS) do list[#list + 1] = { snd.key, snd.label } end
+    return list
+  end
+  local SOUND_TIP = " Plays on the master channel, so you hear it with game sounds turned down. Picking one plays it."
+  Dropdown(TactaraCharDB, "interruptSound", "Sound for interrupts", "A sound when the red interrupt slot lights up (at most every 1.5 seconds)." .. SOUND_TIP, "off",
+    SoundChoices, function(v) ns.PlayAlert(v) end)
+  Dropdown(TactaraCharDB, "defensiveSound", "Sound for defensives", "A sound when the orange defensive slot lights up (at most every 10 seconds)." .. SOUND_TIP, "off",
+    SoundChoices, function(v) ns.PlayAlert(v) end)
 
   Header("Reminders")
   Dropdown(TactaraCharDB, "prePull", "Before the pull", "When you target an enemy and you're not fighting yet: a buff your rotation keeps up, your pet, or a poison or weapon imbue that's missing. Tactara only tells you; you cast it.", "both", {
@@ -307,6 +317,11 @@ local function BuildVertical()
     { "helper", "Under the helper popup" },
     { "off", "Off" },
   }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
+  Dropdown(TactaraCharDB, "supplies", "Supplies", "A Hunter's arrows or bullets, a Warlock's Soul Shards, and the reagents or totems your spells need (Flash Powder for Vanish, an Ankh, a Fire Totem...), when they run low. Tactara only tells you; you buy them. /tac supplies shows the list any time.", "both", {
+    { "both", "Under the helper, in chat and at vendors", "A line under the helper popup when you target an enemy, a chat line when something runs low, and at a vendor that sells it." },
+    { "helper", "Under the helper popup" },
+    { "off", "Off" },
+  }, function() ns.Reminders.ResetSupplyChat(); ns.Reminders.MarkSupplies(); Refresh() end)
   Check(TactaraCharDB, "trainerReminder", "New spells at the trainer", "A chat line when you level up and new spells are waiting at your class trainer, the ones your rotation uses first. /tac trainer shows the list any time.", true,
     function() end)
   do
@@ -344,6 +359,8 @@ local COMMANDS = {
   "/tac helper auto | priority | sequence",
   "/tac interrupts | defensives  - suggestions on/off",
   "/tac prepull on | helper | off  - reminders before a fight",
+  "/tac supplies [on | helper | off]  - ammo, shards, reagents",
+  "/tac sound interrupt | defensive <sound> | off",
   "/tac trainer [on | off]  - spells waiting at your trainer",
   "/tac new  - what's new in this version",
   "/tac export | import  - settings as text",

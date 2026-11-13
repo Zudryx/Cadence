@@ -45,11 +45,13 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
   - Your keys: one-button, AoE and interrupt.
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
   - The bar glow: on or off, and how strong.
-  - Interrupt and defensive suggestions: on or off.
-  - Reminders: before the pull (under the helper and in chat, under the helper only, or off), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
+  - Interrupt and defensive suggestions: on or off, with an optional sound for each.
+  - Reminders: before the pull and supplies (each under the helper and in chat, under the helper only, or off), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
   - Your characters: copy settings from another character, make them the default for new ones, or export them as text to share and import them anywhere.
   - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Reminders:** when you target an enemy before a fight, Tactara tells you if a buff your rotation keeps up, your pet, or a poison or weapon imbue is missing. After a level-up, it lists the new spells waiting at your class trainer, the ones your rotation uses first. It only tells you; you cast them.
+- **Supplies:** a Hunter's arrows or bullets, a Warlock's Soul Shards, and the reagents and totems your spells need (Flash Powder for Vanish, an Ankh, a Fire Totem...), when they run low: under the helper, in chat, and at a vendor that sells them. Tactara never buys anything.
+- **Sound alerts:** pick a sound for when the interrupt or defensive slot lights up. Off until you choose one.
 - **Helper icons work like action buttons:** each shows its keybind and a cooldown sweep. It turns red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used.
 - **Works with your bars:** the glow works on Blizzard's action bars and the popular action bar addons, and with spells inside your own macros. It only draws on top of your buttons and never changes them.
 

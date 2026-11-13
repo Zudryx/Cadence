@@ -12,7 +12,8 @@ One-button rotations and a rotation helper for **World of Warcraft: Forever**.
 - **Minimap button:** left-click for the editor, right-click for settings, shift-click for talents, drag to move it.
 - **Your characters:** copy your keys and display settings to an alt in one click, or make them the default for new characters.
 - **Talent planner:** your talent trees with Tactara's builds or your own, level 10 to 60. Learn the next point with a click, or let it learn when you level up.
-- **Reminders:** before a pull, a missing buff, pet, poison or weapon imbue; after a level-up, the new spells waiting at your class trainer. Tactara tells you; you cast and buy them.
+- **Reminders:** before a pull, a missing buff, pet, poison or weapon imbue; ammo, Soul Shards, reagents or totems running low; after a level-up, the new spells waiting at your class trainer. Tactara tells you; you cast and buy them.
+- **Sound alerts (optional):** a sound when the interrupt or defensive slot lights up.
 
 Every class and spec is included: **Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock and Druid** (Cat and Bear are separate). Healing specs get the solo damage rotation you level with; healing your group stays in your hands. See [Tactara/README.md](Tactara/README.md#rotations-included) for the details per class.
 

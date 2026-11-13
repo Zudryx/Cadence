@@ -12,6 +12,9 @@
 -- They're never part of the one-button sequence, so the rotation key won't
 -- waste an interrupt or a big cooldown. The separate Tactara Interrupt key
 -- (/tac bind interrupt) casts the right interrupt for your stance and gear.
+--
+-- A sound can play when either slot lights up (off unless you pick one).
+-- Like the glow, it only tells you; you still press the key.
 
 local ADDON, ns = ...
 
@@ -57,6 +60,64 @@ function ns.UtilityPicks()
     out.defensive = FirstReady(comp.defensives)
   end
   return out
+end
+
+---------------------------------------------------------------------------
+-- Sounds when the interrupt or defensive slot lights up
+---------------------------------------------------------------------------
+
+-- The game's own sounds (by name, with the number as a fallback).
+ns.SOUNDS = {
+  { key = "raid", label = "Raid warning", kit = "RAID_WARNING", id = 8959 },
+  { key = "ready", label = "Ready check", kit = "READY_CHECK", id = 8960 },
+  { key = "alarm", label = "Alarm clock", kit = "ALARM_CLOCK_WARNING_3", id = 12889 },
+  { key = "ping", label = "Map ping", kit = "MAP_PING", id = 3175 },
+  { key = "whisper", label = "Whisper", kit = "TELL_MESSAGE", id = 3081 },
+}
+ns.SOUND_DEFAULTS = { interrupt = "raid", defensive = "alarm" }   -- for "/tac sound interrupt on"
+
+function ns.SoundFor(key)
+  for _, s in ipairs(ns.SOUNDS) do
+    if s.key == key then return s end
+  end
+  return nil
+end
+
+-- Plays one of the sounds above on the master channel (so it's heard with
+-- game sounds turned down). true if the game played it.
+function ns.PlayAlert(key)
+  local s = ns.SoundFor(key)
+  if not (s and PlaySound) then return false end
+  local id = (type(SOUNDKIT) == "table" and SOUNDKIT[s.kit]) or s.id
+  local ok, played = pcall(PlaySound, id, "Master")
+  return ok and played ~= false
+end
+
+-- At most one sound per this many seconds: a chain of casts shouldn't buzz,
+-- and a defensive that comes and goes with your health shouldn't either.
+local SOUND_GAP = { interrupt = 1.5, defensive = 10 }
+local lastSound = { interrupt = -1e9, defensive = -1e9 }
+local wasLit = {}
+
+-- With each new set of picks: a sound when a slot goes from empty to lit.
+function ns.UtilitySounds(util)
+  if not TactaraCharDB then return end
+  local now = GetTime()
+  for _, kind in ipairs({ "interrupt", "defensive" }) do
+    local lit = util and util[kind] ~= nil or false
+    if lit and not wasLit[kind] then
+      local key = TactaraCharDB[kind .. "Sound"]
+      if key and key ~= "off" and now - lastSound[kind] >= SOUND_GAP[kind] and ns.PlayAlert(key) then
+        lastSound[kind] = now
+      end
+    end
+    wasLit[kind] = lit
+  end
+end
+
+function ns.ResetUtilitySounds()
+  lastSound.interrupt, lastSound.defensive = -1e9, -1e9
+  wasLit = {}
 end
 
 -- React to target casts right away (the helper's tick also catches them).

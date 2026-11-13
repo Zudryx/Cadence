@@ -22,9 +22,9 @@ Pr.KEYS = {
   "binds", "keyDown",
   "display", "helperPos", "displayScale", "helperScale", "showHelper", "showDisplay", "locked",
   "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "helperCooldowns", "helperTint",
-  "highlight", "helperMode", "interrupts", "defensives",
+  "highlight", "helperMode", "interrupts", "defensives", "interruptSound", "defensiveSound",
   "minimapButton", "minimapAngle",
-  "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "trainerReminder", "prePull",
+  "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "trainerReminder", "prePull", "supplies",
 }
 
 local function Copy(v)

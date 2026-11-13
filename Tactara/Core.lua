@@ -251,6 +251,11 @@ local function InitDB()
   if TactaraCharDB.trainerReminder == nil then TactaraCharDB.trainerReminder = true end
   local PREPULL = { both = true, helper = true, off = true }
   if not PREPULL[TactaraCharDB.prePull] then TactaraCharDB.prePull = "both" end
+  if not PREPULL[TactaraCharDB.supplies] then TactaraCharDB.supplies = "both" end
+  for _, k in ipairs({ "interruptSound", "defensiveSound" }) do
+    local v = TactaraCharDB[k]
+    if not (v == "off" or (ns.SoundFor and ns.SoundFor(v))) then TactaraCharDB[k] = "off" end
+  end
   local ang = tonumber(TactaraCharDB.minimapAngle)
   TactaraCharDB.minimapAngle = ang and (ang % 360) or 225
   for _, k in ipairs({ "keyIcons", "helperIcons" }) do
@@ -397,6 +402,7 @@ local HELP = {
   "|cffffd100/tac export|r / |cffffd100import|r  your settings as text, to back up or share (keys only if you choose)",
   "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
   "|cffffd100/tac prepull|r on|helper|off  reminders before a fight: missing buffs, pet, poison or weapon imbue",
+  "|cffffd100/tac supplies|r  ammo, Soul Shards, reagents or totems running low (|cffffd100on|r / |cffffd100helper|r / |cffffd100off|r: the reminder)",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
   "|cffffd100/tac glow strong / normal / subtle|r  how loud the glow is   |cffffd100/tac glow test|r  3-second preview",
@@ -407,13 +413,14 @@ local HELP = {
   "|cffffd100/tac show|r / |cffffd100hide|r [key / helper]  the key bar and/or the helper popup",
   "|cffffd100/tac lock|r / |cffffd100unlock|r  lock or move both",
   "|cffffd100/tac interrupts|r / |cffffd100defensives|r  red interrupt / orange defensive suggestions on or off",
+  "|cffffd100/tac sound|r interrupt|defensive <sound>|on|off  a sound when the slot lights up (|cffffd100/tac sound|r lists the sounds, |cffffd100/tac sound test|r plays them)",
   "|cffffd100/tac reset|r  restart the sequence from the opener",
   "|cffffd100/tac errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
   "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
   "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
   "|cffffd100/tac probe talents|r  report how your talents look to Tactara, in a window you can copy from (changes nothing)",
   "|cffffd100/tac probe locale|r  check Tactara's spell IDs (for games in other languages) against the game (changes nothing)",
-  "|cffffd100/tac probe reminders|r  report what Tactara sees for the trainer and before-the-pull reminders (changes nothing)",
+  "|cffffd100/tac probe reminders|r  report what Tactara sees for the trainer, before-the-pull and supply reminders (changes nothing)",
   "|cffffd100/tac debug|r  print every press, cast and game error to chat",
   "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
   "Key bindings: Esc > Options > Keybindings > AddOns > Tactara",
@@ -516,6 +523,55 @@ local function HandleSlash(msg)
     ns.HelperRefresh()
     local say = { both = "on (under the helper popup and in chat)", helper = "under the helper popup only", off = "off" }
     ns.Print("Before-the-pull reminders " .. say[TactaraCharDB.prePull] .. ".")
+  elseif cmd == "supplies" or cmd == "supply" or cmd == "ammo" or cmd == "reagents" then
+    local v = rest:lower()
+    local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
+    if MODES[v] then
+      TactaraCharDB.supplies = MODES[v]
+      ns.Reminders.ResetSupplyChat()
+      ns.Reminders.MarkSupplies()
+      ns.HelperRefresh()
+      local say = { both = "on (under the helper popup, in chat and at vendors)", helper = "under the helper popup only", off = "off" }
+      ns.Print("Supply reminders " .. say[TactaraCharDB.supplies] .. ".")
+    else
+      ns.Reminders.ShowSupplies()
+    end
+  elseif cmd == "sound" or cmd == "sounds" then
+    local a, b = rest:lower():match("^(%S*)%s*(%S*)")
+    local KINDS = { interrupt = "interrupt", interrupts = "interrupt", int = "interrupt", kick = "interrupt",
+      defensive = "defensive", defensives = "defensive", def = "defensive" }
+    local function Label(key)
+      local s = ns.SoundFor(key)
+      return s and s.label or "off"
+    end
+    if a == "test" or a == "play" then
+      local i, d = TactaraCharDB.interruptSound, TactaraCharDB.defensiveSound
+      i = (i ~= "off") and i or ns.SOUND_DEFAULTS.interrupt
+      d = (d ~= "off") and d or ns.SOUND_DEFAULTS.defensive
+      ns.PlayAlert(i)
+      C_Timer.After(1.5, function() ns.PlayAlert(d) end)
+      ns.Print(("Playing the interrupt sound (%s), then the defensive sound (%s)."):format(Label(i), Label(d)))
+    elseif KINDS[a] then
+      local kind = KINDS[a]
+      local key
+      if b == "off" then key = "off"
+      elseif b == "on" or b == "" then
+        key = (b == "" and TactaraCharDB[kind .. "Sound"] ~= "off") and "off" or ns.SOUND_DEFAULTS[kind]
+      elseif ns.SoundFor(b) then key = b
+      end
+      if key then
+        TactaraCharDB[kind .. "Sound"] = key
+        if key ~= "off" then ns.PlayAlert(key) end
+        ns.Print(("Sound when the %s slot lights up: %s."):format(kind, Label(key)))
+      else
+        ns.Print("No sound called \"" .. b .. "\". /tac sound lists them.")
+      end
+    else
+      local names = {}
+      for _, s in ipairs(ns.SOUNDS) do names[#names + 1] = s.key .. " (" .. s.label .. ")" end
+      ns.Print(("Sounds: interrupt %s, defensive %s. Pick one with /tac sound interrupt|defensive <sound>|off: %s. /tac sound test plays them.")
+        :format(Label(TactaraCharDB.interruptSound), Label(TactaraCharDB.defensiveSound), table.concat(names, ", ")))
+    end
   elseif cmd == "copy" then
     local who = rest
     if who == "" then
@@ -591,7 +647,8 @@ local function HandleSlash(msg)
   elseif cmd == "probe" then
     local what = rest:lower()
     if what:match("^talent") then ns.ProbeTalents()
-    elseif what:match("^remind") or what:match("^trainer") or what:match("^pull") then ns.ProbeReminders()
+    elseif what:match("^remind") or what:match("^trainer") or what:match("^pull") or what:match("^suppl")
+      or what:match("^ammo") then ns.ProbeReminders()
     elseif what:match("^locale") or what:match("^lang") then ns.ProbeLocale()
     else ns.Probe() end
   elseif cmd == "spells" then

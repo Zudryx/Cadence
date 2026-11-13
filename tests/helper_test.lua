@@ -686,6 +686,84 @@ SlashCmdList.TACTARA("defensives off")
 check(ns.lastUtility.defensive == nil, "/tac defensives off")
 SlashCmdList.TACTARA("defensives on")
 
+-- a sound when the interrupt or defensive slot lights up (off unless picked)
+do
+  local played = {}
+  PlaySound = function(id, channel) played[#played + 1] = id .. ":" .. tostring(channel); return true end
+  SOUNDKIT = { RAID_WARNING = 8959, READY_CHECK = 8960 }
+  local function count() local n = #played; played = {}; return n end
+  check(TactaraCharDB.interruptSound == "off" and TactaraCharDB.defensiveSound == "off", "sounds start off")
+  casting, channel = nil, nil
+  playerHP = 90; tick()
+  casting = { name = "Fireball", locked = false }; playerHP = 40; tick()
+  check(ns.lastUtility.interrupt == "Pummel" and ns.lastUtility.defensive == "Retaliation" and count() == 0, "no sound while off")
+  casting = nil; playerHP = 90; tick()
+
+  SlashCmdList.TACTARA("sound interrupt raid")
+  check(TactaraCharDB.interruptSound == "raid" and played[1] == "8959:Master", "/tac sound interrupt raid plays it once: " .. tostring(played[1]))
+  count()
+  now = now + 5
+  casting = { name = "Fireball", locked = false }; tick()
+  check(played[1] == "8959:Master" and count() == 1, "interrupt lights up: raid warning on the master channel")
+  tick(); tick()
+  check(count() == 0, "still lit: no more sounds")
+  casting = nil; tick()
+  casting = { name = "Frostbolt", locked = false }; tick()
+  check(count() == 0, "a new cast within 1.5 seconds: quiet")
+  casting = nil; tick()
+  now = now + 2
+  casting = { name = "Frostbolt", locked = false }; tick()
+  check(count() == 1, "the next cast after that: a sound")
+  casting = nil
+  SlashCmdList.TACTARA("interrupts off")
+  now = now + 2
+  casting = { name = "Fireball", locked = false }; tick()
+  check(count() == 0, "interrupt suggestions off: no sound")
+  SlashCmdList.TACTARA("interrupts on")
+  casting = nil; tick(); count()
+
+  SlashCmdList.TACTARA("sound defensive ready")
+  count()
+  playerHP = 40; tick()
+  check(played[1] == "8960:Master" and count() == 1, "defensive lights up: ready check")
+  playerHP = 90; tick(); playerHP = 40; tick()
+  check(count() == 0, "health bobbing: once per 10 seconds")
+  playerHP = 90; tick()
+  now = now + 11
+  playerHP = 40; tick()
+  check(count() == 1, "after 10 seconds: again")
+  playerHP = 90; tick()
+
+  SOUNDKIT = nil
+  now = now + 11
+  playerHP = 40; tick()
+  check(played[1] == "8960:Master", "no SOUNDKIT table: the sound's number")
+  playerHP = 90; tick(); count()
+  SlashCmdList.TACTARA("sound test"); runTimers()
+  check(#played == 2 and played[1] == "8959:Master" and played[2] == "8960:Master", "/tac sound test plays both: " .. table.concat(played, ","))
+  count()
+  SlashCmdList.TACTARA("sound interrupt nosuch")
+  check(TactaraCharDB.interruptSound == "raid" and table.concat(chat, " "):find("No sound called"), "unknown sound name")
+  SlashCmdList.TACTARA("sound interrupt off")
+  SlashCmdList.TACTARA("sound defensive")
+  check(TactaraCharDB.interruptSound == "off" and TactaraCharDB.defensiveSound == "off", "off, and a toggle")
+  SlashCmdList.TACTARA("sound defensive")
+  check(TactaraCharDB.defensiveSound == ns.SOUND_DEFAULTS.defensive, "toggled back on to the default")
+  SlashCmdList.TACTARA("sound")
+  check(table.concat(chat, " "):find("Sounds: interrupt off, defensive Alarm clock"), "/tac sound says what's set")
+  PlaySound = function() error("no sound") end
+  now = now + 11
+  playerHP = 40
+  check(pcall(tick), "a sound that errors doesn't break the helper")
+  PlaySound = nil
+  playerHP = 90; tick()
+  check(pcall(tick), "no PlaySound at all: fine")
+  TactaraCharDB.defensiveSound = "off"
+  ns.ResetUtilitySounds()
+  casting = nil; playerHP = 40; nameplates = 3
+  tick()
+end
+
 -- interrupt key press doesn't move the rotation
 local idxBefore2 = H.idx
 local cast = click(frames.TactaraInterruptButton, true)
@@ -1824,6 +1902,7 @@ do
   check(R.FutureSpells()[1].line == "Warrior" and #R.FutureSpells() == 4, "other spec's spells left out")
   local okP, probe = pcall(ns.ProbeReminders)
   check(okP and probe:find("waiting at the trainer now %(3") and probe:find("Thunder Clap%*"), "/tac probe reminders: " .. tostring(probe))
+  check(okP and probe:find("== Supplies ==") and probe:find("running low now %(both%): nothing"), "/tac probe reminders: supplies too")
 
   chat = {}
   TactaraCharDB.trainerReminder = true
@@ -1983,6 +2062,203 @@ name: prep test
   for k in pairs(cooldowns) do cooldowns[k] = nil end
   hasTarget = false
   R.ResetChatThrottle()
+end
+
+-- supplies: ammo, Soul Shards, reagents and totems (Tactara only says so)
+do
+  local R = ns.Reminders
+  local realClass, realInv, realItem, realRotSpells = UnitClass, GetInventoryItemID, C_Item, ns.RotationSpells
+  local inv, counts, bags = {}, {}, {}
+  -- class/subclass: 3001 bow, 3002 gun, 3003 thrown, 2512 Rough Arrow, 2516 Light Shot, 2519 Heavy Shot
+  local INFO = { [3001] = { 2, 2 }, [3002] = { 2, 3 }, [3003] = { 2, 16 }, [2512] = { 6, 2 }, [2516] = { 6, 3 }, [2519] = { 6, 3 } }
+  GetInventoryItemID = function(_, slot) return inv[slot] end
+  C_Item = {
+    GetItemInfoInstant = function(id)
+      local i = INFO[id]
+      if i then return id, "x", "y", "INVTYPE_RANGED", 1, i[1], i[2] end
+      return id, "x", "y", "", 1, 15, 0
+    end,
+    GetItemCount = function(id) return counts[id] or 0 end,
+  }
+  C_Container = {
+    GetContainerNumSlots = function(bag) return bags[bag] and 16 or 0 end,
+    GetContainerItemInfo = function(bag, slot) return bags[bag] and bags[bag][slot] end,
+  }
+  local rotUses = {}
+  ns.RotationSpells = function() return rotUses, {} end
+  local function texts() R.MarkSupplies(); local t = {} for _, x in ipairs(R.Supplies()) do t[#t + 1] = x.text end return table.concat(t, ",") end
+  local function said() local s = table.concat(chat, " | "); chat = {}; return s end
+
+  -- Hunter: arrows for a bow, bullets for a gun
+  UnitClass = function() return "Hunter", "HUNTER", 3 end
+  check(TactaraCharDB.supplies == "both", "supply reminders start on")
+  inv[18], inv[0], counts[2512] = 3001, 2512, 1000
+  check(R.AmmoKind() == 2 and texts() == "", "a quiver full of arrows: nothing")
+  counts[2512] = 150
+  check(texts() == "150 arrows left", "low on arrows: " .. texts())
+  counts[2512] = 1
+  check(texts() == "1 arrow left", "one arrow")
+  counts[2512] = 0
+  check(texts() == "no arrows left", "out of arrows")
+  inv[0] = nil
+  bags[0] = { { itemID = 2512, stackCount = 120 }, { itemID = 2516, stackCount = 400 }, nil, { itemID = 99, stackCount = 5 } }
+  check(R.AmmoCount(2) == 120 and texts() == "120 arrows left", "no ammo slot: arrows in your bags (bullets don't count): " .. texts())
+  inv[18] = 3002
+  check(R.AmmoKind() == 3 and texts() == "", "a gun: 400 bullets is plenty")
+  bags[0][2] = { itemID = 2519, stackCount = 30 }
+  check(texts() == "30 bullets left", "low on bullets")
+  inv[18] = 3003
+  check(R.AmmoKind() == false and texts() == "", "thrown weapons need no ammo")
+  inv[18] = nil
+  check(texts() == "", "no ranged weapon: nothing")
+  inv[18] = 3001
+  C_Item.GetItemInfoInstant = function() error("secret value") end
+  check(R.AmmoKind() == nil and texts() == "", "hidden: no guess")
+  C_Item.GetItemInfoInstant = function(id) local i = INFO[id]; if i then return id, "x", "y", "", 1, i[1], i[2] end return id end
+  bags = {}
+  check(texts() == "", "bags can't be read: no guess")
+  bags[0] = {}
+  check(texts() == "no arrows left", "empty bags: out")
+
+  -- under the helper popup, with the before-the-pull line
+  inCombat, hasTarget = false, true
+  check(R.PrePullText() and R.PrePullText():find("Supplies:|r no arrows left$"), "popup line: " .. tostring(R.PrePullText()))
+  TactaraCharDB.supplies = "off"
+  check(R.PrePullText() == nil or not R.PrePullText():find("Supplies"), "off: no supply line")
+  TactaraCharDB.supplies = "both"
+  inCombat = true
+  check(R.PrePullText() == nil, "in a fight: nothing under the popup")
+  inCombat = false
+
+  -- chat: when it runs low or out, not every arrow, and not again for ten minutes
+  R.ResetSupplyChat()
+  bags[0] = { { itemID = 2512, stackCount = 150 } }
+  chat = {}
+  check(R.CheckSupplyChat() and said():find("Low on arrows: 150 left%."), "chat when it runs low")
+  bags[0][1].stackCount = 149
+  check(not R.CheckSupplyChat() and said() == "", "one arrow less: quiet")
+  bags[0][1].stackCount = 0
+  check(R.CheckSupplyChat() and said():find("You're out of arrows"), "chat when it runs out")
+  bags[0][1].stackCount = 1000
+  check(not R.CheckSupplyChat(), "restocked: quiet")
+  bags[0][1].stackCount = 150
+  check(not R.CheckSupplyChat() and said() == "", "low again within ten minutes: quiet")
+  bags[0][1].stackCount = 1000; R.CheckSupplyChat()
+  now = now + 601
+  bags[0][1].stackCount = 150
+  check(R.CheckSupplyChat() and said():find("Low on arrows"), "low again later: chat")
+  TactaraCharDB.supplies = "helper"
+  R.ResetSupplyChat()
+  check(not R.CheckSupplyChat() and said() == "", "helper only: no chat")
+  TactaraCharDB.supplies = "both"
+
+  -- the bag events wait for login, then look once things settle
+  R.ResetSupplyChat()
+  R.HandleEvent("BAG_UPDATE_DELAYED"); runTimers()
+  check(said() == "", "before login: quiet")
+  R.HandleEvent("PLAYER_LOGIN"); runTimers()
+  check(said():find("Low on arrows"), "after login: one look")
+  bags[0][1].stackCount = 0
+  R.HandleEvent("BAG_UPDATE_DELAYED"); R.HandleEvent("BAG_UPDATE_DELAYED"); runTimers()
+  local s = said()
+  check(select(2, s:gsub("out of arrows", "")) == 1, "bag updates come together into one look: " .. s)
+
+  -- at a vendor that sells what you're low on
+  local stock = { 2512, 159, 2516 }
+  GetMerchantNumItems = function() return #stock end
+  GetMerchantItemID = function(i) return stock[i] end
+  local SOLD = { [2512] = "Rough Arrow", [159] = "Refreshing Spring Water", [2516] = "Light Shot", [6265] = "Soul Shard" }
+  C_MerchantFrame = { GetItemInfo = function(i) return { name = SOLD[stock[i]] } end }
+  R.HandleEvent("MERCHANT_SHOW")
+  check(said():find("This vendor sells what you're low on: Rough Arrow%."), "vendor sells arrows (not bullets, not water)")
+  stock = { 159 }
+  R.HandleEvent("MERCHANT_SHOW")
+  check(said() == "", "vendor with nothing you need: quiet")
+  TactaraCharDB.supplies = "helper"
+  stock = { 2512 }
+  R.HandleEvent("MERCHANT_SHOW")
+  check(said() == "", "helper only: quiet at vendors too")
+  TactaraCharDB.supplies = "both"
+  inv[18] = nil
+
+  -- Warlock: Soul Shards once you have Drain Soul
+  UnitClass = function() return "Warlock", "WARLOCK", 9 end
+  counts[6265] = 1
+  check(texts() == "", "no Drain Soul yet: nothing")
+  known["Drain Soul"] = true; ns.ClearKnownCache()
+  check(texts() == "1 Soul Shard left", "one shard: " .. texts())
+  counts[6265] = 0
+  check(texts() == "no Soul Shards", "no shards")
+  counts[6265] = 4
+  check(texts() == "", "four shards: fine")
+  stock = { 6265 }
+  counts[6265] = 0
+  R.HandleEvent("MERCHANT_SHOW")
+  check(said():find("Soul Shard"), "a vendor with the item you're out of")
+  counts[6265] = 4
+  known["Drain Soul"] = nil
+
+  -- reagents: only for spells your rotation casts (an Ankh always)
+  UnitClass = function() return "Rogue", "ROGUE", 4 end
+  known["Vanish"], known["Blind"] = true, true; ns.ClearKnownCache()
+  check(texts() == "", "rotation doesn't cast Vanish: nothing")
+  rotUses = { "Vanish" }
+  check(texts() == "no Flash Powder (Vanish)", "Vanish in the rotation, no Flash Powder: " .. texts())
+  counts[5140] = 3
+  check(texts() == "", "Flash Powder in your bags")
+  rotUses = { "Vanish", "Blind" }
+  check(texts() == "no Blinding Powder (Blind)", "Blind too")
+  counts[5530] = 1
+  known["Vanish"], known["Blind"] = nil, nil
+  rotUses = {}
+
+  UnitClass = function() return "Shaman", "SHAMAN", 7 end
+  known["Reincarnation"], known["Searing Totem"] = true, true; ns.ClearKnownCache()
+  check(texts() == "no Ankh (Reincarnation),no Fire Totem", "shaman: Ankh and the Fire Totem: " .. texts())
+  counts[17030], counts[5176] = 2, 1
+  check(texts() == "", "both in your bags")
+  C_Item.GetItemCount = function() error("secret value") end
+  check(texts() == "", "counts hidden: no guess")
+  C_Item.GetItemCount = function(id) return counts[id] or 0 end
+  known["Reincarnation"], known["Searing Totem"] = nil, nil
+
+  -- ranks: Rebirth's seed for the highest rank you have
+  UnitClass = function() return "Druid", "DRUID", 11 end
+  known["Rebirth"] = true; ns.ClearKnownCache()
+  rotUses = { "Rebirth" }
+  local ranks = { [20484] = true, [20739] = true }
+  IsPlayerSpell = function(id) return ranks[id] or false end
+  counts[17034] = 5
+  check(texts() == "no Stranglethorn Seed (Rebirth)", "rank 2 needs a Stranglethorn Seed: " .. texts())
+  counts[17035] = 1
+  check(texts() == "", "and has one")
+  counts[17035] = nil
+  IsPlayerSpell = nil
+  check(texts() == "", "ranks hidden: any seed counts")
+  known["Rebirth"] = nil
+  rotUses = {}
+
+  -- /tac supplies
+  UnitClass = function() return "Hunter", "HUNTER", 3 end
+  inv[18] = 3001
+  SlashCmdList.TACTARA("supplies")
+  check(said():find("Supplies: no arrows left%."), "/tac supplies lists them")
+  SlashCmdList.TACTARA("supplies off")
+  check(TactaraCharDB.supplies == "off" and said():find("Supply reminders off"), "/tac supplies off")
+  SlashCmdList.TACTARA("supplies helper")
+  check(TactaraCharDB.supplies == "helper", "/tac supplies helper")
+  SlashCmdList.TACTARA("supplies on")
+  check(TactaraCharDB.supplies == "both", "/tac supplies on")
+  inv[18] = nil
+  SlashCmdList.TACTARA("supplies")
+  check(said():find("nothing is running low"), "/tac supplies: all stocked up")
+
+  UnitClass, GetInventoryItemID, C_Item, ns.RotationSpells = realClass, realInv, realItem, realRotSpells
+  C_Container, GetMerchantNumItems, GetMerchantItemID, C_MerchantFrame = nil, nil, nil, nil
+  ns.ClearKnownCache()
+  R.MarkSupplies()
+  R.ResetSupplyChat()
+  hasTarget = false
 end
 
 -- a game in another language: rotations and builds are written in English,

@@ -555,6 +555,7 @@ function ns.UpdateHighlight()
   end
   ns.lastHighlight = spell
   ns.lastUtility = util
+  if ns.UtilitySounds then ns.UtilitySounds(util) end
 end
 
 -- /tac glow <style>: switch style and show a 3-second preview of all three

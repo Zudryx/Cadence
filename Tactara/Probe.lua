@@ -466,6 +466,8 @@ local REMINDER_FUNCTIONS = {
   "GetNumSpellTabs", "GetSpellTabInfo", "GetSpellBookItemInfo",
   "GetWeaponEnchantInfo", "GetInventoryItemID", "C_Item.GetItemInfoInstant",
   "C_Spell.GetSpellPowerCost", "C_UnitAuras.GetAuraDataBySpellName",
+  "C_Item.GetItemCount", "GetItemCount", "C_Item.GetItemNameByID", "C_Container.GetContainerNumSlots",
+  "C_Container.GetContainerItemInfo", "IsPlayerSpell", "GetMerchantItemID", "C_MerchantFrame.GetItemInfo", "PlaySound",
 }
 
 function ns.ProbeReminders()
@@ -551,6 +553,45 @@ function ns.ProbeReminders()
       if #kinds > 0 then prep[#prep + 1] = e.spell .. " @" .. table.concat(kinds, "/") end
     end
     add("rotation lines with checks: " .. (#prep > 0 and table.concat(prep, ", ") or "none"))
+  end)
+
+  add("")
+  add("== Supplies ==")
+  try("ammo", function()
+    for _, slot in ipairs({ 18, 16, 0 }) do
+      local id = GetInventoryItemID and GetInventoryItemID("player", slot)
+      local classID, subID
+      if id and C_Item and C_Item.GetItemInfoInstant then
+        classID, subID = select(6, C_Item.GetItemInfoInstant(id))
+      end
+      add(("slot %d: item %s, class %s/%s"):format(slot, Str(id), Str(classID), Str(subID)))
+    end
+    local kind = R.AmmoKind()
+    add(("ammo kind: %s, shots counted: %s"):format(Str(kind), Str(kind and R.AmmoCount(kind))))
+  end)
+  try("items", function()
+    local ids = {}
+    for id in pairs(R.ITEM_NAMES) do ids[#ids + 1] = id end
+    table.sort(ids)
+    local t = {}
+    for _, id in ipairs(ids) do
+      local fn = (C_Item and C_Item.GetItemCount) or GetItemCount
+      local n = fn and fn(id)
+      if n and n > 0 then t[#t + 1] = R.ItemName(id) .. " " .. tostring(n) end
+    end
+    add("in your bags: " .. (#t > 0 and table.concat(t, ", ") or "none of the reagents Tactara knows"))
+  end)
+  try("spells", function()
+    local t = {}
+    for _, r in ipairs(R.REAGENTS) do
+      if ns.IsKnown(ns.Locale.Spell(r.spell)) then t[#t + 1] = r.spell .. (r.always and " (always)" or "") end
+    end
+    add("reagent spells you know: " .. (#t > 0 and table.concat(t, ", ") or "none"))
+  end)
+  try("supplies", function()
+    local t = {}
+    for _, x in ipairs(R.SupplyList()) do t[#t + 1] = x.text .. " [" .. x.key .. "]" end
+    add(("running low now (%s): %s"):format(R.SupplyMode(), #t > 0 and table.concat(t, ", ") or "nothing"))
   end)
 
   local text = table.concat(L, "\n")
