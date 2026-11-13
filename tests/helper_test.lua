@@ -2162,6 +2162,198 @@ name: prep test
   R.ResetChatThrottle()
 end
 
+-- buffs running low, and the check after a fight (every class)
+do
+  local R = ns.Reminders
+  local env = { isKnown = function() return true end, hasBuff = function() return nil end }
+  local function texts(list) local t = {} for _, x in ipairs(list or {}) do t[#t + 1] = x.text end return table.concat(t, ",") end
+  local realExists, realClass, realInv, realItem, realMain = UnitExists, UnitClass, GetInventoryItemID, C_Item, ns.compiled.main
+  local petUp = true
+  UnitExists = function(u) if u == "pet" then return petUp end return realExists(u) end
+  for k in pairs(playerAuras) do playerAuras[k] = nil end
+  for k in pairs(usable) do usable[k] = nil end
+  for k in pairs(cooldowns) do cooldowns[k] = nil end
+  now = now + 10000      -- Tactara's own timers from earlier casts are long gone
+  inCombat, hasTarget = false, false
+  local comp = ns.Compile(ns.Parse([[
+name: after test
+[priority]
+/cast Call Pet @nopet
+/cast Seal of Righteousness @missing Seal of Righteousness
+/cast Blessing of Might @missing Blessing of Might
+/cast Battle Shout @missing Battle Shout
+/cast Searing Totem @missing Searing Totem
+/cast Shadow Bolt
+]]), "main", env)
+
+  check(ns.BuffLowAt(3600) == 300 and ns.BuffLowAt(1800) == 120 and ns.BuffLowAt(600) == 60
+    and ns.BuffLowAt(120) == 30 and ns.BuffLowAt(30) == 3 and ns.BuffLowAt(math.huge) == 0, "when a buff counts as running low")
+  -- everything up with plenty left
+  playerAuras["Seal of Righteousness"] = { expirationTime = now + 25, duration = 30 }
+  playerAuras["Blessing of Might"] = { expirationTime = now + 3000, duration = 3600 }
+  playerAuras["Battle Shout"] = { expirationTime = now + 100, duration = 120 }
+  check(texts(R.PrePullList(comp)) == "" and texts(R.AfterFightList(comp)) == "", "all up: nothing before or after")
+  local left, full = ns.BuffTimeLeft("Blessing of Might")
+  check(math.floor(left) == 3000 and full == 3600, "time left and full length from the game")
+  -- running low
+  playerAuras["Blessing of Might"] = { expirationTime = now + 200, duration = 3600 }
+  playerAuras["Battle Shout"] = { expirationTime = now + 20, duration = 120 }
+  playerAuras["Seal of Righteousness"] = { expirationTime = now + 20, duration = 30 }
+  check(texts(R.PrePullList(comp)) == "Blessing of Might (4 min left),Battle Shout (20 sec left)",
+    "before the pull: an hour-long Blessing under 5 minutes, a shout under 30 seconds: " .. texts(R.PrePullList(comp)))
+  check(texts(R.AfterFightList(comp)) == "Blessing of Might (4 min left),Battle Shout (20 sec left)", "after the fight: the same")
+  playerAuras["Blessing of Might"] = { expirationTime = 0, duration = 0 }
+  check(not texts(R.PrePullList(comp)):find("Blessing") and select(1, ns.BuffTimeLeft("Blessing of Might")) == math.huge,
+    "no end time: it stays until you change it")
+  -- missing
+  for k in pairs(playerAuras) do playerAuras[k] = nil end
+  petUp = false
+  check(texts(R.PrePullList(comp)) == "your pet,Seal of Righteousness,Blessing of Might,Battle Shout", "before the pull: all of it")
+  check(texts(R.AfterFightList(comp)) == "your pet,Blessing of Might,Battle Shout", "after the fight: no Seal (30 seconds), no totem")
+  usable["Battle Shout"] = { false, true }
+  check(not texts(R.AfterFightList(comp)):find("Battle Shout"), "no rage left over: no shout")
+  usable["Battle Shout"] = nil
+  playerAuras["Blessing of Might"] = "hidden"
+  check(not texts(R.AfterFightList(comp)):find("Blessing"), "hidden by the game: no guess")
+  playerAuras["Blessing of Might"] = nil
+
+  -- the reminder itself: a couple of seconds after the fight
+  ns.compiled.main = comp
+  TactaraCharDB.prePull = "both"
+  R.ResetChatThrottle()
+  chat = {}
+  R.HandleEvent("PLAYER_REGEN_ENABLED"); runTimers()
+  check(table.concat(chat, " "):find("After the fight: your pet, Blessing of Might, Battle Shout%."), "chat after the fight: " .. table.concat(chat, " | "))
+  check(R.PrePullText() and R.PrePullText():find("After the fight:|r your pet, Blessing of Might, Battle Shout"), "under the helper, no target needed")
+  hasTarget = true
+  check(R.PrePullText():find("Before the pull:|r your pet, Seal of Righteousness"), "pick an enemy: the before-the-pull line instead")
+  check(R.ChatPrePull() == false, "no before-the-pull chat line right on top of it")
+  hasTarget = false
+  chat = {}
+  check(R.AfterFight() == false and #chat == 0, "the same after the next fight: quiet")
+  now = now + 31
+  check(R.PrePullText() == nil, "the line goes after 30 seconds")
+  now = now + 100
+  check(R.AfterFight() == true and table.concat(chat, " "):find("After the fight"), "two minutes later: again")
+  petUp = true
+  chat = {}
+  check(R.AfterFight() == true, "something changed: right away")
+  playerAuras["Blessing of Might"] = { expirationTime = now + 3000, duration = 3600 }
+  playerAuras["Battle Shout"] = { expirationTime = now + 100, duration = 120 }
+  check(R.AfterFight() == false and R.PrePullText() == nil, "all set: nothing")
+  playerAuras["Blessing of Might"], playerAuras["Battle Shout"] = nil, nil
+  TactaraCharDB.prePull = "helper"
+  R.ResetChatThrottle()
+  chat = {}
+  check(R.AfterFight() == false and #chat == 0 and R.PrePullText():find("After the fight"), "helper only: the line, no chat")
+  TactaraCharDB.prePull = "off"
+  R.ResetChatThrottle()
+  check(R.AfterFight() == false and R.PrePullText() == nil, "off: nothing")
+  TactaraCharDB.prePull = "both"
+  inCombat = true
+  R.ResetChatThrottle()
+  check(R.AfterFight() == false, "a new fight already started: nothing")
+  inCombat = false
+  UnitIsDeadOrGhost = function() return true end
+  check(R.AfterFight() == false, "dead: nothing")
+  UnitIsDeadOrGhost = nil
+  -- the optional sound
+  local played = {}
+  PlaySound = function(id) played[#played + 1] = id; return true end
+  SlashCmdList.TACTARA("sound buffs ready")
+  check(TactaraCharDB.buffSound == "ready" and #played == 1, "/tac sound buffs ready")
+  played = {}
+  R.ResetChatThrottle()
+  R.AfterFight()
+  check(#played == 1 and played[1] == 8960, "a sound with the after-the-fight reminder")
+  played = {}
+  R.AfterFight()
+  check(#played == 0, "not again for the same reminder")
+  R.ResetChatThrottle()
+  hasTarget = true
+  R.ChatPrePull()
+  check(#played == 1, "and with the before-the-pull one")
+  hasTarget = false
+  SlashCmdList.TACTARA("sound buffs off")
+  PlaySound = nil
+  SlashCmdList.TACTARA("buffs helper")
+  check(TactaraCharDB.prePull == "helper", "/tac buffs works like /tac prepull")
+  SlashCmdList.TACTARA("buffs on")
+
+  -- buffs that replace each other: the old one's timer goes
+  ns.SetTrackedSpells(ns.Parse("[priority]\n/cast Aspect of the Hawk @missing Aspect of the Hawk\n/cast Ice Armor @missing Ice Armor"))
+  ns.TrackCast("Aspect of the Hawk")
+  check((ns.TrackedRemaining("player", "Aspect of the Hawk") or 0) > 0, "Hawk timed from your cast")
+  ns.TrackCast("Aspect of the Cheetah")
+  check(ns.TrackedRemaining("player", "Aspect of the Hawk") == nil, "switch to Cheetah: Hawk is gone")
+  ns.TrackCast("Ice Armor"); ns.TrackCast("Mage Armor")
+  check(ns.TrackedRemaining("player", "Ice Armor") == nil, "Mage Armor ends Ice Armor")
+
+  -- every class: what each built-in rotation keeps up is checked before and after
+  GetInventoryItemID = function(_, slot) if slot == 16 then return 1002 end end
+  C_Item = { GetItemInfoInstant = function(id) return id, "Weapon", "x", "INVTYPE_WEAPON" end }
+  GetWeaponEnchantInfo = function() return false, 0, 0, 0, false, 0, 0, 0 end
+  known["Instant Poison"], known["Rockbiter Weapon"] = true, true
+  ns.ClearKnownCache()
+  petUp = false
+  for k in pairs(playerAuras) do playerAuras[k] = nil end
+  now = now + 10000
+  local classes = 0
+  for _, class in ipairs({ "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }) do
+    UnitClass = function() return class, class, 1 end
+    local rotations = 0
+    for _, r in ipairs(ns.ListRotations(class)) do
+      if r.builtin then
+        rotations = rotations + 1
+        local c = ns.Compile(ns.Parse(ns.GetRotationText(r.name)), "main", env)
+        local wantBefore, wantAfter = {}, {}
+        for _, e in ipairs(c.priority or {}) do
+          local only, pet, buff = #e.live > 0, false, nil
+          for _, cond in ipairs(e.live) do
+            if cond.kind ~= "missing" and cond.kind ~= "nopet" then only = false end
+            if cond.kind == "nopet" then pet = true end
+            if cond.kind == "missing" then buff = cond.arg end
+          end
+          if only and not e.spell:find("Totem$") then
+            local key = pet and "your pet" or e.spell
+            wantBefore[key] = true
+            if pet or ns.BuffDuration(buff) >= 60 then wantAfter[key] = true end
+          end
+        end
+        local function keyed(list)
+          local t = {}
+          for _, x in ipairs(list) do t[x.kind == "pet" and "your pet" or (x.kind == "weapon" and "weapon") or x.spell] = x end
+          return t
+        end
+        local okB, before = pcall(R.PrePullList, c)
+        local okA, after = pcall(R.AfterFightList, c)
+        check(okB and okA, r.name .. ": the checks run")
+        before, after = keyed(okB and before or {}), keyed(okA and after or {})
+        local missed = {}
+        for k in pairs(wantBefore) do if not before[k] then missed[#missed + 1] = "before:" .. k end end
+        for k in pairs(wantAfter) do if not after[k] then missed[#missed + 1] = "after:" .. k end end
+        for k, x in pairs(after) do if x.kind == "buff" and not wantAfter[k] then missed[#missed + 1] = "extra after:" .. k end end
+        check(#missed == 0, r.name .. ": every buff it keeps up is checked (" .. table.concat(missed, ", ") .. ")")
+        check(next(after) ~= nil, r.name .. ": something to check after a fight")
+      end
+    end
+    check(rotations >= 3, class .. ": all its rotations (" .. rotations .. ")")
+    classes = classes + 1
+  end
+  check(classes == 9, "all nine classes")
+
+  known["Instant Poison"], known["Rockbiter Weapon"] = nil, nil
+  UnitExists, UnitClass, GetInventoryItemID, C_Item = realExists, realClass, realInv, realItem
+  GetWeaponEnchantInfo = nil
+  ns.compiled.main = realMain
+  ns.ClearKnownCache()
+  R.ResetChatThrottle()
+  for k in pairs(usable) do usable[k] = nil end
+  inCombat = false
+  ns.Rebuild("test")
+  hasTarget = false
+end
+
 -- supplies: ammo, Soul Shards, reagents and totems (Tactara only says so)
 do
   local R = ns.Reminders

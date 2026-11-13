@@ -150,6 +150,44 @@ local function AuraMissing(unit, name, filter)
   return nil                                 -- game hides it and we have no timer
 end
 
+-- How long a buff on you has left, in seconds (math.huge: until you change
+-- it, 0: not there), and its full length. nil when Tactara can't tell.
+-- Out of combat the game usually says; otherwise Tactara's timer from your cast.
+function ns.BuffTimeLeft(name)
+  local form = ns.FormActive(name)
+  if form ~= nil then return form and math.huge or 0, math.huge end
+  local okAPI, aura = false, nil
+  if C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName then
+    okAPI, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", name, "HELPFUL")
+  end
+  if okAPI and aura ~= nil then
+    local ok, left, full = pcall(function()
+      local exp, dur = aura.expirationTime, aura.duration
+      if not exp or exp == 0 then return math.huge, math.huge end
+      local d = (dur and dur > 0) and dur or nil
+      return math.max(0, exp - GetTime()), d
+    end)
+    if ok then return left, full or ns.BuffDuration(name) end
+  end
+  local mine = ns.TrackedRemaining("player", name)
+  if mine then return math.max(0, mine), ns.BuffDuration(name) end
+  if okAPI then return 0, ns.BuffDuration(name) end
+  return nil
+end
+
+-- When a buff counts as running low, by its full length: an hour-long
+-- Blessing under 5 minutes, a 30-minute buff under 2, a 5-10 minute one
+-- under 1, a 1-2 minute one (Battle Shout) under 30 seconds. Shorter ones
+-- (Seals) only when they're about to drop. Never for auras and forms.
+function ns.BuffLowAt(full)
+  if not full or full == math.huge then return 0 end
+  if full >= 3000 then return 300 end
+  if full >= 1200 then return 120 end
+  if full >= 300 then return 60 end
+  if full >= 60 then return 30 end
+  return REFRESH
+end
+
 function ns.CheckLive(c)
   if c.kind == "enemies" then
     local need = tonumber(c.arg:match("%d+")) or 2

@@ -74,7 +74,7 @@ ns.SOUNDS = {
   { key = "ping", label = "Map ping", kit = "MAP_PING", id = 3175 },
   { key = "whisper", label = "Whisper", kit = "TELL_MESSAGE", id = 3081 },
 }
-ns.SOUND_DEFAULTS = { interrupt = "raid", defensive = "alarm" }   -- for "/tac sound interrupt on"
+ns.SOUND_DEFAULTS = { interrupt = "raid", defensive = "alarm", buff = "ready" }   -- for "/tac sound interrupt on"
 
 function ns.SoundFor(key)
   for _, s in ipairs(ns.SOUNDS) do

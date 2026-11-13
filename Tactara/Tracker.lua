@@ -106,6 +106,14 @@ local function Duration(spell, unitKind)
   return d or FALLBACK[unitKind] or 15
 end
 
+-- A buff's full length in seconds (math.huge for auras, aspects and forms,
+-- which stay until you change them).
+function ns.BuffDuration(spell)
+  local d = Duration(spell, "player")
+  if d >= 7200 then return math.huge end
+  return d
+end
+
 function ns.LearnDuration(spell, seconds)
   local ok, valid = pcall(function() return type(seconds) == "number" and seconds > 1 and seconds < 3600 end)
   if ok and valid then learned[spell] = seconds end
@@ -149,10 +157,45 @@ local function CountCombo(spellName)
   end
 end
 
+-- Buffs that replace each other: casting one ends the others, so their
+-- timers go too (otherwise Tactara would think your old aspect is still up).
+local EXCLUSIVE = {
+  { "Devotion Aura", "Retribution Aura", "Concentration Aura", "Sanctity Aura", "Crusader Aura",
+    "Shadow Resistance Aura", "Frost Resistance Aura", "Fire Resistance Aura" },
+  { "Seal of Righteousness", "Seal of Command", "Seal of Fury", "Seal of the Crusader", "Seal of Light",
+    "Seal of Wisdom", "Seal of Justice" },
+  { "Blessing of Kings", "Blessing of Might", "Blessing of Wisdom", "Blessing of Light", "Blessing of Sanctuary",
+    "Blessing of Salvation" },
+  { "Aspect of the Hawk", "Aspect of the Monkey", "Aspect of the Cheetah", "Aspect of the Pack",
+    "Aspect of the Beast", "Aspect of the Wild" },
+  { "Frost Armor", "Ice Armor", "Mage Armor" },
+  { "Demon Skin", "Demon Armor" },
+  { "Lightning Shield", "Water Shield" },
+}
+local groupOf = {}
+for _, g in ipairs(EXCLUSIVE) do
+  for _, name in ipairs(g) do groupOf[name] = g end
+end
+ns.EXCLUSIVE_BUFFS = EXCLUSIVE
+
+local function EndOthers(spellName)
+  local english = ns.Locale and ns.Locale.English(spellName) or spellName
+  local g = groupOf[english]
+  local bucket = tracked.player.me
+  if not (g and bucket) then return end
+  for _, name in ipairs(g) do
+    if name ~= english then
+      bucket[name] = nil
+      if ns.Locale then bucket[ns.Locale.Spell(name)] = nil end
+    end
+  end
+end
+
 -- Called for every successful cast of yours.
 function ns.TrackCast(spellName)
   if not spellName then return end
   CountCombo(spellName)
+  pcall(EndOthers, spellName)
   local ok, kind = pcall(function() return watch[spellName] end)
   if not ok or not kind then return end
   local bucket

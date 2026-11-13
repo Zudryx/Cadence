@@ -554,6 +554,11 @@ function ns.ProbeReminders()
     end
     add("rotation lines with checks: " .. (#prep > 0 and table.concat(prep, ", ") or "none"))
   end)
+  try("after the fight", function()
+    local t = {}
+    for _, x in ipairs(R.AfterFightList()) do t[#t + 1] = x.text end
+    add("after the fight right now: " .. (#t > 0 and table.concat(t, ", ") or "nothing"))
+  end)
 
   try("stance bar", function()
     if not (GetNumShapeshiftForms and GetShapeshiftFormInfo) then return add("stance bar: functions missing") end
@@ -571,7 +576,10 @@ function ns.ProbeReminders()
       for _, c in ipairs(e.live or {}) do
         if c.kind == "missing" and not checked[c.arg] then
           checked[c.arg] = true
-          add(("@missing %s: stance bar says %s, buff check says %s"):format(c.arg, Str(ns.FormActive(c.arg)), Str(ns.CheckLive(c))))
+          local left, full = ns.BuffTimeLeft(c.arg)
+          add(("@missing %s: stance bar says %s, buff check says %s, time left %s of %s (low under %s)")
+            :format(c.arg, Str(ns.FormActive(c.arg)), Str(ns.CheckLive(c)), Str(left and math.floor(left)),
+              Str(full and math.floor(full)), Str(ns.BuffLowAt(full))))
         end
       end
     end

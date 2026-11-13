@@ -9,7 +9,10 @@
 --     "not learned yet" spells, so it covers new spells (not new ranks).
 --   * Before the pull: when you target an enemy out of combat, a buff your
 --     rotation keeps up, your pet, or a poison / weapon imbue that isn't
---     there. Shown under the helper popup, and in chat now and then.
+--     there or is running low. Shown under the helper popup, and in chat now
+--     and then.
+--   * After the fight: the same for buffs of a minute or more (no Seals), a
+--     couple of seconds after combat ends, without a target.
 --   * Supplies: a Hunter's ammo, a Warlock's Soul Shards, and the reagents
 --     and totems your spells need. Under the helper popup with the line
 --     above, in chat when one runs low, and at a vendor that sells it.
@@ -260,49 +263,96 @@ local function WeaponIn(slot)
   return okI and OFFHAND_WEAPONS[equipLoc] or false
 end
 
--- true = something to remind about, false = all good, nil = can't tell.
-local function WeaponNeedsCoat(spells)
+-- "4 min left", "40 sec left"
+local function LeftText(sec)
+  if sec >= 120 then return ("%d min left"):format(math.ceil(sec / 60)) end
+  return ("%d sec left"):format(math.max(1, math.floor(sec)))
+end
+R.LeftText = LeftText
+
+-- Poisons last 30 minutes, Shaman weapon imbues 5.
+local COAT_LENGTH = { ROGUE = 1800, SHAMAN = 300 }
+
+-- "missing" or "low" (with seconds left) = something to remind about,
+-- false = all good, nil = can't tell.
+local function WeaponNeedsCoat(spells, class)
   if #spells == 0 or not GetWeaponEnchantInfo then return false end
+  local lowAt = ns.BuffLowAt(COAT_LENGTH[class] or 1800)
   -- some clients put poisons on you as a buff instead of on the weapon
   if C_UnitAuras and C_UnitAuras.GetAuraDataBySpellName then
     for _, s in ipairs(spells) do
       local ok, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", s, "HELPFUL")
-      if ok and aura ~= nil then return false end
+      if ok and aura ~= nil then
+        local left, full = ns.BuffTimeLeft(s)
+        if left and left > 0 and left < ns.BuffLowAt(full) then return "low", left end
+        return false
+      end
     end
   end
-  local ok, mh, _, _, _, oh = pcall(GetWeaponEnchantInfo)
+  local ok, mh, mhExp, _, _, oh, ohExp = pcall(GetWeaponEnchantInfo)
   if not ok then return nil end
-  local okB, need = pcall(function()
-    if WeaponIn(16) and not mh then return true end
-    if WeaponIn(17) and not oh then return true end
+  local okB, need, left = pcall(function()
+    local bare, soonest = false, nil
+    for _, w in ipairs({ { 16, mh, mhExp }, { 17, oh, ohExp } }) do
+      if WeaponIn(w[1]) then
+        if not w[2] then bare = true
+        elseif type(w[3]) == "number" and w[3] > 0 then
+          local sec = w[3] / 1000          -- the game counts in milliseconds
+          if not soonest or sec < soonest then soonest = sec end
+        end
+      end
+    end
+    if bare then return "missing" end
+    if soonest and soonest < lowAt then return "low", soonest end
     return false
   end)
   if not okB then return nil end
-  return need
+  return need, left
 end
 
--- What's missing before the pull: a list of { spell = icon spell, text = short label, kind }.
--- Pet first, then buffs from the rotation's [priority] list (@missing / @nopet
--- lines only, no totems), then poisons or weapon imbues.
-function R.PrePullList(comp)
-  comp = comp or (ns.HelperComp and ns.HelperComp())
+-- After the fight: buffs of a minute or more. Seals (30 seconds) would run
+-- out before the next pull anyway; Battle Shout counts, for leftover rage.
+R.AFTER_FIGHT_SHORTEST = 60
+
+-- Is this [priority] line's buff missing or running low? "missing", or
+-- "low" with seconds left; false = fine or can't tell.
+local function BuffState(e)
+  if ns.LiveOK(e) then return "missing" end
+  if #e.live ~= 1 or e.live[1].kind ~= "missing" then return false end
+  local left, full = ns.BuffTimeLeft(e.live[1].arg)
+  if left and left > 0 and left ~= math.huge and left < ns.BuffLowAt(full) then return "low", left end
+  return false
+end
+
+-- after = the after-the-fight check: no target needed, only longer buffs.
+local function BuffChecks(comp, after)
   local out, seen = {}, {}
   if not comp then return out end
   local pets, buffs = {}, {}
   for _, e in ipairs(comp.priority or {}) do
     local prep = #e.live > 0 and not ns.Locale.English(e.spell):find("Totem$")
-    local pet = false
+    local pet, buff = false, nil
     for _, c in ipairs(e.live) do
       if not PREP_KINDS[c.kind] then prep = false end
       if c.kind == "nopet" then pet = true end
+      if c.kind == "missing" then buff = c.arg end
     end
-    if prep and not seen[e.spell] and ns.LiveOK(e) and not OnCooldown(e.spell)
-      and not (CostsRage(e.spell) and ns.UsableState(e.spell) ~= "yes") then
+    if prep and after and buff and not pet then
+      local full = ns.BuffDuration(ns.Locale.English(buff))
+      if full < R.AFTER_FIGHT_SHORTEST then prep = false end
+    end
+    local state, left
+    if prep and not seen[e.spell] then
+      if pet then state = ns.LiveOK(e) and "missing" or false else state, left = BuffState(e) end
+    end
+    if state and not OnCooldown(e.spell) and not (CostsRage(e.spell) and ns.UsableState(e.spell) ~= "yes") then
       seen[e.spell] = true
       if pet then
         if #pets == 0 then pets[1] = { spell = e.spell, text = "your pet", kind = "pet" } end
       else
-        buffs[#buffs + 1] = { spell = e.spell, text = e.spell, kind = "buff" }
+        local text = e.spell
+        if state == "low" then text = ("%s (%s)"):format(e.spell, LeftText(left)) end
+        buffs[#buffs + 1] = { spell = e.spell, text = text, kind = "buff", low = state == "low" }
       end
     end
   end
@@ -310,14 +360,28 @@ function R.PrePullList(comp)
   for _, x in ipairs(buffs) do out[#out + 1] = x end
 
   local _, class = UnitClass("player")
-  if class == "ROGUE" then
-    local known = KnownOf(POISONS)
-    if WeaponNeedsCoat(known) then out[#out + 1] = { spell = known[1], text = "a poison on your weapons", kind = "weapon" } end
-  elseif class == "SHAMAN" then
-    local known = KnownOf(IMBUES)
-    if WeaponNeedsCoat(known) then out[#out + 1] = { spell = known[1], text = "a weapon imbue", kind = "weapon" } end
+  local coats = (class == "ROGUE" and KnownOf(POISONS)) or (class == "SHAMAN" and KnownOf(IMBUES)) or {}
+  local need, left = WeaponNeedsCoat(coats, class)
+  if need then
+    local text = class == "ROGUE" and "a poison on your weapons" or "a weapon imbue"
+    if need == "low" then text = ("%s (%s)"):format(text, LeftText(left)) end
+    out[#out + 1] = { spell = coats[1], text = text, kind = "weapon", low = need == "low" }
   end
   return out
+end
+
+-- What's missing or running low before the pull: a list of { spell = icon
+-- spell, text = short label, kind }. Pet first, then buffs from the
+-- rotation's [priority] list (@missing / @nopet lines only, no totems), then
+-- poisons or weapon imbues.
+function R.PrePullList(comp)
+  return BuffChecks(comp or (ns.HelperComp and ns.HelperComp()), false)
+end
+
+-- The same after a fight, without a target, leaving out buffs shorter than a
+-- minute (Seals): they'd run out before the next pull anyway.
+function R.AfterFightList(comp)
+  return BuffChecks(comp or (ns.HelperComp and ns.HelperComp()), true)
 end
 
 local function Mode()
@@ -332,16 +396,40 @@ local function Texts(list)
   return t
 end
 
+-- What the throttles compare: the buffs, not the minutes left.
+local function Keys(list)
+  local t = {}
+  for _, x in ipairs(list) do t[#t + 1] = tostring(x.spell or x.text) .. (x.low and "~" or "") end
+  return table.concat(t, "|")
+end
+
+-- The optional sound with a buff reminder (off unless you pick one).
+local function BuffSound()
+  local key = TactaraCharDB and TactaraCharDB.buffSound
+  if key and key ~= "off" and ns.PlayAlert then ns.PlayAlert(key) end
+end
+
+local AFTER_SHOW = 30     -- the after-the-fight line stays under the helper this long
+local AFTER_SAME = 120    -- the same after-the-fight chat line at most every 2 minutes
+local afterUntil, afterLast, afterKey = -1e9, -1e9, nil
+local lastChat, lastChatKey = -1e9, nil
+
 -- The lines under the helper popup, or nil when there's nothing to say.
 function R.PrePullText()
-  if InCombat() or not HostileTarget() then return nil end
+  if InCombat() then return nil end
   if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then return nil end
+  local hostile = HostileTarget()
   local lines = {}
   if Mode() ~= "off" then
-    local list = R.PrePullList()
-    if #list > 0 then lines[#lines + 1] = "|cffff9933Before the pull:|r " .. JoinNames(Texts(list)) end
+    if hostile then
+      local list = R.PrePullList()
+      if #list > 0 then lines[#lines + 1] = "|cffff9933Before the pull:|r " .. JoinNames(Texts(list)) end
+    elseif GetTime() < afterUntil then
+      local list = R.AfterFightList()
+      if #list > 0 then lines[#lines + 1] = "|cffff9933After the fight:|r " .. JoinNames(Texts(list)) end
+    end
   end
-  if R.SupplyMode() ~= "off" then
+  if hostile and R.SupplyMode() ~= "off" then
     local list = R.Supplies()
     if #list > 0 then lines[#lines + 1] = "|cffff9933Supplies:|r " .. JoinNames(Texts(list)) end
   end
@@ -349,29 +437,63 @@ function R.PrePullText()
   return table.concat(lines, "\n")
 end
 
-local lastChat, lastChatKey = -1e9, nil
--- A chat line when you pick an enemy and something's missing: at most once a
--- minute, and the same reminder at most every five minutes.
+-- A chat line when you pick an enemy and something's missing or running low:
+-- at most once a minute, and the same reminder at most every five minutes.
 function R.ChatPrePull()
-  if Mode() ~= "both" or InCombat() or not HostileTarget() then return false end
+  if Mode() == "off" or InCombat() or not HostileTarget() then return false end
   if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then return false end
   -- riding past enemies isn't a pull; the line under the helper still shows
   if (IsMounted and IsMounted()) or (UnitOnTaxi and UnitOnTaxi("player")) then return false end
   local list = R.PrePullList()
   if #list == 0 then return false end
-  local texts = Texts(list)
-  local key = table.concat(texts, "|")
+  local key = Keys(list)
   local now = GetTime()
   if (key ~= lastChatKey and now - lastChat >= CHAT_GAP) or now - lastChat >= CHAT_SAME then
     lastChat, lastChatKey = now, key
-    ns.Print("Before you pull: " .. JoinNames(texts) .. ".")
+    BuffSound()
+    if Mode() ~= "both" then return false end
+    ns.Print("Before you pull: " .. JoinNames(Texts(list)) .. ".")
     return true
   end
   return false
 end
 
+-- A couple of seconds after a fight: the buffs your rotation keeps up that
+-- last a minute or more (Blessings, Fortitude, armors, Battle Shout when you
+-- have the rage, Mark of the Wild...), your pet and your
+-- poisons or imbues, if any are missing or running low. Under the helper for
+-- 30 seconds and in chat (the same line at most every 2 minutes).
+function R.AfterFight()
+  if Mode() == "off" or InCombat() then return false end
+  if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then return false end
+  if UnitOnTaxi and UnitOnTaxi("player") then return false end
+  local list = R.AfterFightList()
+  if #list == 0 then
+    afterUntil = -1e9
+    return false
+  end
+  local now = GetTime()
+  afterUntil = now + AFTER_SHOW
+  local key, said = Keys(list), false
+  if key ~= afterKey or now - afterLast >= AFTER_SAME then
+    afterKey, afterLast = key, now
+    BuffSound()
+    if Mode() == "both" then
+      ns.Print("After the fight: " .. JoinNames(Texts(list)) .. ".")
+      lastChat = now        -- and no "before you pull" line right on top of it
+      said = true
+    end
+  end
+  if ns.HelperRefresh then ns.HelperRefresh() end
+  if C_Timer and C_Timer.After then
+    C_Timer.After(AFTER_SHOW + 0.5, function() if ns.HelperRefresh then ns.HelperRefresh() end end)
+  end
+  return said
+end
+
 function R.ResetChatThrottle()
   lastChat, lastChatKey = -1e9, nil
+  afterUntil, afterLast, afterKey = -1e9, -1e9, nil
 end
 
 ---------------------------------------------------------------------------
@@ -735,7 +857,7 @@ end
 
 local f = CreateFrame("Frame")
 R.frame = f
-for _, e in ipairs({ "PLAYER_LOGIN", "PLAYER_LEVEL_UP", "PLAYER_TARGET_CHANGED", "BAG_UPDATE_DELAYED",
+for _, e in ipairs({ "PLAYER_LOGIN", "PLAYER_LEVEL_UP", "PLAYER_TARGET_CHANGED", "PLAYER_REGEN_ENABLED", "BAG_UPDATE_DELAYED",
   "PLAYER_EQUIPMENT_CHANGED", "SPELLS_CHANGED", "MERCHANT_SHOW" }) do
   pcall(f.RegisterEvent, f, e)
 end
@@ -773,6 +895,9 @@ function R.HandleEvent(event, ...)
     C_Timer.After(3, function() R.CheckTrainer(math.max(tonumber(level) or 0, PlayerLevel() or 0)) end)
   elseif event == "PLAYER_TARGET_CHANGED" then
     if ns.loggedIn then R.ChatPrePull() end
+  elseif event == "PLAYER_REGEN_ENABLED" then
+    -- give the game a moment to settle (buffs that ran out, a pet that died)
+    if ns.loggedIn then C_Timer.After(2, R.AfterFight) end
   end
 end
 

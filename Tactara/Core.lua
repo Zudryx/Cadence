@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.16.1"
+ns.VERSION = "0.17.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -281,7 +281,7 @@ local function InitDB()
   local PREPULL = { both = true, helper = true, off = true }
   if not PREPULL[TactaraCharDB.prePull] then TactaraCharDB.prePull = "both" end
   if not PREPULL[TactaraCharDB.supplies] then TactaraCharDB.supplies = "both" end
-  for _, k in ipairs({ "interruptSound", "defensiveSound" }) do
+  for _, k in ipairs({ "interruptSound", "defensiveSound", "buffSound" }) do
     local v = TactaraCharDB[k]
     if not (v == "off" or (ns.SoundFor and ns.SoundFor(v))) then TactaraCharDB[k] = "off" end
   end
@@ -430,7 +430,7 @@ local HELP = {
   "|cffffd100/tac new|r  what's new in this version of Tactara",
   "|cffffd100/tac export|r / |cffffd100import|r  your settings as text, to back up or share (keys only if you choose)",
   "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
-  "|cffffd100/tac prepull|r on|helper|off  reminders before a fight: missing buffs, pet, poison or weapon imbue",
+  "|cffffd100/tac prepull|r (or |cffffd100/tac buffs|r) on|helper|off  reminders before and after a fight: buffs missing or running low, pet, poison or weapon imbue",
   "|cffffd100/tac supplies|r  ammo, Soul Shards, reagents or totems running low (|cffffd100on|r / |cffffd100helper|r / |cffffd100off|r: the reminder)",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
   "|cffffd100/tac fade|r helper|key show|fade|hide  how the displays look when you're not fighting (|cffffd100/tac fade 40|r = see-through amount)",
@@ -442,7 +442,7 @@ local HELP = {
   "|cffffd100/tac show|r / |cffffd100hide|r [key / helper]  the key bar and/or the helper popup",
   "|cffffd100/tac lock|r / |cffffd100unlock|r  lock or move both",
   "|cffffd100/tac interrupts|r / |cffffd100defensives|r  red interrupt / orange defensive suggestions on or off",
-  "|cffffd100/tac sound|r interrupt|defensive <sound>|on|off  a sound when the slot lights up (|cffffd100/tac sound|r lists the sounds, |cffffd100/tac sound test|r plays them)",
+  "|cffffd100/tac sound|r interrupt|defensive|buffs <sound>|on|off  a sound when the slot lights up or with a buff reminder (|cffffd100/tac sound|r lists the sounds, |cffffd100/tac sound test|r plays them)",
   "|cffffd100/tac reset|r  restart the sequence from the opener",
   "|cffffd100/tac reset keybinds|r (or |cffffd100/tac keys|r)  the key setup window: one-button, AoE and interrupt keys, and Remove",
   "|cffffd100/tac errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
@@ -541,7 +541,7 @@ local function HandleSlash(msg)
     else
       ns.Reminders.ShowTrainer()
     end
-  elseif cmd == "prepull" or cmd == "pull" then
+  elseif cmd == "prepull" or cmd == "pull" or cmd == "buffs" or cmd == "buff" then
     local v = rest:lower()
     local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
     if MODES[v] then
@@ -552,7 +552,7 @@ local function HandleSlash(msg)
     ns.Reminders.ResetChatThrottle()
     ns.HelperRefresh()
     local say = { both = "on (under the helper popup and in chat)", helper = "under the helper popup only", off = "off" }
-    ns.Print("Before-the-pull reminders " .. say[TactaraCharDB.prePull] .. ".")
+    ns.Print("Buff reminders before and after a fight " .. say[TactaraCharDB.prePull] .. ".")
   elseif cmd == "supplies" or cmd == "supply" or cmd == "ammo" or cmd == "reagents" then
     local v = rest:lower()
     local MODES = { on = "both", both = "both", chat = "both", helper = "helper", popup = "helper", off = "off" }
@@ -569,7 +569,7 @@ local function HandleSlash(msg)
   elseif cmd == "sound" or cmd == "sounds" then
     local a, b = rest:lower():match("^(%S*)%s*(%S*)")
     local KINDS = { interrupt = "interrupt", interrupts = "interrupt", int = "interrupt", kick = "interrupt",
-      defensive = "defensive", defensives = "defensive", def = "defensive" }
+      defensive = "defensive", defensives = "defensive", def = "defensive", buff = "buff", buffs = "buff" }
     local function Label(key)
       local s = ns.SoundFor(key)
       return s and s.label or "off"
@@ -580,6 +580,7 @@ local function HandleSlash(msg)
       d = (d ~= "off") and d or ns.SOUND_DEFAULTS.defensive
       ns.PlayAlert(i)
       C_Timer.After(1.5, function() ns.PlayAlert(d) end)
+      if TactaraCharDB.buffSound ~= "off" then C_Timer.After(3, function() ns.PlayAlert(TactaraCharDB.buffSound) end) end
       ns.Print(("Playing the interrupt sound (%s), then the defensive sound (%s)."):format(Label(i), Label(d)))
     elseif KINDS[a] then
       local kind = KINDS[a]
@@ -592,15 +593,19 @@ local function HandleSlash(msg)
       if key then
         TactaraCharDB[kind .. "Sound"] = key
         if key ~= "off" then ns.PlayAlert(key) end
-        ns.Print(("Sound when the %s slot lights up: %s."):format(kind, Label(key)))
+        if kind == "buff" then
+          ns.Print(("Sound with buff reminders (before and after a fight): %s."):format(Label(key)))
+        else
+          ns.Print(("Sound when the %s slot lights up: %s."):format(kind, Label(key)))
+        end
       else
         ns.Print("No sound called \"" .. b .. "\". /tac sound lists them.")
       end
     else
       local names = {}
       for _, s in ipairs(ns.SOUNDS) do names[#names + 1] = s.key .. " (" .. s.label .. ")" end
-      ns.Print(("Sounds: interrupt %s, defensive %s. Pick one with /tac sound interrupt|defensive <sound>|off: %s. /tac sound test plays them.")
-        :format(Label(TactaraCharDB.interruptSound), Label(TactaraCharDB.defensiveSound), table.concat(names, ", ")))
+      ns.Print(("Sounds: interrupt %s, defensive %s, buff reminders %s. Pick one with /tac sound interrupt|defensive|buffs <sound>|off: %s. /tac sound test plays them.")
+        :format(Label(TactaraCharDB.interruptSound), Label(TactaraCharDB.defensiveSound), Label(TactaraCharDB.buffSound), table.concat(names, ", ")))
     end
   elseif cmd == "copy" then
     local who = rest

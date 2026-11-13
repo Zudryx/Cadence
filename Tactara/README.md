@@ -81,7 +81,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. **Export** gives the same settings as text to back up or give to a friend (any account or computer); **Import** takes that text back, asks first, and only sets keys if you choose **With keys**. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off, and a sound for each (off until you pick one).
-- **Reminders:** before-the-pull reminders and supply reminders (each under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your keys and the talent planner), and the "what's new" window after an update.
+- **Reminders:** buff reminders before and after a fight, with an optional sound, and supply reminders (each under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your keys and the talent planner), and the "what's new" window after an update.
 
 The `/tac` commands still work, and both always show the same settings.
 
@@ -132,7 +132,9 @@ The `/tac` commands still work, and both always show the same settings.
 
 Tactara only tells you; it never casts, buys or learns anything for you.
 
-- **Before the pull:** when you target an enemy and you're not fighting yet, a line under the helper popup lists what your rotation wants up and isn't: a buff it keeps up (Battle Shout only when you have the rage), your pet, or, for Rogues and Shamans, a poison or weapon imbue. Totems and in-fight lines like Slice and Dice aren't on it. A chat line says the same when you pick an enemy, at most once a minute (the same reminder at most every five minutes, and not while you're mounted). Turn chat off, or the whole thing, on the settings page (Reminders) or with `/tac prepull on` / `helper` / `off`. Paladin auras, Warrior stances, Druid forms and Shadowform are read from your stance bar (the Paladin aura bar), so they're right even after a reload. If WoW hides a buff from addons, Tactara doesn't guess.
+- **Before the pull:** when you target an enemy and you're not fighting yet, a line under the helper popup lists what your rotation wants up and isn't, or what's running low: a buff it keeps up (Battle Shout only when you have the rage), your pet, or, for Rogues and Shamans, a poison or weapon imbue. Running low means an hour-long Blessing under 5 minutes, a 30-minute buff under 2, a 5 to 10 minute one under 1, Battle Shout under 30 seconds; the line says how long is left (*Blessing of Might (4 min left)*). Seals only show when they're missing or about to drop, and auras, aspects and forms never run low. Totems and in-fight lines like Slice and Dice aren't on it. A chat line says the same when you pick an enemy, at most once a minute (the same reminder at most every five minutes, and not while you're mounted). Paladin auras, Warrior stances, Druid forms and Shadowform are read from your stance bar (the Paladin aura bar), so they're right even after a reload. If WoW hides a buff from addons, Tactara goes by its own timer from your cast, and doesn't guess without one.
+- **After the fight:** a couple of seconds after combat ends, the same check without a target, for buffs that last a minute or more: Blessings, Fortitude, Mark of the Wild, armors, aspects, shields, Battle Shout when you have rage left over, your pet, poisons and weapon imbues. Anything missing or running low shows under the helper for 30 seconds and in chat (the same line at most every 2 minutes). Seals are left out; they'd run out before the next pull anyway.
+- Both are one setting, **Buffs before and after a fight** on the settings page (Reminders), or `/tac buffs on` / `helper` / `off` (`/tac prepull` works too). A sound can go with them: `/tac sound buffs ready` (off until you pick one).
 - **Supplies:** what your spells need, when it runs low:
   - **Hunters:** arrows or bullets for the bow, crossbow or gun you have on, under 200 shots.
   - **Warlocks:** Soul Shards, under 2 (once you have Drain Soul).
@@ -169,8 +171,8 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac icons` [`helper` / `key`] `1`-`10` / `all` | How many icons each display shows |
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
-| `/tac sound` `interrupt` / `defensive` <sound> / `off` | A sound when that slot lights up; `/tac sound` lists the sounds, `/tac sound test` plays them |
-| `/tac prepull` `on` / `helper` / `off` | Before-the-pull reminders: under the helper and in chat, under the helper only, or off |
+| `/tac sound` `interrupt` / `defensive` / `buffs` <sound> / `off` | A sound when that slot lights up, or with buff reminders; `/tac sound` lists the sounds, `/tac sound test` plays them |
+| `/tac buffs` (or `/tac prepull`) `on` / `helper` / `off` | Buff reminders before and after a fight: under the helper and in chat, under the helper only, or off |
 | `/tac supplies` | Ammo, Soul Shards, reagents or totems running low (`on` / `helper` / `off`: the reminder) |
 | `/tac new` | What's new in this version (also shown once after each update) |
 | `/tac export` / `import` | Your settings as text, to back up or share; import asks first and keeps your keys unless you choose otherwise |
@@ -182,7 +184,7 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
 | `/tac probe talents` | A read-only report on your talents and the talent window, in a window you can copy from. Changes nothing. |
 | `/tac probe locale` | A read-only check of Tactara's spell IDs (used on games in other languages) against your game |
-| `/tac probe reminders` | A read-only report on what the trainer, before-the-pull and supply reminders can see. Changes nothing. |
+| `/tac probe reminders` | A read-only report on what the trainer, buff (before and after a fight) and supply reminders can see, with each buff's time left. Changes nothing. |
 | `/tac debug` | Prints every press, every cast sent and every game error to chat |
 | `/tac keydown auto` / `off` | Troubleshooting only: cast on key down (default) or key up |
 

@@ -312,11 +312,13 @@ local function BuildVertical()
     SoundChoices, function(v) ns.PlayAlert(v) end)
 
   Header("Reminders")
-  Dropdown(TactaraCharDB, "prePull", "Before the pull", "When you target an enemy and you're not fighting yet: a buff your rotation keeps up, your pet, or a poison or weapon imbue that's missing. Tactara only tells you; you cast it.", "both", {
-    { "both", "Under the helper and in chat", "A line under the helper popup, and a chat line now and then (at most once a minute)." },
+  Dropdown(TactaraCharDB, "prePull", "Buffs before and after a fight", "Before the pull (when you target an enemy and you're not fighting yet): a buff your rotation keeps up, your pet, or a poison or weapon imbue that's missing or running low (an hour-long Blessing under 5 minutes, a 30-minute buff under 2).\n\nAfter the fight (a couple of seconds after combat ends): the same for buffs that last a minute or more, without a target. Seals are left out there; they'd run out before the next pull anyway. Battle Shout shows when you have the rage left over.\n\nTactara only tells you; you cast it.", "both", {
+    { "both", "Under the helper and in chat", "A line under the helper popup, and a chat line now and then (before the pull at most once a minute; after the fight the same line at most every 2 minutes)." },
     { "helper", "Under the helper popup" },
     { "off", "Off" },
   }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
+  Dropdown(TactaraCharDB, "buffSound", "Sound for buff reminders", "A sound with the before-the-pull and after-the-fight reminders (as often as their chat lines)." .. SOUND_TIP, "off",
+    SoundChoices, function(v) ns.PlayAlert(v) end)
   Dropdown(TactaraCharDB, "supplies", "Supplies", "A Hunter's arrows or bullets, a Warlock's Soul Shards, and the reagents or totems your spells need (Flash Powder for Vanish, an Ankh, a Fire Totem...), when they run low. Tactara only tells you; you buy them. /tac supplies shows the list any time.", "both", {
     { "both", "Under the helper, in chat and at vendors", "A line under the helper popup when you target an enemy, a chat line when something runs low, and at a vendor that sells it." },
     { "helper", "Under the helper popup" },
@@ -359,7 +361,7 @@ local COMMANDS = {
   "/tac glow strong | normal | subtle | test",
   "/tac helper auto | priority | sequence",
   "/tac interrupts | defensives  - suggestions on/off",
-  "/tac prepull on | helper | off  - reminders before a fight",
+  "/tac prepull on | helper | off  - buffs before and after a fight",
   "/tac supplies [on | helper | off]  - ammo, shards, reagents",
   "/tac sound interrupt | defensive <sound> | off",
   "/tac trainer [on | off]  - spells waiting at your trainer",

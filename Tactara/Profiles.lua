@@ -24,7 +24,7 @@ Pr.KEYS = {
   "helperIdle", "keyIdle", "fadeAlpha", "keyIcons", "helperIcons", "helperCooldowns", "helperTint",
   "highlight", "helperMode", "interrupts", "defensives", "interruptSound", "defensiveSound",
   "minimapButton", "minimapAngle",
-  "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "trainerReminder", "prePull", "supplies",
+  "talentAutoLearn", "talentGlow", "talentReminders", "talentButton", "trainerReminder", "prePull", "buffSound", "supplies",
 }
 
 local function Copy(v)
