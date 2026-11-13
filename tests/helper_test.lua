@@ -36,6 +36,8 @@ newObj = function(kind, name)
     HookScript = function(self, s, f) self._hooks[s] = self._hooks[s] or {}; table.insert(self._hooks[s], f) end,
     SetText = function(self, t) self._text = t end,
     GetText = function(self) return self._text end,
+    SetChecked = function(self, v) self._checked = v and true or false end,
+    GetChecked = function(self) return self._checked end,
     GetName = function(self) return self._name end,
     Show = function(self) local was = self._shown; self._shown = true; if not was and self._scripts.OnShow then self._scripts.OnShow(self) end end,
     Hide = function(self) self._shown = false end,
@@ -1575,6 +1577,111 @@ do
   check(ui.orderTitle:GetText() == "Level by level", "leveling build: level by level")
   TactaraCharDB.level60Asked = true
   UnitLevel = realLevel
+  StaticPopupDialogs, StaticPopup_Show = nil, nil
+end
+
+
+-- what's new after an update, and the key question on a character with no key
+do
+  local W, T = ns.Welcome, ns.Talents
+  -- the in-game copy matches CHANGELOG.md (run tests/make_whats_new.py after editing it)
+  local log = io.open(root .. "/../CHANGELOG.md"):read("a")
+  local secs, cur = {}, nil
+  for line in (log .. "\n"):gmatch("([^\n]*)\n") do
+    local v = line:match("^## (%d+%.%d+%.%d+)%s*$")
+    if v then cur = { version = v, lines = {} }; secs[#secs + 1] = cur
+    elseif cur and line:match("%S") then cur.lines[#cur.lines + 1] = (line:gsub("%s+$", "")) end
+  end
+  local same = #ns.WHATS_NEW == 3
+  for i, s in ipairs(ns.WHATS_NEW) do
+    same = same and secs[i] and secs[i].version == s.version and table.concat(secs[i].lines, "\n") == table.concat(s.lines, "\n")
+  end
+  check(same, "WhatsNew.lua matches the newest CHANGELOG.md sections (run tests/make_whats_new.py)")
+  check(ns.WHATS_NEW[1].version == ns.VERSION, "the changelog has a section for " .. ns.VERSION)
+
+  check(W.Newer("0.16.0", "0.15.0") and W.Newer("0.16.1", "0.16.0") and W.Newer("1.0.0", "0.99.9")
+    and not W.Newer("0.15.0", "0.15.0") and not W.Newer("0.9.0", "0.10.0"), "versions compare by number")
+  check(W.Format("- **Learn all:** use `/tac new` now") == "• |cffffd100Learn all:|r use |cffffd100/tac new|r now"
+    and W.Format("  - nested") == "      - nested", "changelog markdown as game text")
+
+  -- once per update
+  local realFresh, realPrev = ns.freshInstall, ns.previousVersion
+  TactaraDB.whatsNewSeen, TactaraDB.whatsNewOff = nil, nil
+  ns.freshInstall, ns.previousVersion = true, nil
+  check(W.CheckWhatsNew() == false and TactaraDB.whatsNewSeen == ns.VERSION, "fresh install: nothing to show")
+  TactaraDB.whatsNewSeen = nil
+  ns.freshInstall, ns.previousVersion = false, ns.WHATS_NEW[3].version
+  inCombat = true
+  check(W.CheckWhatsNew() == false and TactaraDB.whatsNewSeen == nil, "waits for the fight to end")
+  inCombat = false
+  W.HandleEvent("PLAYER_REGEN_ENABLED")
+  local body = W.frame and W.frame.body:GetText() or ""
+  check(W.frame and W.frame:IsShown() and body:find("Tactara " .. ns.WHATS_NEW[1].version, 1, true)
+    and body:find("Tactara " .. ns.WHATS_NEW[2].version, 1, true) and not body:find("Tactara " .. ns.WHATS_NEW[3].version, 1, true),
+    "shows every version since the one you had: " .. body:sub(1, 80))
+  check(TactaraDB.whatsNewSeen == ns.VERSION, "and remembers it")
+  W.frame:Hide()
+  check(W.CheckWhatsNew() == false and not W.frame:IsShown(), "only once")
+  TactaraDB.whatsNewSeen, TactaraDB.whatsNewOff = nil, true
+  check(W.CheckWhatsNew() == false and not W.frame:IsShown() and TactaraDB.whatsNewSeen == ns.VERSION, "turned off")
+  TactaraDB.whatsNewOff = nil
+  W.frame.show:SetChecked(false)
+  W.frame.show:GetScript("OnClick")(W.frame.show)
+  check(TactaraDB.whatsNewOff == true, "the checkbox in the window turns it off")
+  W.frame.show:SetChecked(true)
+  W.frame.show:GetScript("OnClick")(W.frame.show)
+  check(TactaraDB.whatsNewOff == nil, "and back on")
+  SlashCmdList.TACTARA("new")
+  check(W.frame:IsShown() and W.frame.body:GetText():find("Tactara " .. ns.VERSION, 1, true), "/tac new shows it any time")
+  W.frame:Hide()
+  ns.freshInstall, ns.previousVersion = realFresh, realPrev
+
+  -- the key question
+  local shown = {}
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(which, text) shown[#shown + 1] = { which = which, text = text } end
+  local realBinds, realSettingsKey, realCapture = TactaraCharDB.binds, ns.GetSettingsKey, ns.StartKeyCapture
+  local captured
+  ns.StartKeyCapture = function(which) captured = which end
+  ns.GetSettingsKey = function() return nil end
+  TactaraCharDB.binds = { main = "F" }
+  TactaraCharDB.keyAsked, TactaraDB.welcomeOff = nil, nil
+  check(W.AskKey() == false and #shown == 0, "not asked when you have a key")
+  TactaraCharDB.binds = {}
+  TactaraDB.welcomeOff = true
+  check(W.AskKey() == false and #shown == 0, "not asked when first-time questions are off")
+  TactaraDB.welcomeOff = nil
+  inCombat = true
+  check(W.AskKey() == false and #shown == 0, "never in combat")
+  inCombat = false
+  W.HandleEvent("PLAYER_REGEN_ENABLED")
+  check(#shown == 1 and shown[1].which == "TACTARA_KEY" and shown[1].text:find("one key"), "asked after the fight")
+  local d = StaticPopupDialogs.TACTARA_KEY
+  check(d.button1 == "Pick a key" and d.button2 == "Later" and d.button3 == "No thanks", "Pick a key / Later / No thanks")
+  check(W.Busy(), "busy while the question is up")
+  -- the planner question waits for it
+  TactaraCharDB.welcomeDone, TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = nil, nil, nil
+  T.Welcome()
+  check(#shown == 1, "the planner question waits for the key question")
+  d.OnAccept()
+  check(captured == "main" and TactaraCharDB.keyAsked, "Pick a key starts picking the main key")
+  check(#shown == 1, "the planner question still waits while you pick")
+  ns.afterKeyCapture()   -- you pressed a key
+  runTimers()
+  check(#shown == 2 and shown[2].which == "TACTARA_WELCOME", "then the planner question")
+  check(not W.Busy(), "not busy any more")
+  -- Later and No thanks
+  shown = {}
+  TactaraCharDB.keyAsked = nil
+  W.AskKey()
+  StaticPopupDialogs.TACTARA_KEY.OnCancel()
+  check(not TactaraCharDB.keyAsked and not W.Busy(), "Later: asked again next time")
+  W.AskKey()
+  StaticPopupDialogs.TACTARA_KEY.OnAlt()
+  check(TactaraCharDB.keyAsked and #shown == 2, "No thanks: not asked again")
+  check(W.AskKey() == false and #shown == 2, "and it isn't")
+  TactaraCharDB.binds, ns.GetSettingsKey, ns.StartKeyCapture = realBinds, realSettingsKey, realCapture
+  TactaraCharDB.welcomeDone, TactaraCharDB.keyAsked = true, true
   StaticPopupDialogs, StaticPopup_Show = nil, nil
 end
 

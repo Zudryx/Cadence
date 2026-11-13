@@ -46,7 +46,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
   - Displays: size, how many icons (1 to 10, or the whole rotation), and normal, see-through or hidden between fights.
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off.
-  - Reminders: before the pull (under the helper and in chat, under the helper only, or off) and the trainer reminder.
+  - Reminders: before the pull (under the helper and in chat, under the helper only, or off), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
   - Your characters: copy settings from another character, or make them the default for new ones.
   - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Reminders:** when you target an enemy before a fight, Tactara tells you if a buff your rotation keeps up, your pet, or a poison or weapon imbue is missing. After a level-up, it lists the new spells waiting at your class trainer, the ones your rotation uses first. It only tells you; you cast them.
@@ -56,7 +56,7 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
 ## Getting started
 
 1. Install Tactara and log in, or type `/reload`.
-2. Type `/tac bind` and press the key you want to use.
+2. Type `/tac bind` and press the key you want to use (Tactara also offers this the first time you play a character).
 3. Press that key in combat, or follow the glow on your bars.
 
 `/tac help` lists every command.

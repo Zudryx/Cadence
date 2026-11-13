@@ -5,7 +5,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.15.0"
+ns.VERSION = "0.16.0"
 ns.builtin = {}        -- [name] = rotation text shipped with the addon
 ns.builtinOrder = {}   -- names in load order
 ns.compiled = {}       -- .main / .aoe compiled sequences
@@ -220,7 +220,9 @@ end
 ---------------------------------------------------------------------------
 
 local function InitDB()
+  ns.freshInstall = TactaraDB == nil
   TactaraDB = TactaraDB or {}
+  ns.previousVersion = TactaraDB.version   -- the version you last played with
   TactaraDB.rotations = TactaraDB.rotations or {}
   TactaraDB.version = ns.VERSION
   if TactaraDB.hideErrors == nil then TactaraDB.hideErrors = true end
@@ -391,6 +393,7 @@ local HELP = {
   "|cffffd100/tac copy|r [name]  copy keys and display settings from another character",
   "|cffffd100/tac defaults|r  new characters start with this character's settings (|cffffd100/tac defaults clear|r)",
   "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
+  "|cffffd100/tac new|r  what's new in this version of Tactara",
   "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
   "|cffffd100/tac prepull|r on|helper|off  reminders before a fight: missing buffs, pet, poison or weapon imbue",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
@@ -485,6 +488,8 @@ local function HandleSlash(msg)
       ns.UpdateMinimapButton()
       ns.Print("Minimap button " .. (TactaraCharDB.minimapButton and "on" or "off (the minimap's addon menu still has Tactara)"))
     end
+  elseif cmd == "new" or cmd == "news" or cmd == "whatsnew" or cmd == "changes" then
+    ns.Welcome.Show(nil)
   elseif cmd == "trainer" then
     local v = rest:lower()
     if v == "on" or v == "off" then

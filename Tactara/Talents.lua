@@ -326,6 +326,8 @@ end
 function T.Welcome()
   if TactaraCharDB.welcomeDone or TactaraDB.welcomeOff or T.ActiveBuild() then return end
   if InCombatLockdown() then welcomeWaiting = true return end
+  -- the key question (or picking the key) comes first
+  if ns.Welcome and ns.Welcome.Busy() then ns.Welcome.afterKey = T.Welcome return end
   welcomeWaiting = false
   local level = UnitLevel and UnitLevel("player") or 1
   local intro = "|cffffd100Tactara|r can plan your talents from level 10 to 60, from its own builds or your own, and learn them with a click as you level."

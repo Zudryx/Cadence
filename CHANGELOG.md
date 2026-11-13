@@ -2,6 +2,12 @@
 
 Each `## x.y.z` section becomes the release notes for that version.
 
+## 0.16.0
+- **What's new:** after Tactara updates, a window shows what changed (including any versions you skipped), once for all your characters. `/tac new` shows it any time. Turn it off on the settings page (Reminders).
+- **Set up your key:** a character with no Tactara key is asked once whether to set one up, before the talent planner question. **Pick a key** works like `/tac bind`; **Later** asks again next time; **No thanks** doesn't ask again. The glow and the helper popup work without a key.
+- First-time questions (your key and the talent planner) can be turned off for all your characters on the settings page (Reminders).
+- No gameplay changes.
+
 ## 0.15.0
 - **Level 60 talent builds:** every spec now has a level 60 build as well, the main raid and dungeon build from each Icy Veins spec page (Druid has one for Cat and one for Bear), checked against the game's trees. They're under **Level 60** in the planner, below the leveling builds.
 - **Switching at 60:** unlearn your talents at your class trainer (it costs gold), then **Use this build** and **Learn all**. The planner says so when your talents don't fit a level 60 build.

@@ -116,16 +116,24 @@ local function WithModifiers(key)
   return mods .. key
 end
 
+local function AfterCapture()
+  local after = ns.afterKeyCapture
+  ns.afterKeyCapture = nil
+  if after then after() end
+end
+
 local function Finish(which, key)
   capture:Hide()
   if not key then
     ns.Print("Key setup cancelled.")
+    AfterCapture()
     return
   end
   ns.SetTactaraKey(which, key)
   ns.Print(("The %s is now on |cffffd100%s|r. Your normal keybinds weren't changed. /tac unbind gives the key back.")
     :format(LABELS[which], Pretty(key)))
   if ns.Editor and ns.Editor.OnRebuilt then ns.Editor.OnRebuilt() end
+  AfterCapture()
 end
 
 function ns.StartKeyCapture(which)

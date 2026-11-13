@@ -290,13 +290,6 @@ local function BuildVertical()
     function() ns.Talents.UpdateWindowButton() end)
   Check(TactaraCharDB, "talentGlow", "Glow the next talent", "In your talent window, the next talent of your build glows.", true,
     function() ns.Talents.Refresh() end)
-  do
-    local variable = "Tactara_welcome"
-    local s = Settings.RegisterProxySetting(cat, variable, VarType("boolean"), "Ask new characters about the planner", true,
-      function() return not TactaraDB.welcomeOff end,
-      function(v) if v then TactaraDB.welcomeOff = nil else TactaraDB.welcomeOff = true end end)
-    CreateCheckbox(cat, s, "The first time you play a character with Tactara, it asks once whether to open the talent planner (or reminds you at level 10). For all your characters.")
-  end
   Check(TactaraCharDB, "talentReminders", "Remind me about talent points", "A chat line when you have talent points to spend, with the next one in your build.", true,
     function() end)
 
@@ -312,6 +305,18 @@ local function BuildVertical()
   }, function() ns.Reminders.ResetChatThrottle(); Refresh() end)
   Check(TactaraCharDB, "trainerReminder", "New spells at the trainer", "A chat line when you level up and new spells are waiting at your class trainer, the ones your rotation uses first. /tac trainer shows the list any time.", true,
     function() end)
+  do
+    local s = Proxy("welcome", "boolean", "First-time questions on new characters", true,
+      function() return not TactaraDB.welcomeOff end,
+      function(v) if v then TactaraDB.welcomeOff = nil else TactaraDB.welcomeOff = true end end)
+    CreateCheckbox(cat, s, "The first time you play a character with Tactara, it asks once about setting up your Tactara key and whether to open the talent planner (or reminds you at level 10). For all your characters.")
+  end
+  do
+    local s = Proxy("whatsNew", "boolean", "What's new after an update", true,
+      function() return not TactaraDB.whatsNewOff end,
+      function(v) if v then TactaraDB.whatsNewOff = nil else TactaraDB.whatsNewOff = true end end)
+    CreateCheckbox(cat, s, "After Tactara updates, a window with what changed, once for all your characters. /tac new shows it any time.")
+  end
 
   Settings.RegisterAddOnCategory(cat)
   return cat
@@ -336,6 +341,7 @@ local COMMANDS = {
   "/tac interrupts | defensives  - suggestions on/off",
   "/tac prepull on | helper | off  - reminders before a fight",
   "/tac trainer [on | off]  - spells waiting at your trainer",
+  "/tac new  - what's new in this version",
   "/tac use <name> | auto  - pick a rotation",
   "/tac help  - every command",
 }

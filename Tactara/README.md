@@ -27,6 +27,8 @@ Tactara is a fan-made project, not made or endorsed by Blizzard Entertainment.
 
 ## Set up your key (pick one)
 
+The first time you play a character with no Tactara key, Tactara asks once whether to set one up: **Pick a key** is the same as `/tac bind`. The glow on your bars and the helper popup work without a key.
+
 - **`/tac bind` (recommended):** type `/tac bind` and press any key, with Shift/Ctrl/Alt if you want, or mouse button 3-5. It can be a key your action bar already uses, like `1`. Tactara takes that key over while the addon is loaded. **Your saved keybinds aren't changed**, and `/tac unbind` gives the key back. Use `/tac bind aoe` for the AoE button. You can also use the **Main key** / **AoE key** buttons in the `/tac` window: left-click to set a key, right-click to remove it.
 - **WoW's keybinding menu:** Esc > Options > Keybindings > AddOns > Tactara. This replaces whatever was on that key.
 
@@ -79,7 +81,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
-- **Reminders:** before-the-pull reminders (under the helper and in chat, under the helper only, or off) and the trainer reminder after a level-up.
+- **Reminders:** before-the-pull reminders (under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your key and the talent planner), and the "what's new" window after an update.
 
 The `/tac` commands still work, and both always show the same settings.
 
@@ -160,6 +162,7 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac fade` [`helper` / `key`] `show` / `fade` / `hide` | How the displays look between fights; `/tac fade 40` sets how visible see-through is |
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
 | `/tac prepull` `on` / `helper` / `off` | Before-the-pull reminders: under the helper and in chat, under the helper only, or off |
+| `/tac new` | What's new in this version (also shown once after each update) |
 | `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |
 | `/tac reset` | Restart from the opener |
 | `/tac errors` | Show/hide red "not ready" errors while pressing (hidden by default) |

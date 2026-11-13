@@ -46,7 +46,7 @@ python3 tests/runlua.py tests/helper_test.lua Tactara
 ## 4. Version, changelog, pull request
 
 - Bump the patch version in **both** `Tactara/Tactara.toc` (`## Version:`) and `Tactara/Core.lua` (`ns.VERSION`). The syntax test checks they match.
-- Add a `## x.y.z` section at the top of `CHANGELOG.md`, written for players: what changed in plain words.
+- Add a `## x.y.z` section at the top of `CHANGELOG.md`, written for players: what changed in plain words. Then run `python3 tests/make_whats_new.py`: it copies the newest sections into `Tactara/WhatsNew.lua` for the in-game "what's new" window, and the tests fail until you do.
 - Open a pull request titled `Rotation update YYYY-MM-DD` on a new branch. In the body, for each change: what changed, why, and the source link.
 - If nothing needs changing, don't open a pull request. Just report that the rotations are current.
 
