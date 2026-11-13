@@ -98,7 +98,7 @@ end
 
 local function Duration(spell, unitKind)
   if learned[spell] then return learned[spell] end
-  local d = DEFAULT_DURATIONS[spell]
+  local d = DEFAULT_DURATIONS[spell] or DEFAULT_DURATIONS[ns.Locale.English(spell)]
   if type(d) == "function" then
     local okL, level = pcall(UnitLevel, "player")
     d = d(okL and tonumber(level) or 60)
@@ -141,6 +141,7 @@ function ns.ComboPoints()
 end
 
 local function CountCombo(spellName)
+  if not (BUILDERS[spellName] or FINISHERS[spellName]) then spellName = ns.Locale.English(spellName) end
   if BUILDERS[spellName] then
     counted = math.min(5, counted + BUILDERS[spellName])
   elseif FINISHERS[spellName] then

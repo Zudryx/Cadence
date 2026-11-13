@@ -60,6 +60,10 @@ If the game's interface version changes, update `## Interface:` in `Tactara/Tact
 
 Each new release is also uploaded to CurseForge (project 1795307, set by `## X-Curse-Project-ID` in `Tactara/Tactara.toc`) by `.github/scripts/curseforge_upload.py`, tagged with the WoW Forever game version that matches `## Interface` (16001 = 1.60.1) and with that version's CHANGELOG section. It needs the `CF_API_KEY` repository secret; without it the upload is skipped with a notice. To test the token without uploading, run the Release workflow by hand (Actions > Release > Run workflow) with **CurseForge: check**. If an upload fails, fix the cause and run it with **upload**.
 
+## Games in other languages
+
+Rotations and builds use English names; `Tactara/SpellIDs.lua` has the spell ID for each, and on other languages Tactara asks the game for the name in that language (`Tactara/Locale.lua`). `SpellIDs.lua` is made by `python3 tests/make_spell_ids.py` from `tests/spell_ids/icy_veins.json` (the spell links on the Icy Veins WoW Forever class guides; `_extra` for IDs found by hand in their spell database) and the talent IDs in `tests/talent_fixtures/`. When a rotation uses a spell that has no ID, the tests say which: add it to the JSON and run the script. `/tac probe locale` in game checks every ID against the game's own names.
+
 ## Talent builds
 
 Tactara's recommended talent builds live in `Tactara/TalentBuilds/<Class>.lua`, one `ns.RegisterTalentBuild` per spec, as a point-by-point order from level 10. Check them with the Forever guides when you check rotations. Players following one of these builds are asked before an update applies to them (they keep their version until they choose), so change a build only when the guides really changed, and **never rename a built-in build**: players are linked to it by name. Every build must be legal on the game's trees. The tests read the real trees in `tests/talent_fixtures/<class>.lua`, made from a `/tac probe talents` report (any level, even 1) with `python3 tests/make_talent_fixture.py report.txt`. When Blizzard changes a class's talents, get a new probe and remake its fixture.

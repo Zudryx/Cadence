@@ -13,6 +13,8 @@
 
 Core.lua
 Parser.lua
+SpellIDs.lua
+Locale.lua
 Rotations\Warrior.lua
 Rotations\Paladin.lua
 Rotations\Hunter.lua
@@ -36,6 +38,7 @@ Editor.lua
 Options.lua
 Minimap.lua
 Profiles.lua
+Share.lua
 Talents.lua
 TalentBuilds\Warrior.lua
 TalentBuilds\Paladin.lua

@@ -514,7 +514,7 @@ function T.ReadTree()
     local cfg = C_Traits.GetConfigInfo(configID) or {}
     local treeIDs = cfg.treeIDs or {}
     if not treeIDs[1] then error("no talent tree", 0) end
-    tree = { configID = configID, treeID = treeIDs[1], list = {}, nodes = {}, byName = {}, trees = {} }
+    tree = { configID = configID, treeID = treeIDs[1], list = {}, nodes = {}, byName = {}, bySpell = {}, trees = {} }
     local raw = {}
     for _, tid in ipairs(treeIDs) do
       for _, nodeID in ipairs(C_Traits.GetTreeNodes(tid) or {}) do
@@ -544,6 +544,7 @@ function T.ReadTree()
       tree.list[#tree.list + 1] = node
       local key = node.name:lower()
       if not tree.byName[key] then tree.byName[key] = node end
+      if node.spellID and not tree.bySpell[node.spellID] then tree.bySpell[node.spellID] = node end
     end
     if #tree.list == 0 then error("no talents found", 0) end
     -- Arrows only run down a tree (or across a row): the Hunter data also
@@ -601,7 +602,7 @@ function T.ReadTree()
       local rowIndex = Cluster(tr.nodes, "y")
       local colIndex = Cluster(tr.nodes, "x")
       for _, node in ipairs(tr.nodes) do node.row, node.col = rowIndex[node.y], colIndex[node.x] end
-      tr.name = ns.NameTalentTree(ns.GetClassToken(), tr.names) or ("Tree " .. t)
+      tr.name = ns.NameTalentTree(ns.GetClassToken(), tr.names, #tree.trees == 3 and t or nil) or ("Tree " .. t)
       tr.rows, tr.cols = 0, 0
       for _, node in ipairs(tr.nodes) do
         tr.rows = math.max(tr.rows, node.row)
@@ -632,6 +633,16 @@ end
 -- Checking a build against the rules
 ---------------------------------------------------------------------------
 
+-- A talent by name: the game's name, or the English name of one of
+-- Tactara's builds (matched by its spell ID on games in other languages).
+function T.FindNode(tree, name)
+  if type(name) ~= "string" then return nil end
+  local node = tree.byName[name:lower()]
+  if node then return node end
+  local id = ns.Locale and ns.Locale.TalentId(name)
+  return id and tree.bySpell and tree.bySpell[id] or nil
+end
+
 -- Plays the picks in order. Each step: { index, name, level, node, rank, err }.
 -- A step with an error isn't counted, so later steps are checked as if it
 -- were left out.
@@ -640,7 +651,7 @@ function T.Simulate(picks, tree)
   local steps, firstError = {}, nil
   for i, name in ipairs(picks) do
     local step = { index = i, name = name, level = T.FIRST_LEVEL + i - 1 }
-    local node = tree.byName[name:lower()]
+    local node = T.FindNode(tree, name)
     if not node then
       step.err = "there's no talent called " .. name
     else

@@ -62,6 +62,7 @@ local KNOWN_ANN = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true,
 local LIVE_ANN = { ["missing"] = true, ["nodebuff"] = true, ["enemies"] = true, ["health"] = true,
   ["creature"] = true, ["nopet"] = true, ["combo"] = true }
 local NO_ARG_ANN = { ["nopet"] = true }   -- written without a value: "@nopet"
+local SPELL_ANN = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true, ["missing"] = true, ["nodebuff"] = true }
 ns.LIVE_ANN = LIVE_ANN
 
 local MAX_WEIGHT = 20
@@ -164,9 +165,21 @@ function ns.Parse(text)
           warnings[#warnings + 1] = ("line %d: expected a /command, got '%s'"):format(lineNo, s)
         else
           local cmd, tail = SplitAnnotations(s)
+          -- on a game in another language: the spell names in that language
+          if ns.LocalizeCommand then cmd = ns.LocalizeCommand(cmd) end
+          local conds = ParseAnnotationTail(tail, warnings, lineNo)
+          for _, c in ipairs(conds) do
+            if SPELL_ANN[c.kind] and ns.LocalizeSpell then
+              c.arg = ns.LocalizeSpell(c.arg)
+            elseif c.kind == "creature" and ns.LocalizeCreature then
+              local list = {}
+              for want in c.arg:gmatch("[^,/]+") do list[#list + 1] = ns.LocalizeCreature(trim(want)) end
+              c.arg = table.concat(list, ", ")
+            end
+          end
           local line = {
             cmd = cmd,
-            conds = ParseAnnotationTail(tail, warnings, lineNo),
+            conds = conds,
             spells = SpellsInCommand(cmd),
             lineNo = lineNo,
           }

@@ -12,6 +12,8 @@ ns.WHATS_NEW = {
     "- **What's new:** after Tactara updates, a window shows what changed (including any versions you skipped), once for all your characters. `/tac new` shows it any time. Turn it off on the settings page (Reminders).",
     "- **Set up your key:** a character with no Tactara key is asked once whether to set one up, before the talent planner question. **Pick a key** works like `/tac bind`; **Later** asks again next time; **No thanks** doesn't ask again. The glow and the helper popup work without a key.",
     "- First-time questions (your key and the talent planner) can be turned off for all your characters on the settings page (Reminders).",
+    "- **Share your settings:** `/tac export` (or **Export** on the settings page, Your characters) gives this character's settings as text, to back them up or give them to a friend on any account or computer. `/tac import` takes it back: you're asked first, and keys only come along if you choose **With keys**.",
+    "- **Games in other languages:** rotations and talent builds now work on German, French, Spanish and other game clients. Tactara finds each spell's name in your language by its spell ID; its own windows stay in English. `/tac probe locale` checks the IDs against your game. On English games nothing changes.",
     "- No gameplay changes.",
   } },
   { version = "0.15.0", lines = {

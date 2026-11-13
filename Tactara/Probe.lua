@@ -558,3 +558,94 @@ function ns.ProbeReminders()
   ns.Print("Reminders probe done. Copy the text in the window (Ctrl+C) and paste it to whoever asked for it. Nothing was changed.")
   return text
 end
+
+---------------------------------------------------------------------------
+-- /tac probe locale
+-- Read only: checks Tactara's spell ID table (SpellIDs.lua, used on games
+-- in other languages) against the game. Best run on an English game: every
+-- ID should come back with the same English name. Also lists the spells
+-- your class's rotations use that have no ID yet, with the ID from your
+-- spellbook when the game knows it.
+---------------------------------------------------------------------------
+
+function ns.ProbeLocale()
+  local L = {}
+  local function add(text) L[#L + 1] = text end
+  local Loc = ns.Locale
+  local version, build = GetBuildInfo()
+  local _, class = UnitClass("player")
+  add(("Tactara %s language probe. Read only: nothing was changed."):format(ns.VERSION))
+  add(("game %s (%s), language %s, %s"):format(tostring(version), tostring(build), tostring(Loc.locale), tostring(class)))
+
+  local total, same, different, unknown = 0, 0, {}, {}
+  for _, section in ipairs({ { "spells", ns.SPELL_IDS }, { "talents", ns.TALENT_IDS } }) do
+    for cls, tbl in pairs(section[2] or {}) do
+      for name, id in pairs(tbl) do
+        total = total + 1
+        local n = Loc.NameOf(id)
+        if not n then
+          unknown[#unknown + 1] = ("%s %s = %d"):format(cls, name, id)
+        elseif n == name then
+          same = same + 1
+        else
+          different[#different + 1] = ("%s %s = %d (game: %s)"):format(cls, name, id, n)
+        end
+      end
+    end
+  end
+  table.sort(different); table.sort(unknown)
+  add(("%d IDs checked: %d match, %d named differently, %d unknown to the game"):format(total, same, #different, #unknown))
+  if Loc.english then
+    add("named differently (on an English game these are wrong or renamed):")
+  else
+    add("named differently (normal on a game in another language):")
+  end
+  for i, t in ipairs(different) do if i > 80 then add("  ...") break end add("  " .. t) end
+  add("unknown to the game:")
+  for i, t in ipairs(unknown) do if i > 80 then add("  ...") break end add("  " .. t) end
+
+  -- this class's rotation spells with no ID
+  local wanted, seen = {}, {}
+  local function want(n) if n and n ~= "" and not seen[n] then seen[n] = true; wanted[#wanted + 1] = n end end
+  local NAMES = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true, ["missing"] = true, ["nodebuff"] = true }
+  for _, r in ipairs(ns.ListRotations(class) or {}) do
+    local text = ns.GetRotationText(r.name)
+    local rot = text and ns.Parse(text)
+    if rot then
+      want(rot.meta.detect)
+      for t in (rot.meta.prefer or ""):gmatch("[^,]+") do want(ns.trim(t)) end
+      local function line(l)
+        for _, s in ipairs(l.spells or {}) do want(s) end
+        for _, c in ipairs(l.conds or {}) do if NAMES[c.kind] then want(c.arg) end end
+      end
+      for key, list in pairs(rot.sections) do
+        for _, item in ipairs(list) do
+          if item.lines then for _, l in ipairs(item.lines) do line(l) end else line(item) end
+        end
+      end
+    end
+  end
+  table.sort(wanted)
+  local future = {}
+  if ns.Reminders and ns.Reminders.FutureSpells then
+    for _, s in ipairs(ns.Reminders.FutureSpells()) do future[s.name] = s.id end
+  end
+  local missing = {}
+  for _, n in ipairs(wanted) do
+    if not Loc.IdFor(n, class) then
+      local found
+      if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, n)
+        if ok and type(info) == "table" then found = info.spellID end
+      end
+      found = found or future[n]
+      missing[#missing + 1] = n .. (found and (" (your spellbook: " .. found .. ")") or "")
+    end
+  end
+  add(("%s rotation spells with no ID: %s"):format(tostring(class), #missing > 0 and table.concat(missing, ", ") or "none"))
+
+  local text = table.concat(L, "\n")
+  ns.ShowCopyText("Tactara language probe", text)
+  ns.Print("Language probe done. Copy the text in the window (Ctrl+C) and paste it to whoever asked for it. Nothing was changed.")
+  return text
+end

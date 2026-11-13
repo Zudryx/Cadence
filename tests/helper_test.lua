@@ -1985,5 +1985,166 @@ name: prep test
   R.ResetChatThrottle()
 end
 
+-- a game in another language: rotations and builds are written in English,
+-- Tactara uses the spell IDs to find each name in the game's language
+do
+  local L, T = ns.Locale, ns.Talents
+  local realGetName, realSB, realCT, realTraits, realClass, realCreature = C_Spell.GetSpellName, C_SpellBook, C_ClassTalents, C_Traits, UnitClass, C_CreatureInfo
+  local EN = {}
+  for _, tbl in pairs({ ns.SPELL_IDS.WARRIOR, ns.TALENT_IDS.WARRIOR }) do
+    for name, id in pairs(tbl) do EN[id] = EN[id] or name end
+  end
+  C_Spell.GetSpellName = function(id) local n = EN[id]; return n and ("DE " .. n) or nil end
+  -- the spellbook only knows the German names
+  C_SpellBook = setmetatable({
+    FindSpellBookSlotForSpell = function(name, ...)
+      if type(name) == "string" and name:find("^DE ") then return realSB.FindSpellBookSlotForSpell(name:sub(4), ...) end
+      return nil
+    end,
+  }, { __index = realSB })
+  C_CreatureInfo = { GetCreatureTypeInfo = function(id) return { name = ({ [3] = "Dämon", [6] = "Untoter" })[id] } end }
+  L.force = true
+  ns.ClearKnownCache()
+
+  check(L.Spell("Heroic Strike") == "DE Heroic Strike" and L.Spell("Not A Spell") == "Not A Spell", "English name -> the game's name, unknown ones unchanged")
+  check(L.English("DE Rend") == "Rend", "and back")
+  check(L.Command("/cast [@focus,exists] Pummel; Shield Bash") == "/cast [@focus,exists] DE Pummel; DE Shield Bash", "conditions kept: " .. L.Command("/cast [@focus,exists] Pummel; Shield Bash"))
+  check(L.Command("/cast !Battle Stance") == "/cast !DE Battle Stance" and L.Command("/startattack") == "/startattack", "! kept, other commands untouched")
+  check(L.Creature("Undead") == "Untoter", "creature types in the game's language")
+
+  local rot = ns.Parse("name: t\nclass: WARRIOR\n[priority]\n/cast Battle Shout @missing Battle Shout\n/cast Execute @creature Undead, Demon\n[loop]\n/cast Heroic Strike\n")
+  local p1, p2 = rot.sections.priority[1], rot.sections.priority[2]
+  check(p1.spells[1] == "DE Battle Shout" and p1.conds[1].arg == "DE Battle Shout" and p2.conds[1].arg == "Untoter, Dämon",
+    "rotation lines read in the game's language")
+  check(ns.IsKnown("DE Heroic Strike") and not ns.IsKnown("Heroic Strike"), "the spellbook answers to the German name")
+  local comp = ns.Compile(ns.Parse(ns.GetRotationText("Warrior - Arms")), "main", ns.MakeEnv())
+  local text = {}
+  for _, st in ipairs(comp.steps) do text[#text + 1] = st.text end
+  text = table.concat(text, "\n")
+  check(#comp.steps > 0 and text:find("/cast DE Heroic Strike", 1, true) and not text:find("/cast Heroic Strike", 1, true),
+    "Arms compiles to German macros: " .. text:sub(1, 80))
+
+  -- talent builds by spell ID, trees named by their place
+  local FIX = dofile(root .. "/../tests/talent_fixtures/warrior.lua")
+  local byId, order = {}, {}
+  for _, n in ipairs(FIX) do byId[n.id] = n; order[#order + 1] = n.id end
+  UnitClass = function() return "Krieger", "WARRIOR", 1 end
+  C_ClassTalents = { GetActiveConfigID = function() return 1 end, CanChangeTalents = function() return true, true end }
+  C_Traits = {
+    GetConfigInfo = function() return { treeIDs = { 1 } } end,
+    GetTreeNodes = function() return order end,
+    GetNodeInfo = function(_, id)
+      local n = byId[id]
+      local edges = {}
+      for _, t in ipairs(n.to) do edges[#edges + 1] = { targetNode = t } end
+      return { ID = id, posX = n.x, posY = n.y, maxRanks = n.max, ranksPurchased = 0, entryIDs = { id }, visibleEdges = edges, subTreeID = 0 }
+    end,
+    GetEntryInfo = function(_, id) return { definitionID = id, maxRanks = byId[id].max } end,
+    GetDefinitionInfo = function(id) return { spellID = byId[id].spell, overrideName = "DE " .. byId[id].name } end,
+    GetTreeCurrencyInfo = function() return { { maxQuantity = 0 } } end,
+  }
+  local tree = T.ReadTree()
+  local names = {}
+  for i, tr in ipairs(tree.trees) do names[i] = tr.name end
+  check(table.concat(names, "/") == "Arms/Fury/Protection", "German talents: trees named by their place: " .. table.concat(names, "/"))
+  check(T.FindNode(tree, "Mortal Strike") and T.FindNode(tree, "Mortal Strike").name == "DE Mortal Strike", "a build's English talent finds the German one")
+  local all = true
+  for _, b in ipairs(T.BuildsForClass("WARRIOR")) do
+    if T.IsBuiltin(b.name) and b.source then
+      local sim = T.Simulate(b.picks, tree)
+      if not (sim.ok and sim.total == 51) then all = false; print("  " .. b.name .. ": " .. tostring(sim.firstError and sim.firstError.err)) end
+    end
+  end
+  check(all, "every Warrior build works on the German trees")
+  local talents = ns.ReadTalents("WARRIOR")
+  local tn = {}
+  for i, t in ipairs(talents.trees) do tn[i] = t.name end
+  check(table.concat(tn, "/") == "Arms/Fury/Protection", "rotation pick sees the trees by their place too: " .. table.concat(tn, "/"))
+
+  L.force = nil
+  C_Spell.GetSpellName, C_SpellBook, C_ClassTalents, C_Traits, UnitClass, C_CreatureInfo = realGetName, realSB, realCT, realTraits, realClass, realCreature
+  ns.ClearKnownCache()
+  check(L.Spell("Heroic Strike") == "Heroic Strike" and L.Command("/cast Rend") == "/cast Rend", "English game: nothing changes")
+end
+
+-- settings as text: export, import, keys only when asked
+do
+  local S = ns.Share
+  local shown
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(which, text) shown = { which = which, text = text } end
+  local saved = {}
+  for _, k in ipairs(ns.Profiles.KEYS) do saved[k] = TactaraCharDB[k] end
+  TactaraCharDB.binds = { main = "F", aoe = "SHIFT-F" }
+  TactaraCharDB.helperPos = { point = "CENTER", x = 12.5, y = -40 }
+  TactaraCharDB.helperScale, TactaraCharDB.showHelper, TactaraCharDB.prePull = 1.25, true, "helper"
+  local text = S.Export()
+  check(text:find("^Tactara settings 1") and text:find("\nend$") and text:find("helperPos.x=n:12.5", 1, true)
+    and text:find("binds.main=s:F", 1, true) and text:find("prePull=s:helper", 1, true), "export as plain lines: " .. text:sub(1, 60))
+  local parsed, n = S.Parse(text)
+  check(parsed and n > 5 and parsed.helperPos.y == -40 and parsed.helperScale == 1.25 and parsed.showHelper == true and parsed.binds.aoe == "SHIFT-F",
+    "the text reads back the same")
+  check(S.Parse("hello") == nil and S.Parse(text:gsub("\nend$", "")) == nil, "not Tactara text, or cut off: refused")
+  local evil = "Tactara settings 1\nactive=s:Warrior - Fury\nloadstring=s:os.exit()\nhelperScale=n:2\nend"
+  local p2 = S.Parse(evil)
+  check(p2 and p2.helperScale == 2 and p2.active == nil and p2.loadstring == nil, "only Tactara's own settings are taken (not rotation or anything else)")
+
+  -- import onto another setup: asked first, keys only with "With keys"
+  TactaraCharDB.binds = { main = "Q" }
+  TactaraCharDB.helperScale, TactaraCharDB.prePull = 1, "both"
+  S.Confirm(parsed)
+  local d = StaticPopupDialogs.TACTARA_IMPORT
+  check(shown and shown.which == "TACTARA_IMPORT" and shown.text:find("F, SHIFT%-F") and d.button1 == "Import" and d.button3 == "With keys", "asked first, with the keys named")
+  check(TactaraCharDB.helperScale == 1, "nothing changes before you answer")
+  d.OnAccept()
+  check(TactaraCharDB.helperScale == 1.25 and TactaraCharDB.prePull == "helper" and TactaraCharDB.binds.main == "Q", "Import: settings, but your keys stay")
+  S.Confirm(parsed)
+  StaticPopupDialogs.TACTARA_IMPORT.OnAlt()
+  check(TactaraCharDB.binds.main == "F" and TactaraCharDB.binds.aoe == "SHIFT-F", "With keys: keys too")
+  TactaraCharDB.showHelper = true
+  S.Apply(S.Parse("Tactara settings 1\nshowHelper=n:5\nend"), false)
+  check(TactaraCharDB.showHelper == true, "a setting of the wrong kind is left out")
+  -- the paste window: wrong text keeps the window open
+  S.ShowImport()
+  local f = _G.TactaraCopyFrame
+  check(f and f.onAccept and f.onAccept("nope") == false, "wrong text: the window stays open")
+  check(f.onAccept(text) == true and shown.which == "TACTARA_IMPORT", "right text: asked to import")
+  SlashCmdList.TACTARA("export")
+  check(_G.TactaraCopyFrame.text:find("^Tactara settings 1"), "/tac export shows the text")
+  for _, k in ipairs(ns.Profiles.KEYS) do TactaraCharDB[k] = saved[k] end
+  StaticPopupDialogs, StaticPopup_Show = nil, nil
+  local okP, probe = pcall(ns.ProbeLocale)
+  check(okP and probe:find("IDs checked"), "/tac probe locale runs: " .. tostring(probe):sub(1, 60))
+end
+
+-- every spell the built-in rotations use has an ID (for games in other languages)
+do
+  local L = ns.Locale
+  local GAPS = { ["Faerie Fire (Feral)"] = true, ["Improved Shifting Power"] = true }   -- no ID found yet
+  local NAMES = { ["if"] = true, ["unless"] = true, ["ifmissing"] = true, ["missing"] = true, ["nodebuff"] = true }
+  local missing = {}
+  for _, class in ipairs({ "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }) do
+    for _, r in ipairs(ns.ListRotations(class)) do
+      local rot = ns.Parse(ns.GetRotationText(r.name))
+      local function want(n)
+        if n and n ~= "" and not GAPS[n] and not L.IdFor(n, class) then missing[#missing + 1] = class .. ": " .. n end
+      end
+      want(rot.meta.detect)
+      for t in (rot.meta.prefer or ""):gmatch("[^,]+") do want(ns.trim(t)) end
+      local function line(l)
+        for _, sp in ipairs(l.spells or {}) do want(sp) end
+        for _, c in ipairs(l.conds or {}) do if NAMES[c.kind] then want(c.arg) end end
+      end
+      for _, list in pairs(rot.sections) do
+        for _, item in ipairs(list) do
+          if item.lines then for _, l in ipairs(item.lines) do line(l) end else line(item) end
+        end
+      end
+    end
+  end
+  check(#missing == 0, "rotation spells without an ID (add them to tests/spell_ids/icy_veins.json, run tests/make_spell_ids.py): "
+    .. table.concat(missing, ", "))
+end
+
 print(fails == 0 and "\nHELPER TEST PASSED" or ("\n" .. fails .. " FAILURE(S)"))
 os.exit(fails == 0 and 0 or 1)

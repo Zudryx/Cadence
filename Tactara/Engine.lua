@@ -198,7 +198,7 @@ function ns.ResolveActive()
       if r.tree and r.tree:lower() == top then
         local score = weaponFits(r) and 1000 or 0
         for t in (r.prefer or ""):gmatch("[^,]+") do
-          score = score + ((build.talents.talents or {})[ns.trim(t)] or 0)
+          score = score + ((build.talents.talents or {})[ns.Locale.Spell(ns.trim(t))] or 0)
         end
         if not bestScore or score > bestScore then best, bestScore = r, score end
       end
@@ -206,7 +206,7 @@ function ns.ResolveActive()
     if best then return best.name, true, reason end
   end
   for _, r in ipairs(list) do
-    if r.detect and ns.IsKnown(r.detect) then return r.name, true, "you know " .. r.detect end
+    if r.detect and ns.IsKnown(ns.Locale.Spell(r.detect)) then return r.name, true, "you know " .. r.detect end
   end
   if build.weapon then
     for _, r in ipairs(list) do

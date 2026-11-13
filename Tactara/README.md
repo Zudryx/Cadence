@@ -78,7 +78,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Keys:** set your one-button, AoE and interrupt keys, give them back, hide the red "not ready" errors.
 - **Displays:** show or hide the helper popup and the key bar, change their size (50% to 200%) and how many icons each shows (1 to 10, or all), turn the helper's cooldown sweep and colors on or off, choose how each looks between fights (normal, see-through or hidden) and how see-through, lock them, or reset them to the middle of the screen, and show or hide the minimap button. While they're unlocked, "hidden" shows see-through instead so you can still find and move them.
 - **Bar highlight:** on or off, how strong the glow is (with a preview), and whether it follows the best spell or the key's next step.
-- **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. Rotation and talent builds stay each character's own.
+- **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. **Export** gives the same settings as text to back up or give to a friend (any account or computer); **Import** takes that text back, asks first, and only sets keys if you choose **With keys**. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off.
 - **Reminders:** before-the-pull reminders (under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your key and the talent planner), and the "what's new" window after an update.
@@ -163,12 +163,14 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac interrupts` / `/tac defensives` | Red interrupt / orange defensive suggestions on or off |
 | `/tac prepull` `on` / `helper` / `off` | Before-the-pull reminders: under the helper and in chat, under the helper only, or off |
 | `/tac new` | What's new in this version (also shown once after each update) |
+| `/tac export` / `import` | Your settings as text, to back up or share; import asks first and keeps your keys unless you choose otherwise |
 | `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |
 | `/tac reset` | Restart from the opener |
 | `/tac errors` | Show/hide red "not ready" errors while pressing (hidden by default) |
 | `/tac test` | Diagnostics: your keys and settings |
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
 | `/tac probe talents` | A read-only report on your talents and the talent window, in a window you can copy from. Changes nothing. |
+| `/tac probe locale` | A read-only check of Tactara's spell IDs (used on games in other languages) against your game |
 | `/tac probe reminders` | A read-only report on what the trainer and before-the-pull reminders can see. Changes nothing. |
 | `/tac debug` | Prints every press, every cast sent and every game error to chat |
 | `/tac keydown auto` / `off` | Troubleshooting only: cast on key down (default) or key up |
@@ -234,7 +236,8 @@ detect: Mortal Strike      # auto-pick this rotation once you know this spell
 
 - If you get Lua errors, type `/console scriptErrors 1` to show them and send the error text.
 - WoW Forever hides cooldowns, procs and buffs from addons during combat. The Tactara key plays a fixed sequence with fallbacks instead of reacting, so some presses won't cast anything. That's normal.
-- Spell names are in English, so non-English game clients need translated rotations.
+- **Games in other languages:** rotations and talent builds are written in English, and Tactara finds each spell's name in your game's language by its spell ID, so they work on German, French, Spanish and other clients too. Rotations you write yourself can use English names or your game's names. Tactara's own windows and messages stay in English. A handful of spells have no ID yet (Faerie Fire (Feral) for Druids); on another language those lines are skipped. `/tac probe locale` checks the IDs against your game.
+- A rotation step can hold about 255 characters, and spell names in some languages are longer, so a long step may get cut off there.
 - Stance numbers assume 1 = Battle, 2 = Defensive, 3 = Berserker. If you skipped the Defensive Stance quest, Berserker becomes stance 2. Edit the `nostance:` numbers if that applies to you.
 - A step longer than 255 characters may get cut off. The editor warns you if that happens.
 

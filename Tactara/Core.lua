@@ -394,6 +394,7 @@ local HELP = {
   "|cffffd100/tac defaults|r  new characters start with this character's settings (|cffffd100/tac defaults clear|r)",
   "|cffffd100/tac minimap|r  show or hide the minimap button (|cffffd100/tac minimap reset|r puts it back)",
   "|cffffd100/tac new|r  what's new in this version of Tactara",
+  "|cffffd100/tac export|r / |cffffd100import|r  your settings as text, to back up or share (keys only if you choose)",
   "|cffffd100/tac trainer|r  spells waiting at your class trainer (|cffffd100/tac trainer on|r / |cffffd100off|r: the level-up reminder)",
   "|cffffd100/tac prepull|r on|helper|off  reminders before a fight: missing buffs, pet, poison or weapon imbue",
   "|cffffd100/tac icons|r helper|key 1-10|all  how many icons each display shows",
@@ -411,6 +412,7 @@ local HELP = {
   "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
   "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
   "|cffffd100/tac probe talents|r  report how your talents look to Tactara, in a window you can copy from (changes nothing)",
+  "|cffffd100/tac probe locale|r  check Tactara's spell IDs (for games in other languages) against the game (changes nothing)",
   "|cffffd100/tac probe reminders|r  report what Tactara sees for the trainer and before-the-pull reminders (changes nothing)",
   "|cffffd100/tac debug|r  print every press, cast and game error to chat",
   "|cffffd100/tac keydown auto / off|r  troubleshooting: fire on key down (default) or key up",
@@ -488,6 +490,10 @@ local function HandleSlash(msg)
       ns.UpdateMinimapButton()
       ns.Print("Minimap button " .. (TactaraCharDB.minimapButton and "on" or "off (the minimap's addon menu still has Tactara)"))
     end
+  elseif cmd == "export" or cmd == "share" then
+    ns.Share.ShowExport()
+  elseif cmd == "import" then
+    ns.Share.ShowImport()
   elseif cmd == "new" or cmd == "news" or cmd == "whatsnew" or cmd == "changes" then
     ns.Welcome.Show(nil)
   elseif cmd == "trainer" then
@@ -586,6 +592,7 @@ local function HandleSlash(msg)
     local what = rest:lower()
     if what:match("^talent") then ns.ProbeTalents()
     elseif what:match("^remind") or what:match("^trainer") or what:match("^pull") then ns.ProbeReminders()
+    elseif what:match("^locale") or what:match("^lang") then ns.ProbeLocale()
     else ns.Probe() end
   elseif cmd == "spells" then
     ns.ReportSpells()

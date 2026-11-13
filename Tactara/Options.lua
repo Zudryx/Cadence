@@ -278,6 +278,10 @@ local function BuildVertical()
     function() ns.Profiles.ShowCopy() end)
   Button("Default for new characters", "Use these", "New characters you play with Tactara start with this character's settings (keys, displays, glow, suggestions, minimap, talent options). /tac defaults clear goes back to Tactara's normal settings.",
     function() ns.Profiles.SaveDefault() end)
+  Button("Share these settings", "Export", "These settings as text, to back them up or give them to a friend (another account or computer too). Also /tac export.",
+    function() ns.Share.ShowExport() end)
+  Button("Settings from text", "Import", "Paste settings text from /tac export. You're asked before anything changes, and keys only come along if you choose. Also /tac import.",
+    function() ns.Share.ShowImport() end)
 
   Header("Talents")
   Button("Talent planner", "Open", "Your talent trees with Tactara's builds and your own, level 10 to 60. Also /tac talents.",
@@ -342,6 +346,7 @@ local COMMANDS = {
   "/tac prepull on | helper | off  - reminders before a fight",
   "/tac trainer [on | off]  - spells waiting at your trainer",
   "/tac new  - what's new in this version",
+  "/tac export | import  - settings as text",
   "/tac use <name> | auto  - pick a rotation",
   "/tac help  - every command",
 }

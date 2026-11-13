@@ -47,11 +47,15 @@ Rotations are built from the WoW Forever class guides and include Forever's new 
   - The bar glow: on or off, and how strong.
   - Interrupt and defensive suggestions: on or off.
   - Reminders: before the pull (under the helper and in chat, under the helper only, or off), the trainer reminder, first-time questions on new characters, and a "what's new" window after each update.
-  - Your characters: copy settings from another character, or make them the default for new ones.
+  - Your characters: copy settings from another character, make them the default for new ones, or export them as text to share and import them anywhere.
   - Talents: learning when you level up, the planner button in your talent window, the glow on the next talent, the one-time question on new characters, and the reminder.
 - **Reminders:** when you target an enemy before a fight, Tactara tells you if a buff your rotation keeps up, your pet, or a poison or weapon imbue is missing. After a level-up, it lists the new spells waiting at your class trainer, the ones your rotation uses first. It only tells you; you cast them.
 - **Helper icons work like action buttons:** each shows its keybind and a cooldown sweep. It turns red when your target is out of range, blue when you're short on mana, rage or energy, and grey when it can't be used.
 - **Works with your bars:** the glow works on Blizzard's action bars and the popular action bar addons, and with spells inside your own macros. It only draws on top of your buttons and never changes them.
+
+## Games in other languages
+
+Rotations and talent builds work on German, French, Spanish and other game clients: Tactara finds each spell's name in your language by its ID. Tactara's own windows are in English.
 
 ## Getting started
 

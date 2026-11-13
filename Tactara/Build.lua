@@ -159,12 +159,28 @@ end
 
 -- Which tree (Arms, Fury...) a set of talents belongs to: the name whose
 -- signature list matches the most of them. `nodes` is { [talent name] = anything }.
-function ns.NameTalentTree(classToken, nodes)
+-- The game's trees, left to right (what the tree tabs show).
+local TREE_ORDER = {
+  WARRIOR = { "Arms", "Fury", "Protection" }, PALADIN = { "Holy", "Protection", "Retribution" },
+  HUNTER = { "Beast Mastery", "Marksmanship", "Survival" }, ROGUE = { "Assassination", "Combat", "Subtlety" },
+  PRIEST = { "Discipline", "Holy", "Shadow" }, SHAMAN = { "Elemental", "Enhancement", "Restoration" },
+  MAGE = { "Arcane", "Fire", "Frost" }, WARLOCK = { "Affliction", "Demonology", "Destruction" },
+  DRUID = { "Balance", "Feral", "Restoration" },
+}
+ns.TREE_ORDER = TREE_ORDER
+
+-- `index`: the tree's place from the left. On a game in another language the
+-- talent names don't match the English lists, so the place decides.
+function ns.NameTalentTree(classToken, nodes, index)
   local bestName, bestHits = nil, 0
   for treeName, list in pairs(TREE_SIGNATURES[classToken or ""] or {}) do
     local hits = 0
     for _, t in ipairs(list) do if nodes[t] ~= nil then hits = hits + 1 end end
     if hits > bestHits then bestName, bestHits = treeName, hits end
+  end
+  if bestHits == 0 and index then
+    local order = TREE_ORDER[classToken or ""]
+    return order and order[index] or nil
   end
   return bestName
 end
@@ -232,7 +248,7 @@ function ns.ReadTalents(classToken)
     -- Name the groups by signature talents.
     for i, key in ipairs(order) do
       local g = groups[key]
-      result.trees[#result.trees + 1] = { name = ns.NameTalentTree(classToken, g.nodes) or ("Tree " .. i), points = g.points, nodes = g.nodes }
+      result.trees[#result.trees + 1] = { name = ns.NameTalentTree(classToken, g.nodes, #order == 3 and i or nil) or ("Tree " .. i), points = g.points, nodes = g.nodes }
     end
     local top
     for _, t in ipairs(result.trees) do

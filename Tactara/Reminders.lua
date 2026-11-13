@@ -216,7 +216,8 @@ R.POISONS, R.IMBUES = POISONS, IMBUES
 local function KnownOf(list)
   local out = {}
   for _, s in ipairs(list) do
-    if ns.IsKnown(s) then out[#out + 1] = s end
+    local name = ns.Locale.Spell(s)
+    if ns.IsKnown(name) then out[#out + 1] = name end
   end
   return out
 end
@@ -286,7 +287,7 @@ function R.PrePullList(comp)
   if not comp then return out end
   local pets, buffs = {}, {}
   for _, e in ipairs(comp.priority or {}) do
-    local prep = #e.live > 0 and not e.spell:find("Totem$")
+    local prep = #e.live > 0 and not ns.Locale.English(e.spell):find("Totem$")
     local pet = false
     for _, c in ipairs(e.live) do
       if not PREP_KINDS[c.kind] then prep = false end
