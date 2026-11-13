@@ -6,9 +6,10 @@
 --   * What's new: after Tactara updates, a window with the changelog of the
 --     new version (and any you skipped), once per update, for all your
 --     characters. /tac new shows it any time.
---   * Your key: on a character with no Tactara key, one question offering to
---     set it up (the same as /tac bind). Asked before the talent planner
---     question, never in combat.
+--   * Your keys: on a character with no Tactara key, a window with your
+--     one-button, AoE and interrupt keys and Remove (the same as on the
+--     settings page). Asked before the talent planner question, never in
+--     combat. /tac reset keybinds opens it again.
 
 local ADDON, ns = ...
 
@@ -187,32 +188,171 @@ local function Done()
   end
 end
 
+-- The window: your three keys and Remove, like the settings page.
+local KEY_ROWS = {
+  { which = "main", label = "One-button key", tip = "The key that plays your rotation, one step per press." },
+  { which = "aoe", label = "AoE key", tip = "A second key that plays the AoE version of your rotation." },
+  { which = "interrupt", label = "Interrupt key", tip = "Casts the best interrupt you have." },
+}
+local keyFrame
+
+local function KeyText(which)
+  local label = ns.KeyLabel(which)
+  if not label or label == "none" then return "Not set (click)" end
+  return label
+end
+
+-- Puts each button's key on it (after you pick or remove one).
+function W.OnKeysChanged()
+  if not keyFrame then return end
+  for _, row in ipairs(KEY_ROWS) do
+    local b = keyFrame.keys[row.which]
+    if b then b:SetText(KeyText(row.which)) end
+  end
+end
+
+local function Tip(button, title, text)
+  button:SetScript("OnEnter", function(self)
+    if not GameTooltip then return end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(title, 1, 0.82, 0)
+    GameTooltip:AddLine(text, 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  button:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+end
+
+-- how: "done" (Done, Escape or the close button) or "no" (No thanks)
+function W.CloseKeys(how)
+  if not keyOpen then return end
+  if how == "no" then
+    TactaraCharDB.keyAsked = true
+    if not HasKey() then
+      ns.Print("No key, then. The glow on your bars and the helper popup work without one; "
+        .. "|cffffd100/tac reset keybinds|r opens the key setup any time.")
+    end
+  else
+    for _, row in ipairs(KEY_ROWS) do
+      if ns.GetTactaraKey(row.which) or ns.GetSettingsKey(row.which) then TactaraCharDB.keyAsked = true end
+    end
+  end
+  -- with no key and no "No thanks", it asks again next time you log in
+  Done()   -- first: hiding the window runs OnHide, which then has nothing to do
+  if keyFrame and keyFrame:IsShown() then keyFrame:Hide() end
+end
+
+local function BuildKeys()
+  local ok, f = pcall(CreateFrame, "Frame", "TactaraKeySetup", UIParent, "BasicFrameTemplateWithInset")
+  if not ok or not f then f = CreateFrame("Frame", "TactaraKeySetup", UIParent) end
+  f:SetSize(440, 290)
+  f:SetPoint("CENTER", UIParent, "CENTER", 0, -40)   -- below the "press a key" prompt
+  f:SetFrameStrata("DIALOG")
+  f:SetToplevel(true)
+  f:SetClampedToScreen(true)
+  f:SetMovable(true)
+  f:EnableMouse(true)
+  f:RegisterForDrag("LeftButton")
+  f:SetScript("OnDragStart", f.StartMoving)
+  f:SetScript("OnDragStop", f.StopMovingOrSizing)
+  if UISpecialFrames then table.insert(UISpecialFrames, "TactaraKeySetup") end
+  f:SetScript("OnHide", function() W.CloseKeys("done") end)   -- Escape or the X
+  f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  f.title:SetPoint("TOP", f, "TOP", 0, -6)
+  f.title:SetText("Tactara keys")
+
+  f.intro = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  f.intro:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -34)
+  f.intro:SetWidth(408)
+  f.intro:SetJustifyH("LEFT")
+  f.intro:SetText("|cffffd100Tactara|r can put your whole rotation on one key: each press casts the next spell "
+    .. "(you still press it every time).\n\nClick a button, then press any key, even one on your action bar. "
+    .. "Your keybinds aren't changed. Right-click a button to clear that key.")
+
+  local HOW = "\n\nClick, then press any key (even one on your action bar). Right-click to clear it. "
+    .. "Tactara takes the key over while it's loaded; your keybinds aren't changed."
+  f.keys = {}
+  local y = -128
+  local function Row(label, buttonText, tip)
+    local fs = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    fs:SetPoint("TOPLEFT", f, "TOPLEFT", 24, y - 4)
+    fs:SetText(label)
+    local b = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    b:SetSize(200, 22)
+    b:SetPoint("TOPRIGHT", f, "TOPRIGHT", -24, y)
+    b:SetText(buttonText)
+    Tip(b, label, tip)
+    y = y - 28
+    return b
+  end
+  for _, row in ipairs(KEY_ROWS) do
+    local which = row.which
+    local b = Row(row.label, KeyText(which), row.tip .. HOW)
+    if b.RegisterForClicks then b:RegisterForClicks("LeftButtonUp", "RightButtonUp") end
+    b:SetScript("OnClick", function(_, mouse)
+      if mouse == "RightButton" then
+        ns.Unbind(which)
+      else
+        ns.afterKeyCapture = W.OnKeysChanged
+        ns.StartKeyCapture(which)
+      end
+      W.OnKeysChanged()
+    end)
+    f.keys[which] = b
+  end
+  f.remove = Row("Give keys back", "Remove", "Removes all Tactara keys. Each key goes back to what it did before.")
+  f.remove:SetScript("OnClick", function()
+    ns.Unbind("all")
+    W.OnKeysChanged()
+  end)
+
+  f.hint = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+  f.hint:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 16, 40)
+  f.hint:SetText("|cffffd100/tac reset keybinds|r opens this again. The settings page has the same keys.")
+
+  f.no = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  f.no:SetSize(110, 22)
+  f.no:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 12, 10)
+  f.no:SetText("No thanks")
+  Tip(f.no, "No thanks", "Don't ask again on this character. /tac reset keybinds opens this any time.")
+  f.no:SetScript("OnClick", function() W.CloseKeys("no") end)
+
+  f.done = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  f.done:SetSize(110, 22)
+  f.done:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -12, 10)
+  f.done:SetText("Done")
+  Tip(f.done, "Done", "Close this. With no key set, Tactara asks again next time you log in.")
+  f.done:SetScript("OnClick", function() W.CloseKeys("done") end)
+  return f
+end
+
+function W.ShowKeys()
+  keyFrame = keyFrame or BuildKeys()
+  W.keyFrame = keyFrame
+  keyOpen = true
+  W.OnKeysChanged()
+  keyFrame:Show()
+  return keyFrame
+end
+
 -- Asked once per character that has no Tactara key, unless first-time
 -- questions are turned off for all your characters.
 function W.AskKey()
   if TactaraDB.welcomeOff or TactaraCharDB.keyAsked or HasKey() then return false end
   if InCombatLockdown() then keyWaiting = true return false end
   keyWaiting = false
-  if not (StaticPopupDialogs and StaticPopup_Show) then return false end
-  StaticPopupDialogs.TACTARA_KEY = {
-    text = "%s", button1 = "Pick a key", button2 = "Later", button3 = "No thanks",
-    OnAccept = function()
-      TactaraCharDB.keyAsked = true
-      ns.afterKeyCapture = Done
-      ns.StartKeyCapture("main")
-    end,
-    OnCancel = function() Done() end,
-    OnAlt = function()
-      TactaraCharDB.keyAsked = true
-      ns.Print("No key, then. The glow on your bars and the helper popup work without one; |cffffd100/tac bind|r sets it up any time.")
-      Done()
-    end,
-    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
-  }
-  keyOpen = true
-  StaticPopup_Show("TACTARA_KEY", "|cffffd100Tactara|r can put your whole rotation on one key: each press casts the next spell "
-    .. "(you still press it every time).\n\nPick that key now? Any key works, even one on your action bar. "
-    .. "Your keybinds aren't changed, and |cffffd100/tac unbind|r gives the key back.")
+  W.ShowKeys()
+  return true
+end
+
+-- /tac reset keybinds: the window again, whatever you answered before.
+-- Your keys stay until you remove them.
+function W.ResetKeys()
+  if InCombatLockdown() then
+    ns.Print("Set keys out of combat.")
+    return false
+  end
+  TactaraCharDB.keyAsked = nil
+  W.ShowKeys()
   return true
 end
 

@@ -345,6 +345,7 @@ end
 local COMMANDS = {
   "/tac  - rotation editor and keys",
   "/tac bind  - pick your one-button key",
+  "/tac reset keybinds  - the key setup window (all three keys)",
   "/tac show | hide [key|helper]  - the two displays",
   "/tac lock | unlock  - drag the displays",
   "/tac minimap  - show or hide the minimap button",

@@ -1714,7 +1714,7 @@ do
   W.frame:Hide()
   ns.freshInstall, ns.previousVersion = realFresh, realPrev
 
-  -- the key question
+  -- the key window: one-button, AoE and interrupt keys, and Remove
   local shown = {}
   StaticPopupDialogs = {}
   StaticPopup_Show = function(which, text) shown[#shown + 1] = { which = which, text = text } end
@@ -1724,41 +1724,97 @@ do
   ns.GetSettingsKey = function() return nil end
   TactaraCharDB.binds = { main = "F" }
   TactaraCharDB.keyAsked, TactaraDB.welcomeOff = nil, nil
-  check(W.AskKey() == false and #shown == 0, "not asked when you have a key")
+  check(W.AskKey() == false and not W.keyFrame, "not asked when you have a key")
   TactaraCharDB.binds = {}
   TactaraDB.welcomeOff = true
-  check(W.AskKey() == false and #shown == 0, "not asked when first-time questions are off")
+  check(W.AskKey() == false and not W.keyFrame, "not asked when first-time questions are off")
   TactaraDB.welcomeOff = nil
   inCombat = true
-  check(W.AskKey() == false and #shown == 0, "never in combat")
+  check(W.AskKey() == false and not W.keyFrame, "never in combat")
   inCombat = false
   W.HandleEvent("PLAYER_REGEN_ENABLED")
-  check(#shown == 1 and shown[1].which == "TACTARA_KEY" and shown[1].text:find("one key"), "asked after the fight")
-  local d = StaticPopupDialogs.TACTARA_KEY
-  check(d.button1 == "Pick a key" and d.button2 == "Later" and d.button3 == "No thanks", "Pick a key / Later / No thanks")
-  check(W.Busy(), "busy while the question is up")
+  local kf = W.keyFrame
+  check(kf and kf:IsShown() and kf.intro:GetText():find("one key"), "asked after the fight: the key window")
+  check(kf.keys.main and kf.keys.aoe and kf.keys.interrupt and kf.remove, "three key buttons and Remove")
+  check(kf.keys.main:GetText() == "Not set (click)" and kf.keys.aoe:GetText() == "Not set (click)"
+    and kf.keys.interrupt:GetText() == "Not set (click)" and kf.remove:GetText() == "Remove", "the buttons say what they do")
+  check(kf.done:GetText() == "Done" and kf.no:GetText() == "No thanks", "Done / No thanks")
+  check(W.Busy(), "busy while the window is up")
   -- the planner question waits for it
   TactaraCharDB.welcomeDone, TactaraCharDB.talentBuild, TactaraCharDB.talentBuildText = nil, nil, nil
   T.Welcome()
-  check(#shown == 1, "the planner question waits for the key question")
-  d.OnAccept()
-  check(captured == "main" and TactaraCharDB.keyAsked, "Pick a key starts picking the main key")
-  check(#shown == 1, "the planner question still waits while you pick")
-  ns.afterKeyCapture()   -- you pressed a key
+  check(#shown == 0, "the planner question waits for the key window")
+  -- pick each key from the window
+  kf.keys.main:GetScript("OnClick")(kf.keys.main, "LeftButton")
+  check(captured == "main", "One-button key starts picking that key")
+  ns.SetTactaraKey("main", "1"); ns.afterKeyCapture()
+  check(kf.keys.main:GetText() == "1", "the button shows the new key")
+  kf.keys.aoe:GetScript("OnClick")(kf.keys.aoe, "LeftButton")
+  check(captured == "aoe", "AoE key")
+  ns.SetTactaraKey("aoe", "2"); ns.afterKeyCapture()
+  kf.keys.interrupt:GetScript("OnClick")(kf.keys.interrupt, "LeftButton")
+  check(captured == "interrupt", "Interrupt key")
+  ns.SetTactaraKey("interrupt", "3"); ns.afterKeyCapture()
+  check(kf.keys.aoe:GetText() == "2" and kf.keys.interrupt:GetText() == "3", "all three show their keys")
+  kf.keys.aoe:GetScript("OnClick")(kf.keys.aoe, "RightButton")
+  check(not TactaraCharDB.binds.aoe and kf.keys.aoe:GetText() == "Not set (click)", "right-click clears one key")
+  kf.remove:GetScript("OnClick")(kf.remove)
+  check(next(TactaraCharDB.binds) == nil and kf.keys.main:GetText() == "Not set (click)", "Remove gives every key back")
+  SlashCmdList.TACTARA("bind")   -- keys set elsewhere show up too
+  ns.SetTactaraKey("main", "F")
+  check(kf.keys.main:GetText() == "F", "a key set with /tac bind shows in the window")
+  check(#shown == 0 and W.Busy(), "the planner question still waits")
+  kf.done:GetScript("OnClick")(kf.done)
   runTimers()
-  check(#shown == 2 and shown[2].which == "TACTARA_WELCOME", "then the planner question")
+  check(not kf:IsShown() and TactaraCharDB.keyAsked, "Done with a key: closed, not asked again")
+  check(#shown == 1 and shown[1].which == "TACTARA_WELCOME", "then the planner question")
   check(not W.Busy(), "not busy any more")
-  -- Later and No thanks
+  kf:GetScript("OnHide")(kf)
+  check(#shown == 1, "closing twice does nothing more")
+  -- Done with no key, Escape, and No thanks
   shown = {}
-  TactaraCharDB.keyAsked = nil
+  TactaraCharDB.binds, TactaraCharDB.keyAsked = {}, nil
   W.AskKey()
-  StaticPopupDialogs.TACTARA_KEY.OnCancel()
-  check(not TactaraCharDB.keyAsked and not W.Busy(), "Later: asked again next time")
+  kf.done:GetScript("OnClick")(kf.done)
+  check(not TactaraCharDB.keyAsked and not W.Busy() and not kf:IsShown(), "Done with no key: asked again next time")
   W.AskKey()
-  StaticPopupDialogs.TACTARA_KEY.OnAlt()
-  check(TactaraCharDB.keyAsked and #shown == 2, "No thanks: not asked again")
-  check(W.AskKey() == false and #shown == 2, "and it isn't")
+  kf:Hide(); kf:GetScript("OnHide")(kf)   -- Escape
+  check(not TactaraCharDB.keyAsked and not W.Busy(), "Escape: the same")
+  TactaraCharDB.binds = { interrupt = "5" }
+  W.AskKey()
+  kf.done:GetScript("OnClick")(kf.done)
+  check(TactaraCharDB.keyAsked, "any of the three keys counts")
+  TactaraCharDB.binds, TactaraCharDB.keyAsked = {}, nil
+  chat = {}
+  W.AskKey()
+  kf.no:GetScript("OnClick")(kf.no)
+  check(TactaraCharDB.keyAsked and not kf:IsShown() and table.concat(chat, " "):find("reset keybinds"), "No thanks: not asked again")
+  check(W.AskKey() == false and not kf:IsShown(), "and it isn't")
+  -- /tac reset keybinds opens it again, whatever you answered, and keeps your keys
+  TactaraCharDB.binds = { main = "F" }
+  TactaraDB.welcomeOff = true
+  SlashCmdList.TACTARA("reset keybinds")
+  check(kf:IsShown() and not TactaraCharDB.keyAsked and TactaraCharDB.binds.main == "F" and kf.keys.main:GetText() == "F",
+    "/tac reset keybinds: the window again, keys kept")
+  kf.done:GetScript("OnClick")(kf.done)
+  SlashCmdList.TACTARA("keys")
+  check(kf:IsShown(), "/tac keys too")
+  kf.done:GetScript("OnClick")(kf.done)
+  SlashCmdList.TACTARA("reset keys")
+  check(kf:IsShown(), "/tac reset keys too")
+  kf.done:GetScript("OnClick")(kf.done)
+  inCombat = true
+  chat = {}
+  SlashCmdList.TACTARA("reset keybinds")
+  check(not kf:IsShown() and table.concat(chat, " "):find("out of combat"), "not in combat")
+  inCombat = false
+  ns.sequenceIndex = 3
+  SlashCmdList.TACTARA("reset")
+  check(not kf:IsShown(), "plain /tac reset still restarts the sequence, no window")
+  runTimers()
+  TactaraDB.welcomeOff = nil
   TactaraCharDB.binds, ns.GetSettingsKey, ns.StartKeyCapture = realBinds, realSettingsKey, realCapture
+  ns.ApplyBindings()
   TactaraCharDB.welcomeDone, TactaraCharDB.keyAsked = true, true
   StaticPopupDialogs, StaticPopup_Show = nil, nil
 end

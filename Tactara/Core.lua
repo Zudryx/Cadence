@@ -415,6 +415,7 @@ local HELP = {
   "|cffffd100/tac interrupts|r / |cffffd100defensives|r  red interrupt / orange defensive suggestions on or off",
   "|cffffd100/tac sound|r interrupt|defensive <sound>|on|off  a sound when the slot lights up (|cffffd100/tac sound|r lists the sounds, |cffffd100/tac sound test|r plays them)",
   "|cffffd100/tac reset|r  restart the sequence from the opener",
+  "|cffffd100/tac reset keybinds|r (or |cffffd100/tac keys|r)  the key setup window: one-button, AoE and interrupt keys, and Remove",
   "|cffffd100/tac errors|r  show/hide the red 'not ready' error text while pressing (hidden by default)",
   "|cffffd100/tac test|r  print diagnostics (key binding, macros, settings)",
   "|cffffd100/tac probe|r  check what the game lets addons read (run out of combat and in combat)",
@@ -631,6 +632,10 @@ local function HandleSlash(msg)
     TactaraCharDB[cmd] = cur
     ns.HelperRefresh()
     ns.Print((cmd == "interrupts" and "Interrupt suggestions " or "Defensive suggestions ") .. (cur and "on." or "off."))
+  elseif cmd == "reset" and (rest:lower():match("^key") or rest:lower():match("^bind")) then
+    ns.Welcome.ResetKeys()
+  elseif cmd == "keys" or cmd == "keybinds" then
+    ns.Welcome.ResetKeys()
   elseif cmd == "reset" then
     ns.ResetSequence()
   elseif cmd == "keydown" then

@@ -27,7 +27,7 @@ Tactara is a fan-made project, not made or endorsed by Blizzard Entertainment.
 
 ## Set up your key (pick one)
 
-The first time you play a character with no Tactara key, Tactara asks once whether to set one up: **Pick a key** is the same as `/tac bind`. The glow on your bars and the helper popup work without a key.
+The first time you play a character with no Tactara key, a small window offers to set them up, with the same buttons as the settings page: **One-button key**, **AoE key**, **Interrupt key**, and **Remove** to give them all back. Click a button and press any key; right-click one to clear it. **Done** closes it (with no key set, it asks again next time you log in); **No thanks** doesn't ask again. `/tac reset keybinds` (or `/tac keys`) opens it any time and keeps the keys you have. The glow on your bars and the helper popup work without a key.
 
 - **`/tac bind` (recommended):** type `/tac bind` and press any key, with Shift/Ctrl/Alt if you want, or mouse button 3-5. It can be a key your action bar already uses, like `1`. Tactara takes that key over while the addon is loaded. **Your saved keybinds aren't changed**, and `/tac unbind` gives the key back. Use `/tac bind aoe` for the AoE button. You can also use the **Main key** / **AoE key** buttons in the `/tac` window: left-click to set a key, right-click to remove it.
 - **WoW's keybinding menu:** Esc > Options > Keybindings > AddOns > Tactara. This replaces whatever was on that key.
@@ -81,7 +81,7 @@ Everything below can be changed on one page: **Esc > Options > AddOns > Tactara*
 - **Your characters:** copy keys, display positions and sizes, the glow, suggestions, minimap button and talent options from another of your characters, or make this character's settings the default for new ones. **Export** gives the same settings as text to back up or give to a friend (any account or computer); **Import** takes that text back, asks first, and only sets keys if you choose **With keys**. Rotation and talent builds stay each character's own.
 - **Talents:** open the talent planner, learn talents when you level up (off by default), the planner button in the talent window, the glow on the next talent, the one-time question on new characters, and the chat reminder.
 - **Suggestions:** interrupt and defensive suggestions on or off, and a sound for each (off until you pick one).
-- **Reminders:** before-the-pull reminders and supply reminders (each under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your key and the talent planner), and the "what's new" window after an update.
+- **Reminders:** before-the-pull reminders and supply reminders (each under the helper and in chat, under the helper only, or off), the trainer reminder after a level-up, first-time questions on new characters (your keys and the talent planner), and the "what's new" window after an update.
 
 The `/tac` commands still work, and both always show the same settings.
 
@@ -176,6 +176,7 @@ Tactara only tells you; it never casts, buys or learns anything for you.
 | `/tac export` / `import` | Your settings as text, to back up or share; import asks first and keeps your keys unless you choose otherwise |
 | `/tac trainer` | Spells waiting at your class trainer (`/tac trainer on` / `off`: the level-up reminder) |
 | `/tac reset` | Restart from the opener |
+| `/tac reset keybinds` (or `/tac keys`) | The key setup window: one-button, AoE and interrupt keys, and Remove |
 | `/tac errors` | Show/hide red "not ready" errors while pressing (hidden by default) |
 | `/tac test` | Diagnostics: your keys and settings |
 | `/tac probe` | What the game lets addons read (run out of combat and in combat) |
