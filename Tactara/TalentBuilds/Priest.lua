@@ -103,3 +103,90 @@ Prayer of Mending
 Spiritual Guidance
 Inner Focus
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Priest - Shadow (level 60)
+class: PRIEST
+tree: Shadow
+level: 60
+source: Icy Veins level 60 build "Cookie Cutter" (15/3/33), November 2026
+notes: Shadowform at the bottom of Shadow, plus Discipline for Twin Disciplines and Mental Strength; Holy for Twilight Focus.
+order:
+Shadow Focus 5
+Improved Mind Blast 4
+Improved Shadow Word: Pain 2
+Shadow Reach
+Mind Flay
+Improved Mind Flay 2
+Dark Inspiration 5
+Vampiric Embrace
+Shadow Weaving 3
+Silence
+Devouring Contagion 2
+Darkness 5
+Shadowform
+Twin Disciplines 5
+Silent Resolve 3
+Mental Strength 4
+Meditation 3
+Twilight Focus 3
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Priest - Discipline (level 60)
+class: PRIEST
+tree: Discipline
+level: 60
+source: Icy Veins level 60 build "The Mitigation Machine" (31/20/0), November 2026
+notes: Power Infusion at the bottom of Discipline, plus Holy for Holy Specialization and Divine Fury.
+order:
+Twin Disciplines 5
+Mental Strength 5
+Mental Agility 3
+Inner Focus
+Improved Power Word: Shield 3
+Meditation 3
+Soul Warding
+Penance
+Renewed Hope 5
+Divine Aegis 3
+Power Infusion
+Twilight Focus 3
+Holy Specialization 5
+Divine Fury 5
+Holy Nova
+Inspiration 3
+Holy Reach
+Searing Light 2
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Priest - Holy (level 60)
+class: PRIEST
+tree: Holy
+level: 60
+source: Icy Veins level 60 build "Full Throttle Group Healer" (17/34/0), November 2026
+notes: Prayer of Mending at the bottom of Holy, plus Discipline for Twin Disciplines and Mental Strength.
+order:
+Improved Renew 3
+Holy Specialization 5
+Divine Fury 5
+Holy Nova
+Inspiration 3
+Improved Healing 3
+Searing Light 2
+Litany of Light 2
+Spirit of Redemption
+Spiritual Guidance 5
+Spiritual Healing 3
+Prayer of Mending
+Twin Disciplines 5
+Silent Resolve 3
+Mental Strength 5
+Inner Focus
+Meditation 3
+]=])

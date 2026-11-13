@@ -100,3 +100,86 @@ Demonic Sacrifice
 Improved Life Tap 2
 Ruin 2
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Warlock - Affliction (level 60)
+class: WARLOCK
+tree: Affliction
+level: 60
+source: Icy Veins level 60 build "Wrack" (33/0/18), November 2026
+notes: Wrack at the bottom of Affliction, plus Destruction for Improved Shadow Bolt and Bane.
+order:
+Improved Life Tap 2
+Suppression 5
+Improved Corruption 5
+Amplify Curse
+Pandemic 3
+Malevolence 5
+Nightfall 2
+Siphon Life
+Soul Siphon 3
+Shadow Mastery 5
+Wrack
+Improved Shadow Bolt 5
+Bane 5
+Ruin 5
+Agonizing Flames 3
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Warlock - Demonology (level 60)
+class: WARLOCK
+tree: Demonology
+level: 60
+source: Icy Veins level 60 build "Demonic Pact Succubus" (2/31/18), November 2026
+notes: Demonic Pact at the bottom of Demonology, plus Destruction for Improved Shadow Bolt and Bane; Affliction for Improved Corruption.
+order:
+Unholy Power 5
+Fel Vitality 3
+Demonic Energies 2
+Improved Sayaad 3
+Demonic Sacrifice
+Master Summoner 2
+Decimation 2
+Demonic Brand 3
+Soul Link
+Demonic Knowledge 3
+Master Demonologist 5
+Demonic Pact
+Improved Corruption 2
+Improved Shadow Bolt 5
+Bane 5
+Ruin 5
+Agonizing Flames 3
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Warlock - Destruction (level 60)
+class: WARLOCK
+tree: Destruction
+level: 60
+source: Icy Veins level 60 build "Demonic Sacrifice Destruction Fire" (7/11/33), November 2026
+notes: Incinerate at the bottom of Destruction, plus Demonology for Demonic Embrace and Fel Vitality; Affliction for Suppression and Improved Corruption.
+order:
+Bane 5
+Cataclysm 3
+Aftermath 5
+Ruin 5
+Shadowburn
+Agonizing Flames 3
+Conflagrate
+Bane of Havoc
+Fire and Brimstone 3
+Shadow and Flame 5
+Incinerate
+Suppression 5
+Improved Corruption 2
+Demonic Embrace 5
+Demonic Aegis 2
+Fel Vitality 3
+Demonic Sacrifice
+]=])

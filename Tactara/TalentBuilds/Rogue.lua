@@ -110,3 +110,101 @@ Blood Splatter
 Lethality 2
 Improved Slice and Dice 2
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Rogue - Combat (level 60)
+class: ROGUE
+tree: Combat
+level: 60
+source: Icy Veins level 60 build "Sinister Strike Combat" (16/35/0), November 2026
+notes: Adrenaline Rush at the bottom of Combat, plus Assassination for Malice and Ruthlessness.
+order:
+Coup de Grace 3
+Efficient Strikes 2
+Lightning Reflexes
+Precision 3
+Improved Sprint 2
+Endurance 2
+Composure 2
+Flawless Execution
+Weapon Expertise 2
+Aggression 3
+Dual Wield Specialization 2
+Blade Flurry
+Hack and Slash 5
+Flash of Steel 5
+Adrenaline Rush
+Malice 5
+Ruthlessness 3
+Improved Expose Armor 2
+Improved Slice and Dice 3
+Blood Splatter
+Lethality
+Cold Blood
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Rogue - Assassination (level 60)
+class: ROGUE
+tree: Assassination
+level: 60
+source: Icy Veins level 60 build "Mutilate Assassination" (33/18/0), November 2026
+notes: Mutilate at the bottom of Assassination, plus Combat for Coup de Grace and Puncturing Wounds.
+order:
+Malice 5
+Ruthlessness 3
+Improved Expose Armor 2
+Improved Slice and Dice 3
+Blood Splatter
+Lethality 2
+Vile Poisons 5
+Cold Blood
+Improved Poisons
+Relentless Strikes 5
+Venom
+Seal Fate 3
+Mutilate
+Coup de Grace 3
+Lightning Reflexes 2
+Puncturing Wounds 3
+Precision 3
+Endurance 2
+Composure 2
+Flawless Execution
+Weapon Expertise 2
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Rogue - Subtlety (level 60)
+class: ROGUE
+tree: Subtlety
+level: 60
+source: Icy Veins level 60 build "Subtlety Bleed" (15/5/31), November 2026
+notes: Death Mark at the bottom of Subtlety, plus Assassination for Malice and Ruthlessness; Combat for Coup de Grace and Efficient Strikes.
+order:
+Setup 3
+Opportunity 5
+Dirty Deeds 2
+Camouflage 2
+Improved Ambush 3
+Initiative 3
+Premeditation
+Serrated Blades 3
+Ghostly Strike
+Preparation
+Hemorrhage
+Boot Knife 5
+Death Mark
+Remorseless Attacks 2
+Malice 5
+Ruthlessness 3
+Improved Slice and Dice 2
+Blood Splatter
+Lethality 2
+Coup de Grace 3
+Efficient Strikes 2
+]=])

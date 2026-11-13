@@ -98,3 +98,89 @@ Thundering Strikes 5
 Restorative Totems 5
 Ancestral Knowledge 5
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Shaman - Enhancement (level 60)
+class: SHAMAN
+tree: Enhancement
+level: 60
+source: Icy Veins level 60 build "Standard Endgame PvE" (17/34/0), November 2026
+notes: Rage of the Farseer at the bottom of Enhancement, plus Elemental for Concussion and Elemental Devastation.
+order:
+Thundering Strikes 5
+Ancestral Knowledge 3
+Mental Dexterity 3
+Elemental Weapons 3
+Shamanistic Focus
+Flurry 5
+Stormstrike
+Improved Ghost Wolf 2
+Spirit Weapons
+Mental Quickness 2
+Improved Stormstrike 2
+Maelstrom Weapon 5
+Rage of the Farseer
+Concussion 5
+Elemental Devastation 3
+Reverberation 3
+Call of Flame 3
+Elemental Focus
+Trial by Fire 2
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Shaman - Elemental (level 60)
+class: SHAMAN
+tree: Elemental
+level: 60
+source: Icy Veins level 60 build "Elemental PvE Raid Support" (31/4/16), November 2026
+notes: Lightning Mastery at the bottom of Elemental, plus Restoration for Tidal Focus and Totemic Focus; Enhancement for Thundering Strikes.
+order:
+Convection 4
+Concussion 5
+Elemental Alacrity 3
+Call of Flame 3
+Elemental Focus
+Trial by Fire 2
+Eye of the Storm 3
+Call of Thunder
+Lightning Overload 3
+Elemental Fury 5
+Lightning Mastery
+Thundering Strikes 4
+Tidal Focus 5
+Mindfulness 3
+Natural Grace
+Totemic Focus 5
+Water Shield
+Mana Tide Totem
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Shaman - Restoration (level 60)
+class: SHAMAN
+tree: Restoration
+level: 60
+source: Icy Veins level 60 build "Restoration Standard" (0/10/41), November 2026
+notes: Riptide at the bottom of Restoration, plus Enhancement for Thundering Strikes and Ancestral Knowledge.
+order:
+Improved Healing Wave 5
+Tidal Focus 5
+Mindfulness 3
+Ancestral Healing 3
+Healing Focus 3
+Water Shield
+Tidal Mastery 5
+Restorative Totems 5
+Mana Tide Totem
+Healing Way 3
+Nature's Swiftness
+Purification 5
+Riptide
+Thundering Strikes 5
+Ancestral Knowledge 5
+]=])

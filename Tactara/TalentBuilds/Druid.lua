@@ -101,3 +101,119 @@ Improved Regrowth 5
 Wild Growth
 Genesis 2
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Druid - Feral Cat (level 60)
+class: DRUID
+tree: Feral
+level: 60
+source: Icy Veins level 60 build "Cat DPS" (8/33/10), November 2026
+notes: Shifting Power at the bottom of Feral, plus Restoration for Heart of the Wild and Naturalist; Balance for Genesis and Nature's Majesty.
+order:
+Ferocity 5
+Furor 3
+Feral Swiftness 2
+Shredding Attacks 3
+Savage Fury 2
+Feral Charge
+Sharpened Claws 2
+Predatory Strikes 3
+Predatory Discipline
+Blood Frenzy 2
+Leader of the Pack
+Natural Instinct 2
+Rend and Tear 5
+Shifting Power
+Genesis 5
+Nature's Majesty 2
+Nature's Reach
+Heart of the Wild 5
+Naturalist 5
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Druid - Feral Bear (level 60)
+class: DRUID
+tree: Feral
+level: 60
+source: Icy Veins level 60 build "Bear Tank Only" (9/32/10), November 2026
+notes: Primal Bite at the bottom of Feral, plus Restoration for Heart of the Wild and Naturalist; Balance for Genesis and Nature's Majesty.
+order:
+Ferocity 5
+Feral Swiftness 2
+Feral Instinct 3
+Thick Hide 3
+Savage Fury 2
+Feral Charge
+Sharpened Claws 2
+Predatory Strikes 3
+Lacerate
+Blood Frenzy
+Leader of the Pack
+Natural Instinct 2
+Rend and Tear 5
+Primal Bite
+Genesis 5
+Nature's Majesty 2
+Nature's Reach 2
+Heart of the Wild 5
+Naturalist 5
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Druid - Balance (level 60)
+class: DRUID
+tree: Balance
+level: 60
+source: Icy Veins level 60 build "Balance Default - Eclipse & DoTs" (41/0/10), November 2026
+notes: Moonkin Form at the bottom of Balance, plus Restoration for Nature's Focus and Naturalist.
+order:
+Improved Wrath 5
+Genesis 5
+Moonglow 3
+Improved Moonfire 2
+Nature's Majesty 2
+Nature's Reach 2
+Nature's Splendor
+Insect Swarm
+Vengeance 5
+Improved Starfire 5
+Nature's Grace
+Eclipse 3
+Moonfury 5
+Moonkin Form
+Nature's Focus 5
+Naturalist 5
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Druid - Restoration (level 60)
+class: DRUID
+tree: Restoration
+level: 60
+source: Icy Veins level 60 build "Restoration Default" (18/0/33), November 2026
+notes: Wild Growth at the bottom of Restoration, plus Balance for Improved Wrath and Genesis.
+order:
+Heart of the Wild 5
+Naturalist 5
+Reflection 3
+Gift of Nature 5
+Bloom
+Improved Rejuvenation 3
+Swiftmend
+Nature's Swiftness
+Living Spirit 3
+Improved Regrowth 5
+Wild Growth
+Improved Wrath 5
+Genesis 5
+Moonglow 2
+Nature's Majesty 2
+Nature's Reach 2
+Nature's Splendor
+Insect Swarm
+]=])

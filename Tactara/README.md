@@ -90,6 +90,7 @@ The `/tac` commands still work, and both always show the same settings.
 `/tac talents` (or the **Tactara planner** button at the bottom of the game's talent window, the **Talents** button in `/tac`, or shift-click the minimap button) opens your three talent trees, read straight from the game, with a build on them point by point from level 10 to 60.
 
 - **Tactara's builds:** a leveling build for every spec of every class, from the Icy Veins leveling guides, each checked point by point against the game's trees. Druid's Feral build covers both Cat and Bear.
+- **Level 60 builds:** every spec also has a level 60 build, the main raid and dungeon build from its Icy Veins page (Druid has one for Cat and one for Bear). They're listed under **Level 60**, below the leveling builds. To switch at 60, unlearn your talents at your class trainer (it costs gold), then **Use this build** and **Learn all**. When you reach 60, Tactara asks once whether to look at the one for your spec; nothing changes unless you pick it.
 - **Your own builds:** click **New**, **Copy** one of Tactara's, or **Start from my talents** to begin with the points you already have (no respec needed) and plan the rest. Click a talent to add a point to the end of the build, right-click to take its last point back, **Undo** takes back the last point. If you change one of Tactara's builds, you get your own copy and the original stays as it was. Rename yours in the box at the top. The planner won't let you add a point the game wouldn't take: 5 points per row in a tree, an arrow needs the talent before it maxed, 51 points in all.
 - **Share:** **Share** gives your build as text; **Import** takes one pasted from someone else.
 - **Use this build** picks the build Tactara follows for this character. Then:
@@ -100,7 +101,8 @@ The `/tac` commands still work, and both always show the same settings.
 - **Dual spec:** each spec keeps its own build (and its own rotation choice). When you switch specs, Tactara switches too and tells you which build it's following.
 - **First time on a character,** Tactara asks once whether to open the planner. Below level 10 you can pick **At level 10** to be asked when your first talent point arrives. Turn it off for all characters on the settings page.
 - **When Tactara updates a build you're following,** nothing changes under you: you keep following the version you picked, and Tactara asks once whether to **Switch**, decide **Later**, or **Keep mine** (saved as your own build, which never changes). It says where the build changed and whether the new version needs a respec. The planner shows the same choice.
-- The level-by-level list shows what you've learned (green) and what's next (blue). Talents you have that the build doesn't use show their points in red on the trees.
+- The build list is grouped: **Leveling**, **Level 60** and **Yours**.
+- The level-by-level list (point by point for level 60 builds) shows what you've learned (green) and what's next (blue). Talents you have that the build doesn't use show their points in red on the trees.
 
 ## Rotation helper (bar highlight)
 

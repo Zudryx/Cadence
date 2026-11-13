@@ -103,3 +103,94 @@ Divine Intellect 5
 Consecrated Ground
 Improved Seals 2
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Paladin - Retribution (level 60)
+class: PALADIN
+tree: Retribution
+level: 60
+source: Icy Veins level 60 build "Unsealed Wrath" (12/8/31), November 2026
+notes: Unsealed Wrath at the bottom of Retribution, plus Holy for Divine Strength and Improved Seals; Protection for Divine Intellect and Precision.
+order:
+Benediction 5
+Improved Judgement 2
+Conviction 3
+Sanctified Judgement 3
+Unyielding Faith
+Seal of Command
+Pursuit of Justice 2
+Sacred Arbiter
+Two-Handed Weapon Specialization 3
+Repentance
+Vengeance 3
+Champion of the Light 5
+Unsealed Wrath
+Divine Strength 5
+Improved Seals 5
+Holy Conduit 2
+Divine Intellect 5
+Precision 3
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Paladin - Protection (level 60)
+class: PALADIN
+tree: Protection
+level: 60
+source: Icy Veins level 60 build "Deep Protection" (0/35/16), November 2026
+notes: Shieldsworn at the bottom of Protection, plus Retribution for Benediction and Conviction.
+order:
+Redoubt 5
+Precision 3
+Sacred Duty 2
+Templar's Bulwark
+Shield Specialization 2
+Toughness 3
+Swift Judgement
+Improved Righteous Fury 3
+Anticipation 5
+Holy Shield
+Reckoning 5
+Iron Creed 3
+Shieldsworn
+Benediction 5
+Improved Judgement 2
+Conviction 3
+Sanctified Judgement 3
+Pursuit of Justice 2
+Sacred Arbiter
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Paladin - Holy (level 60)
+class: PALADIN
+tree: Holy
+level: 60
+source: Icy Veins level 60 build "Light's Vigil" (31/8/12), November 2026
+notes: Light's Vigil at the bottom of Holy, plus Retribution for Benediction and Conviction; Protection for Divine Intellect and Sacred Duty.
+order:
+Spiritual Focus 5
+Healing Light 3
+Reverence 2
+Purifying Power 2
+Divine Favor
+Illumination 5
+Holy Conduit
+Infusion of Light 2
+Oath of Light
+Holy Shock
+Boundless Light 2
+Holy Power 5
+Light's Vigil
+Divine Intellect 5
+Guardian's Favor
+Sacred Duty 2
+Benediction 5
+Improved Judgement 2
+Conviction 3
+Pursuit of Justice 2
+]=])

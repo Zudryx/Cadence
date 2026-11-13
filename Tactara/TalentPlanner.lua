@@ -65,9 +65,9 @@ local function Editable()
   if not selected then return nil end
   if selected.builtin then
     local copy = {
-      name = T.UniqueName("My " .. (selected.tree or "talent") .. " build"),
+      name = T.UniqueName("My " .. (selected.tree or "talent") .. (T.IsLevel60(selected) and " level 60" or "") .. " build"),
       class = selected.class or ns.GetClassToken(),
-      tree = selected.tree, notes = selected.notes,
+      tree = selected.tree, notes = selected.notes, level = selected.level,
       source = "based on " .. selected.name, picks = {},
     }
     for i, p in ipairs(selected.picks) do copy.picks[i] = p end
@@ -278,33 +278,86 @@ local function DrawOrder()
     local nextIndex = prog and prog.next and prog.next.index
     local sim = T.Simulate(selected.picks, tree)
     local have = {}
+    -- level 60 builds are learned all at once after a respec: number the points
+    local at60 = T.IsLevel60(selected)
     for _, step in ipairs(sim.steps) do
       local line
+      local n = at60 and step.index or step.level
       if step.err then
-        line = ("|cffff7070%d  %s - %s|r"):format(step.level, step.name, step.err)
+        line = ("|cffff7070%d  %s - %s|r"):format(n, step.name, step.err)
       else
         have[step.node.id] = (have[step.node.id] or 0) + 1
         local learned = step.node.rank >= have[step.node.id]
         local color = learned and "|cff40ff40" or (step.index == nextIndex and "|cff4dc0ff" or "|cffffffff")
-        line = ("%s%d  %s %d/%d%s|r"):format(color, step.level, step.node.name, step.rank, step.node.max,
+        line = ("%s%d  %s %d/%d%s|r"):format(color, n, step.node.name, step.rank, step.node.max,
           step.index == nextIndex and "  < next" or "")
       end
       text[#text + 1] = line
     end
     if #sim.steps < T.MAX_POINTS then
-      text[#text + 1] = ("|cff888888%d  (click a talent to add level %d)|r"):format(T.FIRST_LEVEL + #sim.steps, T.FIRST_LEVEL + #sim.steps)
+      local n = at60 and (#sim.steps + 1) or (T.FIRST_LEVEL + #sim.steps)
+      text[#text + 1] = ("|cff888888%d  (click a talent to add %s %d)|r"):format(n, at60 and "point" or "level", n)
     end
   end
+  ui.orderTitle:SetText((selected and T.IsLevel60(selected)) and "Point by point (level 60)" or "Level by level")
   ui.orderText:SetText(table.concat(text, "\n"))
   local h = math.max(1, #text * 14 + 8)
   ui.orderChild:SetHeight(h)
 end
 
+local listHeaders = {}
+
+-- Built-in builds without the class in front (the list only shows your
+-- class), grouped: leveling, level 60, then yours.
+local function ListName(b)
+  local name = b.name
+  if b.builtin and b.class then
+    local short = name:match("^[^%-]+%s%-%s(.+)$")
+    if short then name = short end
+  end
+  return name
+end
+
+local function Group(b)
+  if not b.builtin then return "Yours" end
+  return T.IsLevel60(b) and "Level 60" or "Leveling"
+end
+
+local GROUP_ORDER = { Leveling = 1, ["Level 60"] = 2, Yours = 3 }
+
 local function DrawList()
-  local builds = T.BuildsForClass(ns.GetClassToken())
+  local builds = {}
+  for i, b in ipairs(T.BuildsForClass(ns.GetClassToken())) do builds[i] = b end
+  local pos = {}
+  for i, b in ipairs(builds) do pos[b] = i end
+  table.sort(builds, function(a, b)
+    local ga, gb = GROUP_ORDER[Group(a)], GROUP_ORDER[Group(b)]
+    if ga ~= gb then return ga < gb end
+    return pos[a] < pos[b]
+  end)
   for _, b in ipairs(listButtons) do b:Hide() end
+  for _, h in ipairs(listHeaders) do h:Hide() end
   local active = T.ActiveBuild()
+  local row, lastGroup, headers = 0, nil, 0
+  P.listText = {}
   for i, b in ipairs(builds) do
+    local group = Group(b)
+    if group ~= lastGroup then
+      lastGroup = group
+      headers = headers + 1
+      local h = listHeaders[headers]
+      if not h then
+        h = ui.list:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        h:SetJustifyH("LEFT")
+        listHeaders[headers] = h
+      end
+      h:ClearAllPoints()
+      h:SetPoint("TOPLEFT", ui.list, "TOPLEFT", 2, -row * 22 - 6)
+      h:SetText(group)
+      h:Show()
+      P.listText[#P.listText + 1] = "[" .. group .. "]"
+      row = row + 1
+    end
     local btn = listButtons[i]
     if not btn then
       btn = CreateFrame("Button", nil, ui.list)
@@ -319,10 +372,12 @@ local function DrawList()
       listButtons[i] = btn
     end
     btn:ClearAllPoints()
-    btn:SetPoint("TOPLEFT", ui.list, "TOPLEFT", 0, -(i - 1) * 22)
+    btn:SetPoint("TOPLEFT", ui.list, "TOPLEFT", 0, -row * 22)
+    row = row + 1
     btn.build = b
     local mark = (active and active.name == b.name) and "|cff40ff40> |r" or ""
-    btn.text:SetText(mark .. b.name .. (b.builtin and "" or " |cff888888(yours)|r"))
+    btn.text:SetText(mark .. ListName(b))
+    P.listText[#P.listText + 1] = ListName(b)
     if selected and selected.name == b.name then
       btn.bg:SetColorTexture(0.3, 0.5, 0.9, 0.35)
     else
@@ -344,6 +399,11 @@ local function DrawHeader()
   local parts = { ("%s points (%s)"):format(#selected.picks, split) }
   if selected.outdated then
     table.insert(parts, 1, "|cffffd100Tactara has updated this build. You're still following the version you picked.|r")
+  end
+  if T.IsLevel60(selected) then
+    local fits = P.tree and #T.Progress(selected, P.tree).offPlan == 0
+    table.insert(parts, 1, fits and "|cffffd100For level 60.|r"
+      or "|cffffd100For level 60. Your talents don't fit it: unlearn them at your class trainer (it costs gold), then use this build and click Learn all.|r")
   end
   if selected.source then parts[#parts + 1] = selected.source end
   if selected.notes then parts[#parts + 1] = selected.notes end
@@ -494,6 +554,7 @@ local function Build()
   local orderTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   orderTitle:SetPoint("TOPLEFT", frame, "TOPLEFT", 796, -34)
   orderTitle:SetText("Level by level")
+  ui.orderTitle = orderTitle
   local okS, scroll = pcall(CreateFrame, "ScrollFrame", "TactaraTalentOrderScroll", frame, "UIPanelScrollFrameTemplate")
   if not okS or not scroll then scroll = CreateFrame("ScrollFrame", "TactaraTalentOrderScroll", frame) end
   scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", 794, -56)
@@ -554,7 +615,8 @@ local function Build()
   ui.copy:SetScript("OnClick", function()
     if not selected then return end
     local copy = { name = T.UniqueName(selected.name), class = selected.class or ns.GetClassToken(),
-      tree = selected.tree, notes = selected.notes, source = selected.builtin and ("based on " .. selected.name) or selected.source, picks = {} }
+      tree = selected.tree, notes = selected.notes, level = selected.level,
+      source = selected.builtin and ("based on " .. selected.name) or selected.source, picks = {} }
     for i, p in ipairs(selected.picks) do copy.picks[i] = p end
     T.SaveCustom(copy)
     P.Select(copy.name)

@@ -103,3 +103,92 @@ Enrage 5
 Reckless Swings
 Deflection
 ]=])
+
+-- Level 60 builds: the main raid and dungeon build from each Icy Veins
+-- spec page, as the full 51 points (learned top row first). Switching to
+-- one at 60 means unlearning your talents at your class trainer first.
+
+ns.RegisterTalentBuild([=[
+name: Warrior - Arms (level 60)
+class: WARRIOR
+tree: Arms
+level: 60
+source: Icy Veins level 60 build "Mortal Strike Two Handed" (32/17/2), November 2026
+notes: Mortal Strike at the bottom of Arms, plus Fury for Cruelty and Unbridled Wrath; Protection for Improved Bloodrage.
+order:
+Improved Heroic Strike 3
+Improved Rend 3
+Improved Tactical Mastery 3
+Improved Overpower 2
+Anger Management
+Deep Wounds 3
+Spearing Strike
+Two-Handed Weapon Specialization 3
+Impale 2
+Bloodthrill 2
+Sweeping Strikes
+Weaponmaster 5
+Improved Slam 2
+Mortal Strike
+Cruelty 5
+Unbridled Wrath 5
+Enrage 5
+Reckless Swings
+Improved Execute
+Improved Bloodrage 2
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Warrior - Fury (level 60)
+class: WARRIOR
+tree: Fury
+level: 60
+source: Icy Veins level 60 build "Bloodthirst Dual Wield" (18/33/0), November 2026
+notes: Bloodthirst at the bottom of Fury, plus Arms for Improved Heroic Strike and Improved Rend.
+order:
+Cruelty 5
+Unbridled Wrath 5
+Furious Precision 3
+Enrage 5
+Dual Wield Specialization 5
+Reckless Swings
+Improved Berserker Rage 2
+Death Wish
+Improved Whirlwind 2
+Flurry 3
+Bloodthirst
+Improved Heroic Strike 3
+Improved Rend 3
+Improved Tactical Mastery 3
+Improved Overpower 2
+Anger Management
+Deep Wounds 3
+Spearing Strike
+Impale 2
+]=])
+
+ns.RegisterTalentBuild([=[
+name: Warrior - Protection (level 60)
+class: WARRIOR
+tree: Protection
+level: 60
+source: Icy Veins level 60 build "Shield Slam Tank" (5/15/31), November 2026
+notes: Shield Slam at the bottom of Protection, plus Fury for Cruelty and Lingering Rage; Arms for Deflection.
+order:
+Shield Specialization 5
+Anticipation 5
+Improved Revenge 3
+Last Stand
+Master of Defense 2
+Defiance 3
+Vanguard
+Improved Shield Wall 2
+Concussion Blow
+Focused Rage 2
+Bastion 5
+Shield Slam
+Deflection 5
+Cruelty 5
+Lingering Rage 5
+Enrage 5
+]=])

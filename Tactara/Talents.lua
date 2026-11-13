@@ -11,6 +11,7 @@
 --   tree: Arms
 --   source: where it comes from
 --   notes: one line about it
+--   level: 60        (only for builds meant for level 60, after a respec)
 --   order:
 --   Improved Rend 3
 --   Deflection 2
@@ -43,7 +44,7 @@ local function Trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 -- Build text
 ---------------------------------------------------------------------------
 
-local META = { name = true, class = true, tree = true, source = true, notes = true }
+local META = { name = true, class = true, tree = true, source = true, notes = true, level = true }
 
 function T.Parse(text)
   local b = { order = {}, picks = {} }
@@ -67,6 +68,7 @@ function T.Parse(text)
     end
   end
   if b.class then b.class = b.class:upper() end
+  b.level = tonumber(b.level)
   return b
 end
 
@@ -76,6 +78,7 @@ function T.Export(b)
   if b.tree then L[#L + 1] = "tree: " .. b.tree end
   if b.source then L[#L + 1] = "source: " .. b.source end
   if b.notes then L[#L + 1] = "notes: " .. b.notes end
+  if b.level then L[#L + 1] = "level: " .. b.level end
   L[#L + 1] = "order:"
   local i = 1
   while i <= #b.picks do
@@ -347,6 +350,55 @@ local function WelcomeAt10(level)
   if T.ActiveBuild() then return end
   Popup("TACTARA_WELCOME_10", "Level 10: your first talent point!\n\nOpen the |cffffd100Tactara|r talent planner to pick a build or plan your own?",
     "Open planner", "Not now", nil, function() ns.TalentPlanner.Show() end)
+end
+
+T.MAX_LEVEL = T.FIRST_LEVEL + T.MAX_POINTS - 1
+
+function T.IsLevel60(b) return b ~= nil and b.level == T.MAX_LEVEL end
+
+-- Tactara's level 60 build for what you play now: the one for your build's
+-- tree (or your most-used tree), Cat or Bear by your rotation for Feral.
+function T.Level60For()
+  local class = ns.GetClassToken()
+  local active = T.ActiveBuild()
+  if T.IsLevel60(active) then return nil end
+  local tree = active and active.tree
+  if not tree and ns.ReadBuild then
+    local ok, build = pcall(ns.ReadBuild)
+    tree = ok and build and build.top or nil
+  end
+  if not tree then return nil end
+  local found = {}
+  for _, b in ipairs(builtin[class or ""] or {}) do
+    if T.IsLevel60(b) and b.tree == tree then found[#found + 1] = b end
+  end
+  if #found > 1 then
+    local bear = (ns.activeName or ""):find("Bear") ~= nil
+    for _, b in ipairs(found) do
+      if (b.name:find("Bear") ~= nil) == bear then return b end
+    end
+  end
+  return found[1]
+end
+
+local level60Waiting = false
+
+-- Once per character, when you reach 60 (or log in at 60): Tactara has a
+-- level 60 build for your spec. Nothing changes unless you pick it.
+function T.AskLevel60()
+  if TactaraCharDB.level60Asked then return end
+  local level = UnitLevel and UnitLevel("player") or 1
+  if level < T.MAX_LEVEL then return end
+  local b = T.Level60For()
+  if not b then return end
+  if InCombatLockdown() then level60Waiting = true return end
+  level60Waiting = false
+  TactaraCharDB.level60Asked = true
+  local text = ("Level %d!\n\n|cffffd100Tactara|r has a level %d talent build for you: |cffffd100%s|r.\n\n"
+    .. "To switch, unlearn your talents at your class trainer (it costs gold), then use the build in the planner and click Learn all.")
+    :format(T.MAX_LEVEL, T.MAX_LEVEL, b.name)
+  Popup("TACTARA_LEVEL60", text, "Open planner", "No thanks", nil,
+    function() ns.TalentPlanner.Show(); ns.TalentPlanner.Select(b.name) end)
 end
 
 function T.PromptUpdate()
@@ -921,15 +973,18 @@ function T.HandleEvent(event, arg1)
       C_Timer.After(8, T.Remind)
       C_Timer.After(10, T.PromptUpdate)
       C_Timer.After(12, T.Welcome)
+      C_Timer.After(14, T.AskLevel60)
     end
   elseif event == "PLAYER_LEVEL_UP" then
     WelcomeAt10(arg1)
+    if (tonumber(arg1) or 0) >= T.MAX_LEVEL and C_Timer and C_Timer.After then C_Timer.After(4, T.AskLevel60) end
     -- the new point shows up a moment after the level
     if C_Timer and C_Timer.After then C_Timer.After(1.5, T.TryAutoLearn) else T.TryAutoLearn() end
   elseif event == "PLAYER_REGEN_ENABLED" then
     if autoWaiting then T.TryAutoLearn() end
     if promptWaiting then T.PromptUpdate() end
     if welcomeWaiting then T.Welcome() end
+    if level60Waiting then T.AskLevel60() end
   else
     if event == "TRAIT_CONFIG_UPDATED" and T.pendingReport then T.pendingReport() end
     if event == "TRAIT_CONFIG_UPDATED" and T.SyncSpec() then return end

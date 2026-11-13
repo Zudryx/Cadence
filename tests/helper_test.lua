@@ -985,15 +985,16 @@ do
 
   -- the built-in builds are legal, 51 points each
   local builds = T.BuildsForClass("WARRIOR")
-  check(#builds == 3, "three Warrior builds")
-  local want = { ["Warrior - Arms"] = "33/16/2", ["Warrior - Fury"] = "16/33/2", ["Warrior - Protection"] = "4/16/31" }
+  check(#builds == 6, "six Warrior builds (three leveling, three level 60)")
+  local want = { ["Warrior - Arms"] = "33/16/2", ["Warrior - Fury"] = "16/33/2", ["Warrior - Protection"] = "4/16/31",
+    ["Warrior - Arms (level 60)"] = "32/17/2", ["Warrior - Fury (level 60)"] = "18/33/0", ["Warrior - Protection (level 60)"] = "5/15/31" }
   for _, b in ipairs(builds) do
     local split, sim = T.Split(b, tree)
     check(sim.ok and sim.total == 51, b.name .. " is legal with 51 points: "
       .. (sim.firstError and ("level " .. sim.firstError.level .. " " .. sim.firstError.err) or tostring(sim.total)))
     check(split == want[b.name], b.name .. " splits " .. want[b.name] .. " (" .. split .. ")")
     local again = T.Parse(T.Export(b))
-    check(table.concat(again.picks, ",") == table.concat(b.picks, ","), b.name .. " survives export and import")
+    check(table.concat(again.picks, ",") == table.concat(b.picks, ",") and again.level == b.level, b.name .. " survives export and import")
   end
 
   -- the rules
@@ -1027,9 +1028,9 @@ do
     "copying a built-in build gets its own name")
   check(T.RenameCustom("Warrior - Arms 2", "Tank leveling") and T.GetBuild("Tank leveling") and not T.GetBuild("Warrior - Arms 2"), "rename")
   check(not T.RenameCustom("Tank leveling", "Warrior - Fury"), "can't take a built-in build's name")
-  check(#T.BuildsForClass("WARRIOR") == 4, "your build is listed after the built-in ones")
+  check(#T.BuildsForClass("WARRIOR") == 7, "your build is listed after the built-in ones")
   T.DeleteCustom("Tank leveling")
-  check(#T.BuildsForClass("WARRIOR") == 3, "delete")
+  check(#T.BuildsForClass("WARRIOR") == 6, "delete")
 
   -- learning
   chat = {}
@@ -1306,7 +1307,10 @@ do
     for _, b in ipairs(T.BuildsForClass(class:upper())) do
       if T.IsBuiltin(b.name) then builds[#builds + 1] = b end
     end
-    check(#builds == 3, ("%s: three builds (%d)"):format(class, #builds))
+    local leveling, at60 = 0, 0
+    for _, b in ipairs(builds) do if T.IsLevel60(b) then at60 = at60 + 1 else leveling = leveling + 1 end end
+    check(leveling == 3 and at60 == (class == "druid" and 4 or 3),
+      ("%s: three leveling builds and %d level 60 (%d, %d)"):format(class, class == "druid" and 4 or 3, leveling, at60))
     for _, b in ipairs(builds) do
       local sim = T.Simulate(b.picks, tree)
       check(sim.ok and sim.total == 51, ("%s is legal with 51 points: %s"):format(b.name,
@@ -1315,7 +1319,14 @@ do
       check(want and T.Split(b, tree) == want, ("%s split %s (source says %s)"):format(b.name, T.Split(b, tree), tostring(want)))
       local main = 0
       for t, tr in ipairs(tree.trees) do if tr.name == b.tree then main = sim.perTree[t] or 0 end end
-      check(main >= 31, ("%s: 31+ points in %s (%d)"):format(b.name, tostring(b.tree), main))
+      -- leveling builds go 31 deep; a level 60 build's tree is at least its biggest
+      local most = 0
+      for _, n in pairs(sim.perTree) do most = math.max(most, n) end
+      if T.IsLevel60(b) then
+        check(main == most and b.name:find("%(level 60%)$"), ("%s: most points in %s (%d)"):format(b.name, tostring(b.tree), main))
+      else
+        check(main >= 31, ("%s: 31+ points in %s (%d)"):format(b.name, tostring(b.tree), main))
+      end
     end
   end
   -- Warlock: talents a few units off the grid still share a row
@@ -1490,6 +1501,80 @@ do
   check(shown == nil, "not asked when turned off for all characters")
   TactaraDB.welcomeOff, TactaraCharDB.welcomeDone = nil, true
   UnitLevel, P.Show = realLevel, realShow
+  StaticPopupDialogs, StaticPopup_Show = nil, nil
+end
+
+
+-- level 60: Tactara's level 60 build for your spec, asked about once
+do
+  local T, P = ns.Talents, ns.TalentPlanner
+  local shown
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(which, text) shown = { which = which, text = text } end
+  local realLevel, realShow, realSelect, realClass, realActive = UnitLevel, P.Show, P.Select, ns.GetClassToken, ns.activeName
+  local level, opened, picked = 59, 0, nil
+  UnitLevel = function() return level end
+  P.Show = function() opened = opened + 1 end
+  P.Select = function(name) picked = name end
+  TactaraCharDB.level60Asked = nil
+  T.SetActive("Warrior - Arms")
+  check(T.IsLevel60(T.GetBuild("Warrior - Arms (level 60)")) and not T.IsLevel60(T.GetBuild("Warrior - Arms")), "level 60 builds are marked")
+  check(T.Level60For().name == "Warrior - Arms (level 60)", "Arms leveling -> Arms level 60")
+  T.AskLevel60()
+  check(shown == nil, "not before 60")
+  level = 60
+  inCombat = true
+  T.AskLevel60()
+  check(shown == nil and not TactaraCharDB.level60Asked, "waits for the fight to end")
+  inCombat = false
+  T.HandleEvent("PLAYER_REGEN_ENABLED")
+  check(shown and shown.which == "TACTARA_LEVEL60" and shown.text:find("Warrior %- Arms %(level 60%)") and shown.text:find("class trainer"),
+    "at 60: names the build and the respec")
+  local d = StaticPopupDialogs.TACTARA_LEVEL60
+  check(d.button1 == "Open planner" and d.button2 == "No thanks" and d.button3 == nil, "Open planner / No thanks")
+  d.OnAccept()
+  check(opened == 1 and picked == "Warrior - Arms (level 60)", "Open planner shows that build")
+  check(TactaraCharDB.talentBuild == "Warrior - Arms", "nothing switched by itself")
+  shown = nil
+  T.AskLevel60()
+  check(shown == nil, "asked once per character")
+  TactaraCharDB.level60Asked = nil
+  T.HandleEvent("PLAYER_LEVEL_UP", 60)
+  runTimers()
+  check(shown and shown.which == "TACTARA_LEVEL60", "asked when you reach 60")
+  shown = nil
+  TactaraCharDB.level60Asked = nil
+  T.SetActive("Warrior - Fury (level 60)")
+  T.AskLevel60()
+  check(shown == nil, "not asked when you already follow a level 60 build")
+  -- Feral: Cat or Bear by your rotation
+  ns.GetClassToken = function() return "DRUID" end
+  T.SetActive("Druid - Feral")
+  ns.activeName = "Druid - Feral (Bear)"
+  check(T.Level60For().name == "Druid - Feral Bear (level 60)", "bear rotation -> Bear build")
+  ns.activeName = "Druid - Feral (Cat)"
+  check(T.Level60For().name == "Druid - Feral Cat (level 60)", "cat rotation -> Cat build")
+  ns.GetClassToken = realClass
+  ns.activeName = realActive
+  -- the planner groups the list
+  P.Show, P.Select = realShow, realSelect
+  T.SetActive("Warrior - Arms")
+  P.Show()
+  P.Select("Warrior - Arms (level 60)")
+  local list = table.concat(P.listText, ",")
+  check(list:find("^%[Leveling%],Arms,Fury,Protection,Update Test,%[Level 60%],Arms %(level 60%),Fury %(level 60%),Protection %(level 60%),%[Yours%]"),
+    "planner list: leveling, then level 60: " .. list)
+  local ui = P.debug.ui
+  check(ui.orderTitle:GetText() == "Point by point (level 60)" and ui.info:GetText():find("For level 60%."), "level 60 build: numbered by point, says it's for 60: " .. tostring(ui.info:GetText()))
+  ui.copy:GetScript("OnClick")(ui.copy)
+  local copied = P.Selected()
+  check(copied and not copied.builtin and T.IsLevel60(copied) and copied.name == "Warrior - Arms (level 60) 2", "a copy of a level 60 build stays level 60: " .. tostring(copied and copied.name))
+  check(table.concat(P.listText, ","):find("%[Yours%].*Warrior %- Arms %(level 60%) 2"), "and is listed under Yours")
+  T.DeleteCustom(copied.name)
+  P.Select("Warrior - Arms")
+  check(ui.orderTitle:GetText() == "Level by level", "leveling build: level by level")
+  TactaraCharDB.level60Asked = true
+  UnitLevel = realLevel
   StaticPopupDialogs, StaticPopup_Show = nil, nil
 end
 
