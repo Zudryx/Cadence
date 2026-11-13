@@ -1297,6 +1297,27 @@ do
       check(T.Simulate(T.FromCurrent(tree), tree).ok, class .. ": empty tree is fine")
     end
   end
+  -- Tactara's builds for every class: legal on that class's real tree, 51
+  -- points, and the split their source line says
+  for class in pairs(expect) do
+    Install(dofile(root .. "/../tests/talent_fixtures/" .. class .. ".lua"))
+    local tree = T.ReadTree()
+    local builds = {}
+    for _, b in ipairs(T.BuildsForClass(class:upper())) do
+      if T.IsBuiltin(b.name) then builds[#builds + 1] = b end
+    end
+    check(#builds == 3, ("%s: three builds (%d)"):format(class, #builds))
+    for _, b in ipairs(builds) do
+      local sim = T.Simulate(b.picks, tree)
+      check(sim.ok and sim.total == 51, ("%s is legal with 51 points: %s"):format(b.name,
+        sim.firstError and (sim.firstError.level .. " " .. sim.firstError.name .. ": " .. sim.firstError.err) or tostring(sim.total)))
+      local want = (b.source or ""):match("%((%d+/%d+/%d+)%)")
+      check(want and T.Split(b, tree) == want, ("%s split %s (source says %s)"):format(b.name, T.Split(b, tree), tostring(want)))
+      local main = 0
+      for t, tr in ipairs(tree.trees) do if tr.name == b.tree then main = sim.perTree[t] or 0 end end
+      check(main >= 31, ("%s: 31+ points in %s (%d)"):format(b.name, tostring(b.tree), main))
+    end
+  end
   -- Warlock: talents a few units off the grid still share a row
   Install(dofile(root .. "/../tests/talent_fixtures/warlock.lua"))
   local w = T.ReadTree()

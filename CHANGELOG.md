@@ -3,6 +3,8 @@
 Each `## x.y.z` section becomes the release notes for that version.
 
 ## 0.14.0
+- **Talent builds for every class:** leveling builds for every spec of Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock and Druid (one Feral build for Cat and Bear), level 10 to 60, from the Icy Veins and Warcraft Tavern leveling guides. Each is checked point by point against the game's talent trees.
+- **Talent planner, Hunter:** the trees draw and check correctly. The Hunter data has a second Lightning Reflexes far off to the side, an Improved Serpent Sting far below the tree, and an arrow from Bestial Wrath back up to Intimidation (which would make each need the other). Those are left out.
 - **Before the pull:** when you target an enemy and you're not fighting yet, a line under the helper popup lists what your rotation wants up and isn't: a buff it keeps up, your pet, or a poison or weapon imbue (Rogue, Shaman). A chat line says the same at most once a minute. Tactara only tells you; you cast it. Settings page (Reminders) or `/tac prepull on` / `helper` / `off`.
 - **Trainer reminder:** when you level up, a chat line lists the spells now waiting at your class trainer, the ones your rotation uses first. `/tac trainer` shows the list any time. New spells only, not new ranks.
 - **Dual spec:** each spec keeps its own talent build and rotation choice. Switch specs and Tactara switches with you, and says which build it's following. The talent glow only shows on your active spec's tab.

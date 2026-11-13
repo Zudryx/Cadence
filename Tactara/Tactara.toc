@@ -38,4 +38,12 @@ Minimap.lua
 Profiles.lua
 Talents.lua
 TalentBuilds\Warrior.lua
+TalentBuilds\Paladin.lua
+TalentBuilds\Hunter.lua
+TalentBuilds\Rogue.lua
+TalentBuilds\Priest.lua
+TalentBuilds\Shaman.lua
+TalentBuilds\Mage.lua
+TalentBuilds\Warlock.lua
+TalentBuilds\Druid.lua
 TalentPlanner.lua
